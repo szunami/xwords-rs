@@ -1,21 +1,21 @@
 use std::{collections::HashSet, fmt};
 
-#[derive(PartialEq, Eq, Debug, Hash)]
+#[derive(PartialEq, Eq, Debug, Hash, Clone)]
 struct Crossword {
     contents: String,
     width: usize,
     height: usize,
 }
 
-impl Clone for Crossword {
-    fn clone(&self) -> Self {
-        Crossword {
-            contents: self.contents.clone(),
-            width: self.width,
-            height: self.height,
-        }
-    }
-}
+// impl Clone for Crossword {
+//     fn clone(&self) -> Self {
+//         Crossword {
+//             contents: self.contents.clone(),
+//             width: self.width,
+//             height: self.height,
+//         }
+//     }
+// }
 
 impl fmt::Display for Crossword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -44,8 +44,8 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     // parse crossword into partially filled words
     // fill a word
     let mut candidates = vec![crossword.clone()];
-    let mut visitedCandidates = HashSet::new();
-    visitedCandidates.insert(crossword);
+    let mut visited_candidates: HashSet<Crossword> = HashSet::new();
+    visited_candidates.insert(crossword.to_owned());
 
     loop {
         if candidates.len() == 0 {
@@ -53,28 +53,24 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
         }
 
         let candidate = candidates.pop().unwrap();
+        visited_candidates.insert(candidate.to_owned());
 
         let words = parse_words(crossword);
-
         for word in words {
-
             // find valid fills for word;
             // for each fill:
             //   are all complete words legit?
             //     if so, push
 
-            let potential_fills = find_fills(word);
-
+            let potential_fills = find_fills(word, vec!["cat", "dog"]);
 
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, potential_fill);
                 // TODO: are all complete words legit?
-                // TODO: have we visisted this candidate before?
-                candidates.push(new_candidate);
+                if visited_candidates.contains(&new_candidate) {
+                    candidates.push(new_candidate);
+                }
             }
-
-
-
         }
     }
 }
@@ -84,42 +80,61 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
 
     match potential_fill.direction {
         Direction::Across => {
-
             let mut bytes = result_contents.into_bytes();
 
             for index in 0..potential_fill.contents.len() {
-                let col = potential_fill.start_col + index; 
+                let col = potential_fill.start_col + index;
 
-                bytes[potential_fill.start_row * candidate.width + col] = potential_fill.contents.as_bytes()[index];
-
+                bytes[potential_fill.start_row * candidate.width + col] =
+                    potential_fill.contents.as_bytes()[index];
             }
-            unsafe { result_contents = String::from_utf8_unchecked(bytes)}
+            unsafe { result_contents = String::from_utf8_unchecked(bytes) }
         }
         Direction::Down => {
             let mut bytes = result_contents.into_bytes();
 
             for index in 0..potential_fill.contents.len() {
-                let row = potential_fill.start_row + index; 
+                let row = potential_fill.start_row + index;
 
-                bytes[row * candidate.width + potential_fill.start_col] = potential_fill.contents.as_bytes()[index];
-
+                bytes[row * candidate.width + potential_fill.start_col] =
+                    potential_fill.contents.as_bytes()[index];
             }
-            unsafe { result_contents = String::from_utf8_unchecked(bytes)}
+            unsafe { result_contents = String::from_utf8_unchecked(bytes) }
         }
     }
 
-    Crossword{
+    Crossword {
         contents: result_contents,
         ..*candidate
     }
 }
 
-fn find_fills(word: Word) -> Vec<Word> {
-    // TODO: make this real
-    vec![Word{
-        contents: String::from("abc"),
-        ..word
-    }]
+fn find_fills(word: Word, all_real_words: Vec<&str>) -> Vec<Word> {
+    let mut result = vec![];
+
+    for real_word in all_real_words {
+        if real_word.len() != word.contents.len() {
+            continue;
+        }
+        let mut is_valid = true;
+        for i in 0..word.contents.len() {
+            if word.contents.as_bytes()[i] == b' '
+                || word.contents.as_bytes()[i] == real_word.as_bytes()[i]
+            {
+                continue;
+            } else {
+                is_valid = false;
+            }
+        }
+        if is_valid {
+            result.push(Word {
+                contents: real_word.to_string(),
+                ..word.clone()
+            })
+        }
+    }
+
+    result
 }
 
 fn parse_words(crossword: &Crossword) -> Vec<Word> {
@@ -221,12 +236,12 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
     result
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum Direction {
     Across,
     Down,
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct Word {
     contents: String,
     start_row: usize,
@@ -237,7 +252,9 @@ struct Word {
 
 #[cfg(test)]
 mod tests {
-    use crate::{fill_crossword, parse_words, Crossword, Word, Direction, fill_one_word};
+    use crate::{
+        fill_crossword, fill_one_word, find_fills, parse_words, Crossword, Direction, Word,
+    };
 
     #[test]
     fn it_works() {
@@ -320,18 +337,18 @@ mod tests {
             height: 3,
         };
 
-
-        let result = 
-
-        assert_eq!(
-            fill_one_word(&c, Word {
-                contents: String::from("cat"),
-                start_col: 0,
-                start_row: 0,
-                length: 3,
-                direction: Direction::Across,
-            }),
-            Crossword{
+        let result = assert_eq!(
+            fill_one_word(
+                &c,
+                Word {
+                    contents: String::from("cat"),
+                    start_col: 0,
+                    start_row: 0,
+                    length: 3,
+                    direction: Direction::Across,
+                }
+            ),
+            Crossword {
                 contents: String::from("catdefghi"),
                 width: 3,
                 height: 3,
@@ -339,19 +356,45 @@ mod tests {
         );
 
         assert_eq!(
-            fill_one_word(&c, Word {
-                contents: String::from("cat"),
-                start_col: 0,
-                start_row: 0,
-                length: 3,
-                direction: Direction::Down,
-            }),
-            Crossword{
+            fill_one_word(
+                &c,
+                Word {
+                    contents: String::from("cat"),
+                    start_col: 0,
+                    start_row: 0,
+                    length: 3,
+                    direction: Direction::Down,
+                }
+            ),
+            Crossword {
                 contents: String::from("cbcaeft`hi"),
                 width: 3,
                 height: 3,
             }
         );
+    }
 
+    #[test]
+    fn find_fill_works() {
+        let input = Word {
+            contents: String::from("   "),
+            length: 3,
+            start_row: 0,
+            start_col: 0,
+            direction: Direction::Across,
+        };
+        assert_eq!(
+            find_fills(input.clone(), vec!["cat", "dog"]),
+            vec![
+                Word {
+                    contents: String::from("cat"),
+                    ..input.clone()
+                },
+                Word {
+                    contents: String::from("dog"),
+                    ..input.clone()
+                },
+            ]
+        );
     }
 }
