@@ -99,6 +99,49 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
         }
     }
 
+    for col in 0..crossword.width {
+        for row in 0..crossword.height {
+            let current_char = byte_array[row * crossword.width + col] as char;
+            if current_char != '*' {
+                // found a char; is it our first?
+                if start_row == None {
+                    start_row = Some(row);
+                    start_col = Some(col);
+                }
+                length += 1;
+                current_word.push(current_char)
+            } else {
+                let new_word = Word {
+                    contents: current_word,
+                    start_row: start_row.unwrap(),
+                    start_col: start_col.unwrap(),
+                    length: length,
+                    direction: Direction::Down,
+                };
+                result.push(new_word);
+                current_word = "".to_owned();
+                length = 0;
+                start_row = None;
+                start_col = None;
+            }
+        }
+        // have to process end of row
+        if current_word.len() > 0 {
+            let new_word = Word {
+                contents: current_word,
+                start_row: start_row.unwrap(),
+                start_col: start_col.unwrap(),
+                length: length,
+                direction: Direction::Down,
+            };
+            result.push(new_word);
+            current_word = "".to_owned();
+            length = 0;
+            start_row = None;
+            start_col = None;
+        }
+    }
+
     result
 }
 
@@ -118,7 +161,7 @@ struct Word {
 
 #[cfg(test)]
 mod tests {
-    use crate::{fill_crossword, parse_words, Crossword, Word};
+    use crate::{fill_crossword, parse_words, Crossword, Word, Direction};
 
     #[test]
     fn it_works() {
@@ -150,7 +193,7 @@ mod tests {
         };
         let result = parse_words(&c);
 
-        assert_eq!(result.len(), 3);
+        assert_eq!(result.len(), 6);
         assert_eq!(
             result[0],
             Word {
@@ -158,7 +201,7 @@ mod tests {
                 start_col: 0,
                 start_row: 0,
                 length: 3,
-                direction: crate::Direction::Across
+                direction: Direction::Across
             }
         );
         assert_eq!(
@@ -168,8 +211,29 @@ mod tests {
                 start_col: 0,
                 start_row: 1,
                 length: 3,
-                direction: crate::Direction::Across
+                direction: Direction::Across
             }
         );
+        assert_eq!(
+            result[2],
+            Word {
+                contents: String::from("ghi"),
+                start_col: 0,
+                start_row: 2,
+                length: 3,
+                direction: Direction::Across
+            }
+        );
+        assert_eq!(
+            result[3],
+            Word {
+                contents: String::from("adg"),
+                start_col: 0,
+                start_row: 0,
+                length: 3,
+                direction: Direction::Down,
+            }
+        )
+
     }
 }
