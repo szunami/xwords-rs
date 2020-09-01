@@ -68,7 +68,8 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, potential_fill);
-                // are all complete words legit?
+                // TODO: are all complete words legit?
+                // TODO: have we visisted this candidate before?
                 candidates.push(new_candidate);
             }
 
@@ -114,6 +115,7 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
 }
 
 fn find_fills(word: Word) -> Vec<Word> {
+    // TODO: make this real
     vec![Word{
         contents: String::from("abc"),
         ..word
