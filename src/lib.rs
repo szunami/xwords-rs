@@ -45,9 +45,15 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
         }
 
         let candidate = candidates.pop().unwrap();
+
+        println!("Testing candidate");
+        println!("{}", candidate);
+
         visited_candidates.insert(candidate.to_owned());
 
         let words = parse_words(crossword);
+
+
         for word in words {
             // find valid fills for word;
             // for each fill:
@@ -56,12 +62,21 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
             let potential_fills = find_fills(word);
 
+            let mut ctr = 0;
             for potential_fill in potential_fills {
+                println!("Processing potential fill {}", ctr);
+                ctr += 1;
                 let new_candidate = fill_one_word(&candidate, potential_fill);
                 // TODO: are all complete words legit?
 
-                if is_viable(&candidate) && !visited_candidates.contains(&new_candidate) {
-                    candidates.push(new_candidate);
+                if is_viable(&new_candidate) {
+                    if !new_candidate.contents.contains(" ") {
+                        return Ok(new_candidate)
+                    }
+
+                    if !visited_candidates.contains(&new_candidate) {
+                        candidates.push(new_candidate);
+                    }
                 }
             }
         }
@@ -287,15 +302,16 @@ mod tests {
         println!("{}", c);
     }
 
-    // #[test]
-    // fn fill_works() {
-    //     let c = Crossword {
-    //         contents: String::from("         "),
-    //         width: 3,
-    //         height: 3,
-    //     };
-    //     assert_eq!(fill_crossword(&c), c);
-    // }
+    #[test]
+    fn fill_works() {
+        let c = Crossword {
+            contents: String::from("         "),
+            width: 3,
+            height: 3,
+        };
+
+        println!("{}", fill_crossword(&c).unwrap());
+    }
 
     #[test]
     fn parse_works() {
