@@ -367,7 +367,7 @@ mod tests {
                 }
             ),
             Crossword {
-                contents: String::from("cbcaeft`hi"),
+                contents: String::from("cbcaefthi"),
                 width: 3,
                 height: 3,
             }
