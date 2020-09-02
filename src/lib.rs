@@ -1,5 +1,7 @@
-use std::{collections::HashSet, fmt};
+use std::{collections::HashSet, fmt, fs::File};
 
+#[macro_use]
+extern crate lazy_static;
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 struct Crossword {
     contents: String,
@@ -62,7 +64,7 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
             //   are all complete words legit?
             //     if so, push
 
-            let potential_fills = find_fills(word, vec!["cat", "dog"]);
+            let potential_fills = find_fills(word);
 
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, potential_fill);
@@ -109,10 +111,10 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
     }
 }
 
-fn find_fills(word: Word, all_real_words: Vec<&str>) -> Vec<Word> {
+fn find_fills(word: Word) -> Vec<Word> {
     let mut result = vec![];
 
-    for real_word in all_real_words {
+    for real_word in all_words.iter() {
         if real_word.len() != word.contents.len() {
             continue;
         }
@@ -250,11 +252,28 @@ struct Word {
     direction: Direction,
 }
 
+lazy_static! {
+    static ref all_words: Vec<String> = {
+        let mut file = File::open("wordlist.json").unwrap();
+
+        let json: serde_json::Value =
+            serde_json::from_reader(file).expect("JSON was not well-formatted");
+
+        match json.as_object() {
+            Some(obj) => {
+                return obj.keys().into_iter().map(String::to_owned).collect();
+            }
+            None => return vec![],
+        }
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
         fill_crossword, fill_one_word, find_fills, parse_words, Crossword, Direction, Word,
     };
+    use std::fs::File;
 
     #[test]
     fn it_works() {
@@ -383,18 +402,9 @@ mod tests {
             start_col: 0,
             direction: Direction::Across,
         };
-        assert_eq!(
-            find_fills(input.clone(), vec!["cat", "dog"]),
-            vec![
-                Word {
-                    contents: String::from("cat"),
-                    ..input.clone()
-                },
-                Word {
-                    contents: String::from("dog"),
-                    ..input.clone()
-                },
-            ]
-        );
+        assert!(find_fills(input.clone()).contains(&Word {
+            contents: String::from("CAT"),
+            ..input.clone()
+        }));
     }
 }
