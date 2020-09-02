@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt, fs::File};
+use std::{collections::{VecDeque, HashSet}, fmt, fs::File};
 
 #[macro_use]
 extern crate lazy_static;
@@ -35,7 +35,8 @@ impl fmt::Display for Crossword {
 fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     // parse crossword into partially filled words
     // fill a word
-    let mut candidates = vec![crossword.clone()];
+    let mut candidates = VecDeque::new();
+    candidates.push_back(crossword.clone());
     let mut visited_candidates: HashSet<Crossword> = HashSet::new();
     visited_candidates.insert(crossword.to_owned());
 
@@ -44,14 +45,14 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
             return Err(String::from("Failed to fill."));
         }
 
-        let candidate = candidates.pop().unwrap();
+        let candidate = candidates.pop_back().unwrap();
 
         println!("Testing candidate");
         println!("{}", candidate);
 
         visited_candidates.insert(candidate.to_owned());
 
-        let words = parse_words(crossword);
+        let words = parse_words(&candidate);
 
 
         for word in words {
@@ -62,10 +63,7 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
             let potential_fills = find_fills(word);
 
-            let mut ctr = 0;
             for potential_fill in potential_fills {
-                println!("Processing potential fill {}", ctr);
-                ctr += 1;
                 let new_candidate = fill_one_word(&candidate, potential_fill);
                 // TODO: are all complete words legit?
 
@@ -75,7 +73,7 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
                     }
 
                     if !visited_candidates.contains(&new_candidate) {
-                        candidates.push(new_candidate);
+                        candidates.push_back(new_candidate);
                     }
                 }
             }
@@ -268,7 +266,7 @@ struct Word {
 }
 
 lazy_static! {
-    static ref all_words: Vec<String> = {
+    static ref all_words: HashSet<String> = {
         let mut file = File::open("wordlist.json").unwrap();
 
         let json: serde_json::Value =
@@ -278,7 +276,7 @@ lazy_static! {
             Some(obj) => {
                 return obj.keys().into_iter().map(String::to_owned).collect();
             }
-            None => return vec![],
+            None => return HashSet::new(),
         }
     };
 }
