@@ -406,5 +406,41 @@ mod tests {
             contents: String::from("CAT"),
             ..input.clone()
         }));
+
+        let input = Word {
+            contents: String::from("C T"),
+            length: 3,
+            start_row: 0,
+            start_col: 0,
+            direction: Direction::Across,
+        };
+        assert!(find_fills(input.clone()).contains(&Word {
+            contents: String::from("CAT"),
+            ..input.clone()
+        }));
+
+        let input = Word {
+            contents: String::from("  T"),
+            length: 3,
+            start_row: 0,
+            start_col: 0,
+            direction: Direction::Across,
+        };
+        assert!(find_fills(input.clone()).contains(&Word {
+            contents: String::from("CAT"),
+            ..input.clone()
+        }));
+
+        let input = Word {
+            contents: String::from("CAT"),
+            length: 3,
+            start_row: 0,
+            start_col: 0,
+            direction: Direction::Across,
+        };
+        assert!(find_fills(input.clone()).contains(&Word {
+            contents: String::from("CAT"),
+            ..input.clone()
+        }));
     }
 }
