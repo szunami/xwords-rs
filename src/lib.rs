@@ -9,16 +9,6 @@ struct Crossword {
     height: usize,
 }
 
-// impl Clone for Crossword {
-//     fn clone(&self) -> Self {
-//         Crossword {
-//             contents: self.contents.clone(),
-//             width: self.width,
-//             height: self.height,
-//         }
-//     }
-// }
-
 impl fmt::Display for Crossword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for row in 0..self.height {
@@ -69,12 +59,22 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, potential_fill);
                 // TODO: are all complete words legit?
-                if visited_candidates.contains(&new_candidate) {
+
+                if is_viable(&candidate) && !visited_candidates.contains(&new_candidate) {
                     candidates.push(new_candidate);
                 }
             }
         }
     }
+}
+
+fn is_viable(candidate: &Crossword) -> bool {
+    for word in parse_words(candidate) {
+        if !all_words.contains(&word.contents) && !word.contents.contains(" ") {
+            return false;
+        }
+    }
+    true
 }
 
 fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
@@ -271,7 +271,8 @@ lazy_static! {
 #[cfg(test)]
 mod tests {
     use crate::{
-        fill_crossword, fill_one_word, find_fills, parse_words, Crossword, Direction, Word,
+        fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword, Direction,
+        Word,
     };
     use std::fs::File;
 
@@ -441,6 +442,21 @@ mod tests {
         assert!(find_fills(input.clone()).contains(&Word {
             contents: String::from("CAT"),
             ..input.clone()
+        }));
+    }
+
+    #[test]
+    fn is_viable_works() {
+        assert!(is_viable(&Crossword {
+            contents: String::from("         "),
+            width: 3,
+            height: 3,
+        }));
+
+        assert!(!is_viable(&Crossword {
+            contents: String::from("ABCDEFGH "),
+            width: 3,
+            height: 3,
         }));
     }
 }
