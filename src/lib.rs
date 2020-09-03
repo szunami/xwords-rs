@@ -1,3 +1,5 @@
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::{
     collections::{HashSet, VecDeque},
     fmt,
@@ -39,63 +41,124 @@ impl fmt::Display for Crossword {
 pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     // parse crossword into partially filled words
     // fill a word
-    let mut candidates = VecDeque::new();
-    candidates.push_back(crossword.clone());
-    let mut visited_candidates: HashSet<Crossword> = HashSet::new();
-    visited_candidates.insert(crossword.to_owned());
-    let mut visited_words = 0;
 
-    loop {
-        if candidates.len() == 0 {
-            return Err(String::from("Failed to fill."));
-        }
+    let mut queue = VecDeque::new();
+    queue.push_back(crossword.clone());
 
-        let candidate = candidates.pop_back().unwrap();
+    let candidates = Arc::new(Mutex::new(queue));
 
-        visited_candidates.insert(candidate.to_owned());
+    {
+        let mut queue = candidates.lock().unwrap();
+        queue.push_back(crossword.clone());
+    }
 
-        let words = parse_words(&candidate);
-        let to_fill = words
-            .iter()
-            .max_by_key(|word| {
-                let empty_squares: i32 = word.contents.matches(" ").count() as i32;
-                // we want to identify highly constrained words
-                // very unscientifically: we want longer words, with fewer spaces.
-                if empty_squares == 0 {
-                    return -1;
-                }
-                return 2 * word.contents.len() as i32 - empty_squares;
-            })
-            .unwrap();
-        // println!("Filling {}", to_fill.contents);
-        visited_words += 1;
-        // find valid fills for word;
-        // for each fill:
-        //   are all complete words legit?
-        //     if so, push
+    // let mut visited_candidates: HashSet<Crossword> = HashSet::new();
+    // visited_candidates.insert(crossword.to_owned());
+    // let mut visited_words = 0;
 
-        let potential_fills = find_fills(to_fill.to_owned());
+    // want to spawn multiple threads, have each of them perform the below
 
-        for potential_fill in potential_fills {
-            let new_candidate = fill_one_word(&candidate, potential_fill);
+    for _ in 0..1 {
+        let new_arc = Arc::clone(&candidates);
 
-            if is_viable(&new_candidate) {
-                if !new_candidate.contents.contains(" ") {
-                    println!(
-                        "Visited {} candidates. Visited {} words.",
-                        visited_candidates.len(),
-                        visited_words
-                    );
+        std::thread::spawn(move || {
+            let mut candidate: Crossword;
+            {
+                let mut queue = new_arc.lock().unwrap();
+                candidate = queue.pop_back().unwrap();
+            }
+            let words = parse_words(&candidate);
+            let to_fill = words
+                .iter()
+                .max_by_key(|word| {
+                    let empty_squares: i32 = word.contents.matches(" ").count() as i32;
+                    // we want to identify highly constrained words
+                    // very unscientifically: we want longer words, with fewer spaces.
+                    if empty_squares == 0 {
+                        return -1;
+                    }
+                    return 2 * word.contents.len() as i32 - empty_squares;
+                })
+                .unwrap();
+            // find valid fills for word;
+            // for each fill:
+            //   are all complete words legit?
+            //     if so, push
 
-                    return Ok(new_candidate);
-                }
+            let potential_fills = find_fills(to_fill.to_owned());
 
-                if !visited_candidates.contains(&new_candidate) {
-                    candidates.push_back(new_candidate);
+            for potential_fill in potential_fills {
+                let new_candidate = fill_one_word(&candidate, potential_fill);
+
+                if is_viable(&new_candidate) {
+                    if !new_candidate.contents.contains(" ") {
+                        // return Ok(new_candidate);
+                        println!("Done!: {}", new_candidate);
+                    }
+
+                    // if !visited_candidates.contains(&new_candidate) {
+                        let mut queue = new_arc.lock().unwrap();
+                        queue.push_back(new_candidate);
+                    // }
                 }
             }
-        }
+        });
     }
+
+    Err(String::from("whoopsies"))
+
+    // loop {
+
+    //     if candidates.len() == 0 {
+    //         return Err(String::from("Failed to fill."));
+    //     }
+
+    //     let candidate = candidates.pop_back().unwrap();
+
+    //     visited_candidates.insert(candidate.to_owned());
+
+    //     let words = parse_words(&candidate);
+    //     let to_fill = words
+    //         .iter()
+    //         .max_by_key(|word| {
+    //             let empty_squares: i32 = word.contents.matches(" ").count() as i32;
+    //             // we want to identify highly constrained words
+    //             // very unscientifically: we want longer words, with fewer spaces.
+    //             if empty_squares == 0 {
+    //                 return -1;
+    //             }
+    //             return 2 * word.contents.len() as i32 - empty_squares;
+    //         })
+    //         .unwrap();
+    //     // println!("Filling {}", to_fill.contents);
+    //     visited_words += 1;
+    //     // find valid fills for word;
+    //     // for each fill:
+    //     //   are all complete words legit?
+    //     //     if so, push
+
+    //     let potential_fills = find_fills(to_fill.to_owned());
+
+    //     for potential_fill in potential_fills {
+    //         let new_candidate = fill_one_word(&candidate, potential_fill);
+
+    //         if is_viable(&new_candidate) {
+    //             if !new_candidate.contents.contains(" ") {
+    //                 println!(
+    //                     "Visited {} candidates. Visited {} words.",
+    //                     visited_candidates.len(),
+    //                     visited_words
+    //                 );
+
+    //                 return Ok(new_candidate);
+    //             }
+
+    //             if !visited_candidates.contains(&new_candidate) {
+    //                 candidates.push_back(new_candidate);
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 fn is_viable(candidate: &Crossword) -> bool {
