@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::{collections::{VecDeque, HashSet}, fmt, fs::File};
 
 #[macro_use]
@@ -50,10 +51,17 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
         visited_candidates.insert(candidate.to_owned());
 
-        let words = parse_words(&candidate);
-
-
-        let to_fill = words.iter().filter(|word| word.contents.contains(" ")).next().unwrap();
+        let mut words = parse_words(&candidate);
+        let to_fill = words.iter().max_by_key(|word| {
+            let empty_squares: i32 = word.contents.matches(" ").count() as i32;
+            // we want to identify highly constrained words
+            // very unscientifically: we want longer words, with fewer spaces.
+            if empty_squares == 0 {
+                return -1;
+            }
+            return 2 * word.contents.len() as i32 - empty_squares;
+        }).unwrap();
+        // println!("Filling {}", to_fill.contents);
         visited_words += 1;
         // find valid fills for word;
         // for each fill:
@@ -301,10 +309,18 @@ mod tests {
 
     #[test]
     fn fill_works() {
+        // let c = Crossword {
+        //     contents: String::from("         "),
+        //     width: 3,
+        //     height: 3,
+        // };
+
+        // println!("{}", fill_crossword(&c).unwrap());
+
         let c = Crossword {
-            contents: String::from("         "),
-            width: 3,
-            height: 3,
+            contents: String::from("                "),
+            width: 4,
+            height: 4,
         };
 
         println!("{}", fill_crossword(&c).unwrap());
