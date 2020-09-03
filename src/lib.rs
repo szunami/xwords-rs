@@ -39,6 +39,7 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     candidates.push_back(crossword.clone());
     let mut visited_candidates: HashSet<Crossword> = HashSet::new();
     visited_candidates.insert(crossword.to_owned());
+    let mut visited_words = 0;
 
     loop {
         if candidates.len() == 0 {
@@ -47,34 +48,33 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
         let candidate = candidates.pop_back().unwrap();
 
-        println!("Testing candidate");
-        println!("{}", candidate);
-
         visited_candidates.insert(candidate.to_owned());
 
         let words = parse_words(&candidate);
 
 
-        for word in words {
-            // find valid fills for word;
-            // for each fill:
-            //   are all complete words legit?
-            //     if so, push
+        let to_fill = words.iter().filter(|word| word.contents.contains(" ")).next().unwrap();
+        visited_words += 1;
+        // find valid fills for word;
+        // for each fill:
+        //   are all complete words legit?
+        //     if so, push
 
-            let potential_fills = find_fills(word);
+        let potential_fills = find_fills(to_fill.to_owned());
 
-            for potential_fill in potential_fills {
-                let new_candidate = fill_one_word(&candidate, potential_fill);
-                // TODO: are all complete words legit?
+        for potential_fill in potential_fills {
+            let new_candidate = fill_one_word(&candidate, potential_fill);
+            // TODO: are all complete words legit?
 
-                if is_viable(&new_candidate) {
-                    if !new_candidate.contents.contains(" ") {
-                        return Ok(new_candidate)
-                    }
+            if is_viable(&new_candidate) {
+                if !new_candidate.contents.contains(" ") {
+                    println!("Visited {} candidates. Visited {} words.", visited_candidates.len(), visited_words);
 
-                    if !visited_candidates.contains(&new_candidate) {
-                        candidates.push_back(new_candidate);
-                    }
+                    return Ok(new_candidate)
+                }
+
+                if !visited_candidates.contains(&new_candidate) {
+                    candidates.push_back(new_candidate);
                 }
             }
         }
