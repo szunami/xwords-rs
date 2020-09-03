@@ -64,7 +64,6 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
         for potential_fill in potential_fills {
             let new_candidate = fill_one_word(&candidate, potential_fill);
-            // TODO: are all complete words legit?
 
             if is_viable(&new_candidate) {
                 if !new_candidate.contents.contains(" ") {
