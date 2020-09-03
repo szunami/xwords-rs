@@ -1,10 +1,13 @@
-use std::cmp::Ordering;
-use std::{collections::{VecDeque, HashSet}, fmt, fs::File};
+use std::{
+    collections::{HashSet, VecDeque},
+    fmt,
+    fs::File,
+};
 
 #[macro_use]
 extern crate lazy_static;
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
-struct Crossword {
+pub struct Crossword {
     contents: String,
     width: usize,
     height: usize,
@@ -18,22 +21,22 @@ impl fmt::Display for Crossword {
                     f,
                     "{}",
                     self.contents.as_bytes()[row * self.width + col] as char
-                );
+                )?;
                 if col != self.width - 1 {
-                    write!(f, " ");
+                    write!(f, " ")?;
                 }
             }
-            write!(f, "\n");
+            write!(f, "\n")?;
 
             if row != self.height - 1 {
-                write!(f, "\n");
+                write!(f, "\n")?;
             }
         }
         Ok(())
     }
 }
 
-fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
+pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     // parse crossword into partially filled words
     // fill a word
     let mut candidates = VecDeque::new();
@@ -51,16 +54,19 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
         visited_candidates.insert(candidate.to_owned());
 
-        let mut words = parse_words(&candidate);
-        let to_fill = words.iter().max_by_key(|word| {
-            let empty_squares: i32 = word.contents.matches(" ").count() as i32;
-            // we want to identify highly constrained words
-            // very unscientifically: we want longer words, with fewer spaces.
-            if empty_squares == 0 {
-                return -1;
-            }
-            return 2 * word.contents.len() as i32 - empty_squares;
-        }).unwrap();
+        let words = parse_words(&candidate);
+        let to_fill = words
+            .iter()
+            .max_by_key(|word| {
+                let empty_squares: i32 = word.contents.matches(" ").count() as i32;
+                // we want to identify highly constrained words
+                // very unscientifically: we want longer words, with fewer spaces.
+                if empty_squares == 0 {
+                    return -1;
+                }
+                return 2 * word.contents.len() as i32 - empty_squares;
+            })
+            .unwrap();
         // println!("Filling {}", to_fill.contents);
         visited_words += 1;
         // find valid fills for word;
@@ -75,9 +81,13 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
             if is_viable(&new_candidate) {
                 if !new_candidate.contents.contains(" ") {
-                    println!("Visited {} candidates. Visited {} words.", visited_candidates.len(), visited_words);
+                    println!(
+                        "Visited {} candidates. Visited {} words.",
+                        visited_candidates.len(),
+                        visited_words
+                    );
 
-                    return Ok(new_candidate)
+                    return Ok(new_candidate);
                 }
 
                 if !visited_candidates.contains(&new_candidate) {
@@ -90,7 +100,7 @@ fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
 fn is_viable(candidate: &Crossword) -> bool {
     for word in parse_words(candidate) {
-        if !all_words.contains(&word.contents) && !word.contents.contains(" ") {
+        if !ALL_WORDS.contains(&word.contents) && !word.contents.contains(" ") {
             return false;
         }
     }
@@ -134,7 +144,7 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
 fn find_fills(word: Word) -> Vec<Word> {
     let mut result = vec![];
 
-    for real_word in all_words.iter() {
+    for real_word in ALL_WORDS.iter() {
         if real_word.len() != word.contents.len() {
             continue;
         }
@@ -273,8 +283,8 @@ struct Word {
 }
 
 lazy_static! {
-    static ref all_words: HashSet<String> = {
-        let mut file = File::open("wordlist.json").unwrap();
+    static ref ALL_WORDS: HashSet<String> = {
+        let file = File::open("wordlist.json").unwrap();
 
         let json: serde_json::Value =
             serde_json::from_reader(file).expect("JSON was not well-formatted");
@@ -294,7 +304,6 @@ mod tests {
         fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword, Direction,
         Word,
     };
-    use std::fs::File;
 
     #[test]
     fn it_works() {
@@ -386,7 +395,7 @@ mod tests {
             height: 3,
         };
 
-        let result = assert_eq!(
+        assert_eq!(
             fill_one_word(
                 &c,
                 Word {
