@@ -300,7 +300,9 @@ lazy_static! {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
+    use crate::ALL_WORDS;
+use std::time::Instant;
+use crate::{
         fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword, Direction,
         Word,
     };
@@ -326,13 +328,16 @@ mod tests {
 
         // println!("{}", fill_crossword(&c).unwrap());
 
+        ALL_WORDS.len();
+        let start = Instant::now();
+
         let c = Crossword {
             contents: String::from("                "),
             width: 4,
             height: 4,
         };
-
         println!("{}", fill_crossword(&c).unwrap());
+        println!("{}", start.elapsed().as_millis()); 
     }
 
     #[test]
