@@ -75,7 +75,7 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..1 {
+    for thread_index in 0..16 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
 
