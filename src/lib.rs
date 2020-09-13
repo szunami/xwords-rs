@@ -76,14 +76,14 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..1 {
+    for thread_index in 0..32 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
 
         std::thread::spawn(move || {
             println!("Hello from thread {}", thread_index);
 
-            let guard = pprof::ProfilerGuard::new(100).unwrap();
+            // let guard = pprof::ProfilerGuard::new(100).unwrap();
 
             loop {
                 let candidate = {
@@ -119,14 +119,14 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
                     if is_viable(&new_candidate) {
                         if !new_candidate.contents.contains(" ") {
 
-                            if let Ok(report) = guard.report().build() {
-                                let file = File::create(format!(
-                                    "flamegraph-{}.svg",
-                                    thread_index
-                                ))
-                                .unwrap();
-                                report.flamegraph(file).unwrap();
-                            };
+                            // if let Ok(report) = guard.report().build() {
+                            //     let file = File::create(format!(
+                            //         "flamegraph-{}.svg",
+                            //         thread_index
+                            //     ))
+                                // .unwrap();
+                            //     report.flamegraph(file).unwrap();
+                            // };
 
                             // return Ok(new_candidate);
                             match new_tx.send(new_candidate.clone()) {
@@ -245,6 +245,10 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
                 length += 1;
                 current_word.push(current_char)
             } else {
+                // If we don't have any data yet, just keep going
+                if start_row == None {
+                    continue
+                }
                 let new_word = Word {
                     contents: current_word,
                     start_row: start_row.unwrap(),
@@ -288,6 +292,9 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
                 length += 1;
                 current_word.push(current_char)
             } else {
+                if start_row == None {
+                    continue
+                }
                 let new_word = Word {
                     contents: current_word,
                     start_row: start_row.unwrap(),
@@ -381,9 +388,16 @@ mod tests {
         let start = Instant::now();
 
         let c = Crossword {
-            contents: String::from("                "),
-            width: 4,
-            height: 4,
+            contents: String::from(concat!(
+                "**   **",
+                "*     *",
+                "       ",
+                "       ",
+                "       ",
+                "*     *",
+                "**   **")),
+            width: 7,
+            height: 7,
         };
         println!("{}", fill_crossword(&c).unwrap());
         println!("{}", start.elapsed().as_millis());
@@ -391,6 +405,61 @@ mod tests {
         //     let file = File::create("flamegraph.svg").unwrap();
         //     report.flamegraph(file).unwrap();
         // };
+    }
+
+    #[test]
+    fn bigger_parse_works() {
+                    let c = Crossword {
+                        contents: String::from("**   ***     *                     *     ***   **"),
+                        width: 7,
+                        height: 7,
+                    };
+        let result = parse_words(&c);
+
+        assert_eq!(
+            result[0],
+            Word {
+                contents: String::from("   "),
+                start_col: 2,
+                start_row: 0,
+                length: 3,
+                direction: Direction::Across
+            }
+        );
+
+        assert_eq!(
+            result[1],
+            Word {
+                contents: String::from("     "),
+                start_col: 1,
+                start_row: 1,
+                length: 5,
+                direction: Direction::Across
+            }
+        );
+
+        assert_eq!(
+            result[2],
+            Word {
+                contents: String::from("       "),
+                start_col: 0,
+                start_row: 2,
+                length: 7,
+                direction: Direction::Across
+            }
+        );
+
+        assert_eq!(
+            result[7],
+            Word {
+                contents: String::from("   "),
+                start_col: 0,
+                start_row: 2,
+                length: 3,
+                direction: Direction::Down
+            }
+        );
+
     }
 
     #[test]
