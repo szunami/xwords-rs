@@ -6,6 +6,8 @@ use std::{
     fs::File,
 };
 
+use pprof::ProfilerGuard;
+
 #[macro_use]
 extern crate lazy_static;
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
@@ -74,12 +76,14 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..16 {
+    for thread_index in 0..1 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
 
         std::thread::spawn(move || {
             println!("Hello from thread {}", thread_index);
+
+            let guard = pprof::ProfilerGuard::new(100).unwrap();
 
             loop {
                 let candidate = {
@@ -114,9 +118,22 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
                     if is_viable(&new_candidate) {
                         if !new_candidate.contents.contains(" ") {
+
+                            if let Ok(report) = guard.report().build() {
+                                let file = File::create(format!(
+                                    "flamegraph-{}.svg",
+                                    thread_index
+                                ))
+                                .unwrap();
+                                report.flamegraph(file).unwrap();
+                            };
+
                             // return Ok(new_candidate);
                             match new_tx.send(new_candidate.clone()) {
-                                Ok(_) => println!("Just sent a result."),
+                                Ok(_) => {
+                   
+                                    println!("Just sent a result.")
+                                }
                                 Err(err) => println!("Failed to send a result, error was {}", err),
                             }
                         }
@@ -342,6 +359,7 @@ mod tests {
         fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword, Direction,
         Word,
     };
+    use std::fs::File;
     use std::time::Instant;
 
     #[test]
@@ -357,13 +375,7 @@ mod tests {
 
     #[test]
     fn fill_works() {
-        // let c = Crossword {
-        //     contents: String::from("         "),
-        //     width: 3,
-        //     height: 3,
-        // };
-
-        // println!("{}", fill_crossword(&c).unwrap());
+        // let guard = pprof::ProfilerGuard::new(100).unwrap();
 
         ALL_WORDS.len();
         let start = Instant::now();
@@ -375,6 +387,10 @@ mod tests {
         };
         println!("{}", fill_crossword(&c).unwrap());
         println!("{}", start.elapsed().as_millis());
+        // if let Ok(report) = guard.report().build() {
+        //     let file = File::create("flamegraph.svg").unwrap();
+        //     report.flamegraph(file).unwrap();
+        // };
     }
 
     #[test]
