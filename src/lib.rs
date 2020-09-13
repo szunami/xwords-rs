@@ -1,3 +1,5 @@
+use std::sync::Arc;
+use std::sync::{mpsc, Mutex};
 use std::{
     collections::{HashSet, VecDeque},
     fmt,
@@ -36,65 +38,100 @@ impl fmt::Display for Crossword {
     }
 }
 
+struct CrosswordFillState {
+    // Used to ensure we only enqueue each crossword once.
+    // Contains crosswords that are queued or have already been visited
+    processed_candidates: HashSet<Crossword>,
+    candidate_queue: VecDeque<Crossword>,
+}
+
+impl CrosswordFillState {
+    fn take_candidate(&mut self) -> Option<Crossword> {
+        self.candidate_queue.pop_back()
+    }
+
+    fn add_candidate(&mut self, candidate: Crossword) {
+        if !self.processed_candidates.contains(&candidate) {
+            self.candidate_queue.push_back(candidate);
+        }
+    }
+}
+
 pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     // parse crossword into partially filled words
     // fill a word
-    let mut candidates = VecDeque::new();
-    candidates.push_back(crossword.clone());
-    let mut visited_candidates: HashSet<Crossword> = HashSet::new();
-    visited_candidates.insert(crossword.to_owned());
-    let mut visited_words = 0;
 
-    loop {
-        if candidates.len() == 0 {
-            return Err(String::from("Failed to fill."));
-        }
+    let crossword_fill_state = {
+        let mut temp_state = CrosswordFillState {
+            processed_candidates: HashSet::new(),
+            candidate_queue: VecDeque::new(),
+        };
+        temp_state.add_candidate(crossword.clone());
+        temp_state
+    };
 
-        let candidate = candidates.pop_back().unwrap();
+    let candidates = Arc::new(Mutex::new(crossword_fill_state));
+    let (tx, rx) = mpsc::channel();
+    // want to spawn multiple threads, have each of them perform the below
 
-        visited_candidates.insert(candidate.to_owned());
+    for thread_index in 0..16 {
+        let new_arc = Arc::clone(&candidates);
+        let new_tx = tx.clone();
 
-        let words = parse_words(&candidate);
-        let to_fill = words
-            .iter()
-            .max_by_key(|word| {
-                let empty_squares: i32 = word.contents.matches(" ").count() as i32;
-                // we want to identify highly constrained words
-                // very unscientifically: we want longer words, with fewer spaces.
-                if empty_squares == 0 {
-                    return -1;
-                }
-                return 2 * word.contents.len() as i32 - empty_squares;
-            })
-            .unwrap();
-        // println!("Filling {}", to_fill.contents);
-        visited_words += 1;
-        // find valid fills for word;
-        // for each fill:
-        //   are all complete words legit?
-        //     if so, push
+        std::thread::spawn(move || {
+            println!("Hello from thread {}", thread_index);
 
-        let potential_fills = find_fills(to_fill.to_owned());
+            loop {
+                let candidate = {
+                    let mut queue = new_arc.lock().unwrap();
+                    match queue.take_candidate() {
+                        Some(candidate) => candidate,
+                        None => continue,
+                    }
+                };
+                let words = parse_words(&candidate);
+                let to_fill = words
+                    .iter()
+                    .max_by_key(|word| {
+                        let empty_squares: i32 = word.contents.matches(" ").count() as i32;
+                        // we want to identify highly constrained words
+                        // very unscientifically: we want longer words, with fewer spaces.
+                        if empty_squares == 0 {
+                            return -1;
+                        }
+                        return 2 * word.contents.len() as i32 - empty_squares;
+                    })
+                    .unwrap();
+                // find valid fills for word;
+                // for each fill:
+                //   are all complete words legit?
+                //     if so, push
 
-        for potential_fill in potential_fills {
-            let new_candidate = fill_one_word(&candidate, potential_fill);
+                let potential_fills = find_fills(to_fill.to_owned());
 
-            if is_viable(&new_candidate) {
-                if !new_candidate.contents.contains(" ") {
-                    println!(
-                        "Visited {} candidates. Visited {} words.",
-                        visited_candidates.len(),
-                        visited_words
-                    );
+                for potential_fill in potential_fills {
+                    let new_candidate = fill_one_word(&candidate, potential_fill);
 
-                    return Ok(new_candidate);
-                }
+                    if is_viable(&new_candidate) {
+                        if !new_candidate.contents.contains(" ") {
+                            // return Ok(new_candidate);
+                            match new_tx.send(new_candidate.clone()) {
+                                Ok(_) => println!("Just sent a result."),
+                                Err(err) => println!("Failed to send a result, error was {}", err),
+                            }
+                        }
 
-                if !visited_candidates.contains(&new_candidate) {
-                    candidates.push_back(new_candidate);
+                        let mut queue = new_arc.lock().unwrap();
+                        queue.add_candidate(new_candidate);
+                    }
                 }
             }
-        }
+        });
+    }
+
+    match rx.recv() {
+        Ok(result) => Ok(result),
+        Err(_) => Err(String::from("Failed to receive")),
     }
 }
 
@@ -301,11 +338,11 @@ lazy_static! {
 #[cfg(test)]
 mod tests {
     use crate::ALL_WORDS;
-use std::time::Instant;
-use crate::{
+    use crate::{
         fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword, Direction,
         Word,
     };
+    use std::time::Instant;
 
     #[test]
     fn it_works() {
@@ -337,7 +374,7 @@ use crate::{
             height: 4,
         };
         println!("{}", fill_crossword(&c).unwrap());
-        println!("{}", start.elapsed().as_millis()); 
+        println!("{}", start.elapsed().as_millis());
     }
 
     #[test]
