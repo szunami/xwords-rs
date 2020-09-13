@@ -1,6 +1,5 @@
 use std::sync::Arc;
 use std::sync::{mpsc, Mutex};
-use std::time::Instant;
 use std::{
     collections::{HashSet, VecDeque},
     fmt,
