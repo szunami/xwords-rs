@@ -57,6 +57,7 @@ struct CrosswordFillState {
     // Contains crosswords that are queued or have already been visited
     processed_candidates: HashSet<Crossword>,
     candidate_queue: VecDeque<Crossword>,
+    done: bool,
 }
 
 impl CrosswordFillState {
@@ -69,6 +70,10 @@ impl CrosswordFillState {
             self.candidate_queue.push_back(candidate);
         }
     }
+
+    fn mark_done(&mut self) {
+        self.done = true;
+    }
 }
 
 pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
@@ -79,6 +84,7 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
         let mut temp_state = CrosswordFillState {
             processed_candidates: HashSet::new(),
             candidate_queue: VecDeque::new(),
+            done: false,
         };
         temp_state.add_candidate(crossword.clone());
         temp_state
@@ -98,6 +104,13 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
             // let guard = pprof::ProfilerGuard::new(100).unwrap();
 
             loop {
+                {
+                    let queue = new_arc.lock().unwrap();
+                    if queue.done {
+                        return;
+                    }
+                }
+
                 let candidate = {
                     let mut queue = new_arc.lock().unwrap();
                     match queue.take_candidate() {
@@ -130,15 +143,18 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
                     if is_viable(&new_candidate) {
                         if !new_candidate.contents.contains(" ") {
+                            let mut queue = new_arc.lock().unwrap();
+                            queue.mark_done();
+
                             match new_tx.send(new_candidate.clone()) {
                                 Ok(_) => {
                                     println!("Just sent a result.");
-                                    return
-                                },
+                                    return;
+                                }
                                 Err(err) => {
                                     println!("Failed to send a result, error was {}", err);
-                                    return
-                                },
+                                    return;
+                                }
                             }
                         }
 
