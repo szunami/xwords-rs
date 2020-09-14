@@ -130,19 +130,15 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
                     if is_viable(&new_candidate) {
                         if !new_candidate.contents.contains(" ") {
-                            // if let Ok(report) = guard.report().build() {
-                            //     let file = File::create(format!(
-                            //         "flamegraph-{}.svg",
-                            //         thread_index
-                            //     ))
-                            // .unwrap();
-                            //     report.flamegraph(file).unwrap();
-                            // };
-
-                            // return Ok(new_candidate);
                             match new_tx.send(new_candidate.clone()) {
-                                Ok(_) => println!("Just sent a result."),
-                                Err(err) => println!("Failed to send a result, error was {}", err),
+                                Ok(_) => {
+                                    println!("Just sent a result.");
+                                    return
+                                },
+                                Err(err) => {
+                                    println!("Failed to send a result, error was {}", err);
+                                    return
+                                },
                             }
                         }
 
