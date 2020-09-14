@@ -15,6 +15,20 @@ pub struct Crossword {
     height: usize,
 }
 
+impl Crossword {
+    pub fn new(contents: String) -> Result<Crossword, String> {
+        let width = (contents.len() as f64).sqrt() as usize;
+        if width * width != contents.len() {
+            return Err(String::from("Invalid string."));
+        }
+        Ok(Crossword {
+            contents,
+            width,
+            height: width,
+        })
+    }
+}
+
 impl fmt::Display for Crossword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for row in 0..self.height {
@@ -74,12 +88,14 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..16 {
+    for thread_index in 0..32 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
 
         std::thread::spawn(move || {
             println!("Hello from thread {}", thread_index);
+
+            // let guard = pprof::ProfilerGuard::new(100).unwrap();
 
             loop {
                 let candidate = {
@@ -114,6 +130,15 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
                     if is_viable(&new_candidate) {
                         if !new_candidate.contents.contains(" ") {
+                            // if let Ok(report) = guard.report().build() {
+                            //     let file = File::create(format!(
+                            //         "flamegraph-{}.svg",
+                            //         thread_index
+                            //     ))
+                            // .unwrap();
+                            //     report.flamegraph(file).unwrap();
+                            // };
+
                             // return Ok(new_candidate);
                             match new_tx.send(new_candidate.clone()) {
                                 Ok(_) => println!("Just sent a result."),
@@ -228,6 +253,10 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
                 length += 1;
                 current_word.push(current_char)
             } else {
+                // If we don't have any data yet, just keep going
+                if start_row == None {
+                    continue;
+                }
                 let new_word = Word {
                     contents: current_word,
                     start_row: start_row.unwrap(),
@@ -271,6 +300,9 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
                 length += 1;
                 current_word.push(current_char)
             } else {
+                if start_row == None {
+                    continue;
+                }
                 let new_word = Word {
                     contents: current_word,
                     start_row: start_row.unwrap(),
@@ -337,12 +369,8 @@ lazy_static! {
 
 #[cfg(test)]
 mod tests {
-    use crate::ALL_WORDS;
-    use crate::{
-        fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword, Direction,
-        Word,
-    };
-    use std::time::Instant;
+
+    use crate::{fill_one_word, find_fills, is_viable, parse_words, Crossword, Direction, Word};
 
     #[test]
     fn it_works() {
@@ -356,25 +384,57 @@ mod tests {
     }
 
     #[test]
-    fn fill_works() {
-        // let c = Crossword {
-        //     contents: String::from("         "),
-        //     width: 3,
-        //     height: 3,
-        // };
-
-        // println!("{}", fill_crossword(&c).unwrap());
-
-        ALL_WORDS.len();
-        let start = Instant::now();
-
+    fn bigger_parse_works() {
         let c = Crossword {
-            contents: String::from("                "),
-            width: 4,
-            height: 4,
+            contents: String::from("**   ***     *                     *     ***   **"),
+            width: 7,
+            height: 7,
         };
-        println!("{}", fill_crossword(&c).unwrap());
-        println!("{}", start.elapsed().as_millis());
+        let result = parse_words(&c);
+
+        assert_eq!(
+            result[0],
+            Word {
+                contents: String::from("   "),
+                start_col: 2,
+                start_row: 0,
+                length: 3,
+                direction: Direction::Across
+            }
+        );
+
+        assert_eq!(
+            result[1],
+            Word {
+                contents: String::from("     "),
+                start_col: 1,
+                start_row: 1,
+                length: 5,
+                direction: Direction::Across
+            }
+        );
+
+        assert_eq!(
+            result[2],
+            Word {
+                contents: String::from("       "),
+                start_col: 0,
+                start_row: 2,
+                length: 7,
+                direction: Direction::Across
+            }
+        );
+
+        assert_eq!(
+            result[7],
+            Word {
+                contents: String::from("   "),
+                start_col: 0,
+                start_row: 2,
+                length: 3,
+                direction: Direction::Down
+            }
+        );
     }
 
     #[test]
