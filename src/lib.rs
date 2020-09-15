@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::sync::Arc;
 use std::sync::{mpsc, Mutex};
 use std::{
@@ -13,6 +14,20 @@ pub struct Crossword {
     contents: String,
     width: usize,
     height: usize,
+}
+
+impl Crossword {
+    pub fn new(contents: String) -> Result<Crossword, String> {
+        let width = (contents.len() as f64).sqrt() as usize;
+        if width * width != contents.len() {
+            return Err(String::from("Invalid string."));
+        }
+        Ok(Crossword {
+            contents,
+            width,
+            height: width,
+        })
+    }
 }
 
 impl fmt::Display for Crossword {
@@ -43,6 +58,7 @@ struct CrosswordFillState {
     // Contains crosswords that are queued or have already been visited
     processed_candidates: HashSet<Crossword>,
     candidate_queue: VecDeque<Crossword>,
+    done: bool,
 }
 
 impl CrosswordFillState {
@@ -55,6 +71,10 @@ impl CrosswordFillState {
             self.candidate_queue.push_back(candidate);
         }
     }
+
+    fn mark_done(&mut self) {
+        self.done = true;
+    }
 }
 
 pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
@@ -65,6 +85,7 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
         let mut temp_state = CrosswordFillState {
             processed_candidates: HashSet::new(),
             candidate_queue: VecDeque::new(),
+            done: false,
         };
         temp_state.add_candidate(crossword.clone());
         temp_state
@@ -74,14 +95,23 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..16 {
+    for thread_index in 0..32 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
 
         std::thread::spawn(move || {
             println!("Hello from thread {}", thread_index);
 
+            // let guard = pprof::ProfilerGuard::new(100).unwrap();
+
             loop {
+                {
+                    let queue = new_arc.lock().unwrap();
+                    if queue.done {
+                        return;
+                    }
+                }
+
                 let candidate = {
                     let mut queue = new_arc.lock().unwrap();
                     match queue.take_candidate() {
@@ -114,10 +144,18 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
                     if is_viable(&new_candidate) {
                         if !new_candidate.contents.contains(" ") {
-                            // return Ok(new_candidate);
+                            let mut queue = new_arc.lock().unwrap();
+                            queue.mark_done();
+
                             match new_tx.send(new_candidate.clone()) {
-                                Ok(_) => println!("Just sent a result."),
-                                Err(err) => println!("Failed to send a result, error was {}", err),
+                                Ok(_) => {
+                                    println!("Just sent a result.");
+                                    return;
+                                }
+                                Err(err) => {
+                                    println!("Failed to send a result, error was {}", err);
+                                    return;
+                                }
                             }
                         }
 
@@ -178,7 +216,7 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
     }
 }
 
-fn find_fills(word: Word) -> Vec<Word> {
+pub fn find_fills(word: Word) -> Vec<Word> {
     let mut result = vec![];
 
     for real_word in ALL_WORDS.iter() {
@@ -228,6 +266,10 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
                 length += 1;
                 current_word.push(current_char)
             } else {
+                // If we don't have any data yet, just keep going
+                if start_row == None {
+                    continue;
+                }
                 let new_word = Word {
                     contents: current_word,
                     start_row: start_row.unwrap(),
@@ -271,6 +313,9 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
                 length += 1;
                 current_word.push(current_char)
             } else {
+                if start_row == None {
+                    continue;
+                }
                 let new_word = Word {
                     contents: current_word,
                     start_row: start_row.unwrap(),
@@ -306,17 +351,41 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-enum Direction {
+pub enum Direction {
     Across,
     Down,
 }
 #[derive(Debug, PartialEq, Clone)]
-struct Word {
+pub struct Word {
     contents: String,
     start_row: usize,
     start_col: usize,
     length: usize,
     direction: Direction,
+}
+
+impl fmt::Display for Word {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        write!(f, "Contents: {}", self.contents)
+    }
+}
+
+impl Word {
+    pub fn new(
+        contents: String,
+        start_row: usize,
+        start_col: usize,
+        length: usize,
+        direction: Direction,
+    ) -> Word {
+        Word {
+            contents,
+            start_row,
+            start_col,
+            length,
+            direction,
+        }
+    }
 }
 
 lazy_static! {
@@ -337,12 +406,8 @@ lazy_static! {
 
 #[cfg(test)]
 mod tests {
-    use crate::ALL_WORDS;
-    use crate::{
-        fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword, Direction,
-        Word,
-    };
-    use std::time::Instant;
+
+    use crate::{fill_one_word, find_fills, is_viable, parse_words, Crossword, Direction, Word};
 
     #[test]
     fn it_works() {
@@ -356,25 +421,57 @@ mod tests {
     }
 
     #[test]
-    fn fill_works() {
-        // let c = Crossword {
-        //     contents: String::from("         "),
-        //     width: 3,
-        //     height: 3,
-        // };
-
-        // println!("{}", fill_crossword(&c).unwrap());
-
-        ALL_WORDS.len();
-        let start = Instant::now();
-
+    fn bigger_parse_works() {
         let c = Crossword {
-            contents: String::from("                "),
-            width: 4,
-            height: 4,
+            contents: String::from("**   ***     *                     *     ***   **"),
+            width: 7,
+            height: 7,
         };
-        println!("{}", fill_crossword(&c).unwrap());
-        println!("{}", start.elapsed().as_millis());
+        let result = parse_words(&c);
+
+        assert_eq!(
+            result[0],
+            Word {
+                contents: String::from("   "),
+                start_col: 2,
+                start_row: 0,
+                length: 3,
+                direction: Direction::Across
+            }
+        );
+
+        assert_eq!(
+            result[1],
+            Word {
+                contents: String::from("     "),
+                start_col: 1,
+                start_row: 1,
+                length: 5,
+                direction: Direction::Across
+            }
+        );
+
+        assert_eq!(
+            result[2],
+            Word {
+                contents: String::from("       "),
+                start_col: 0,
+                start_row: 2,
+                length: 7,
+                direction: Direction::Across
+            }
+        );
+
+        assert_eq!(
+            result[7],
+            Word {
+                contents: String::from("   "),
+                start_col: 0,
+                start_row: 2,
+                length: 3,
+                direction: Direction::Down
+            }
+        );
     }
 
     #[test]
