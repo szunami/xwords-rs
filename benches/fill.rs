@@ -1,15 +1,10 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use xwords::fill_crossword;
-use xwords::Crossword;
+use criterion::{criterion_group, criterion_main, Criterion};
+use xwords::{find_fills, Word, Direction};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("fib 20", |b| {
         b.iter(|| {
-            let c = Crossword::new(String::from(
-                "**   ***     *                     *     ***   **",
-            ))
-            .unwrap();
-            fill_crossword(&c);
+            find_fills(Word::new(String::from("R**"), 0, 0, 3, Direction::Across))
         })
     });
 }

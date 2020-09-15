@@ -215,7 +215,7 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
     }
 }
 
-fn find_fills(word: Word) -> Vec<Word> {
+pub fn find_fills(word: Word) -> Vec<Word> {
     let mut result = vec![];
 
     for real_word in ALL_WORDS.iter() {
@@ -350,17 +350,23 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-enum Direction {
+pub enum Direction {
     Across,
     Down,
 }
 #[derive(Debug, PartialEq, Clone)]
-struct Word {
+pub struct Word {
     contents: String,
     start_row: usize,
     start_col: usize,
     length: usize,
     direction: Direction,
+}
+
+impl Word {
+    pub fn new(contents: String, start_row: usize, start_col: usize, length: usize, direction: Direction) -> Word {
+        Word{contents, start_row, start_col, length, direction}
+    }
 }
 
 lazy_static! {
