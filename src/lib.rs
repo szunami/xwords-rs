@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::sync::Arc;
 use std::sync::{mpsc, Mutex};
 use std::{
@@ -363,9 +364,27 @@ pub struct Word {
     direction: Direction,
 }
 
+impl fmt::Display for Word {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        write!(f, "Contents: {}", self.contents)
+    }
+}
+
 impl Word {
-    pub fn new(contents: String, start_row: usize, start_col: usize, length: usize, direction: Direction) -> Word {
-        Word{contents, start_row, start_col, length, direction}
+    pub fn new(
+        contents: String,
+        start_row: usize,
+        start_col: usize,
+        length: usize,
+        direction: Direction,
+    ) -> Word {
+        Word {
+            contents,
+            start_row,
+            start_col,
+            length,
+            direction,
+        }
     }
 }
 
