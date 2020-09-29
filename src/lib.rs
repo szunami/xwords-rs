@@ -7,6 +7,8 @@ use std::{
     fs::File,
 };
 
+mod trie;
+
 #[macro_use]
 extern crate lazy_static;
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
