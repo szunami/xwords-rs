@@ -7,41 +7,93 @@ struct TrieNode {
 }
 
 impl TrieNode {
+    fn add_child<'s>(&'s mut self, val: char, isTerminal: bool) -> &'s TrieNode {
 
-    fn add_child(mut self, node: TrieNode) {
-        if self.children.get(&node.contents.unwrap()).is_none() {
-            self.children.insert(node.contents.unwrap(), node);
+        let maybeChild = self.children.get(&val);
+
+        match maybeChild {
+            Some(child) => {
+                // child.isTerminal = child.isTerminal || isTerminal;
+                child
+            }
+            None => {
+                let newNode = TrieNode{
+                    contents: Some(val),
+                    children: HashMap::new(),
+                    isTerminal,
+                };
+                self.children.insert(val, newNode);
+                &newNode
+            }
+        }
+
+
+        // if self.children.get(&val).is_none() {
+
+        // }
+        // self.children.get(&val)
+    }
+
+    fn add_sequence(mut self, chars: &str) {
+
+        let maybeVal = chars.as_bytes().get(0);
+
+        match maybeVal {
+            Some(val) => {
+                self.add_child(*val as char, chars.len() == 1);
+                let maybeChild = self.children.get(&(*val as char)).unwrap();
+                let nextVal = &chars[1..];
+                maybeChild.add_sequence(nextVal);
+            }
+            None => {}
         }
     }
 }
 
 struct Trie {
-    root: TrieNode
+    root: TrieNode,
 }
 
 impl Trie {
     fn build(words: Vec<String>) -> Trie {
+        todo!();
+        // let root = TrieNode {
+        //     contents: None,
+        //     children: HashMap::new(),
+        //     isTerminal: false,
+        // };
 
-        let root = TrieNode{contents: None, children: HashMap::new(), isTerminal: false};
+        // let word = words.first().unwrap();
 
-        for word in words {
+        // let b = word.as_bytes().first().unwrap();
 
-            let curr = root;
+        // let newNode = TrieNode {
+        //     contents: Some(*b as char),
+        //     children: HashMap::new(),
+        //     isTerminal: false,
+        // };
+        // root.add_child(newNode);
 
-            for letter in word.as_bytes() {
+        // for word in words {
+        //     let curr = root;
 
-                let newNode = TrieNode{
-                    contents: Some(*letter as char),
-                    children: HashMap::new(),
-                    isTerminal: false,
-                };
+        //     let b = word.as_bytes().first().unwrap();
 
-                curr.add_child(newNode);
-            }
+            // for letter in word.as_bytes() {
+            //     let newNode = TrieNode {
+            //         contents: Some(*letter as char),
+            //         children: HashMap::new(),
+            //         isTerminal: false,
+            //     };
 
-        }
+            //     curr.add_child(newNode);
+            //     curr = newNode;
+            // }
+        // }
 
-        todo!()
+        // Trie {
+        //     root,
+        // }
     }
 
     fn words(self, pattern: String) -> Vec<String> {
@@ -55,17 +107,24 @@ impl Trie {
 
 #[cfg(test)]
 mod tests {
-    use super::Trie;
+        use std::collections::HashMap;
+
+use super::{Trie, TrieNode};
 
     #[test]
     fn it_works() {
-        let trie = Trie::build(vec![
-            String::from("cat")
-        ]);
+        let root = TrieNode{
+            contents: None,
+            children: HashMap::new(),
+            isTerminal: false,
+        };
 
-        assert!(
-            trie.is_word(String::from("cat"))
-        );
+        root.add_sequence("asdf");
+
+
+        // let trie = Trie::build(vec![String::from("cat")]);
+
+        // assert!(trie.is_word(String::from("cat")));
         // assert!(
         //     !trie.is_word(String::from("cbt"))
         // );
@@ -74,8 +133,5 @@ mod tests {
         //     vec![String::from("cat")],
         //     trie.words(String::from("c t"))
         // );
-
-
     }
-
 }
