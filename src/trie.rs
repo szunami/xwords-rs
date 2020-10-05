@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+#[derive(Clone)]
 struct TrieNode {
     contents: Option<char>,
     children: HashMap<char, TrieNode>,
@@ -8,24 +9,24 @@ struct TrieNode {
 
 impl TrieNode {
     fn add_child<'s>(&'s mut self, val: char, isTerminal: bool) -> &'s TrieNode {
+        todo!();
 
-        let maybeChild = self.children.get(&val);
+        // match self.children.get(&val) {
 
-        match maybeChild {
-            Some(child) => {
-                // child.isTerminal = child.isTerminal || isTerminal;
-                child
-            }
-            None => {
-                let newNode = TrieNode{
-                    contents: Some(val),
-                    children: HashMap::new(),
-                    isTerminal,
-                };
-                self.children.insert(val, newNode);
-                &newNode
-            }
-        }
+        //     Some(child) => {
+        //         // child.isTerminal = child.isTerminal || isTerminal;
+        //         child
+        //     }
+        //     None => {
+        //         let newNode = TrieNode{
+        //             contents: Some(val),
+        //             children: HashMap::new(),
+        //             isTerminal,
+        //         };
+        //         self.children.insert(val, newNode);
+        //         &newNode
+        //     }
+        // }
 
 
         // if self.children.get(&val).is_none() {
@@ -34,19 +35,28 @@ impl TrieNode {
         // self.children.get(&val)
     }
 
-    fn add_sequence(mut self, chars: &str) {
-
-        let maybeVal = chars.as_bytes().get(0);
-
-        match maybeVal {
+    fn add_sequence(mut self, chars: &str) -> TrieNode {
+        match chars.as_bytes().get(0) {
             Some(val) => {
-                self.add_child(*val as char, chars.len() == 1);
-                let maybeChild = self.children.get(&(*val as char)).unwrap();
-                let nextVal = &chars[1..];
-                maybeChild.add_sequence(nextVal);
+
+                match self.children.get(&(*val as char)) {
+                    Some(child) => {
+                        self.children.insert(*val as char, child.clone().add_sequence(&chars[1..]));
+                    }
+                    None => {
+                        // create child and iterate on it
+                        self.children.insert(*val as char, TrieNode{
+                            children: HashMap::new(),
+                            contents: Some(*val as char),
+                            isTerminal: false,
+                        }.add_sequence(&chars[1..]));
+                    }
+                }
             }
             None => {}
         }
+
+        self
     }
 }
 
