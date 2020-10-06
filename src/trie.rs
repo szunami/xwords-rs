@@ -8,32 +8,6 @@ struct TrieNode {
 }
 
 impl TrieNode {
-    fn add_child<'s>(&'s mut self, val: char, isTerminal: bool) -> &'s TrieNode {
-        todo!();
-
-        // match self.children.get(&val) {
-
-        //     Some(child) => {
-        //         // child.isTerminal = child.isTerminal || isTerminal;
-        //         child
-        //     }
-        //     None => {
-        //         let newNode = TrieNode{
-        //             contents: Some(val),
-        //             children: HashMap::new(),
-        //             isTerminal,
-        //         };
-        //         self.children.insert(val, newNode);
-        //         &newNode
-        //     }
-        // }
-
-        // if self.children.get(&val).is_none() {
-
-        // }
-        // self.children.get(&val)
-    }
-
     fn add_sequence(mut self, chars: &str) -> TrieNode {
         match chars.as_bytes().get(0) {
             Some(val) => {
@@ -90,6 +64,43 @@ impl TrieNode {
 
         Ok(())
     }
+
+    fn words(self, pattern: String, partial: String) -> Vec<String> {
+
+        let mut newPartial = partial.clone();
+        let mut newPattern = pattern.clone();
+        if self.contents.is_some() {
+            newPartial.push(self.contents.unwrap());
+            newPattern = pattern[1..].to_owned();
+        }
+
+        if pattern.len() == 0 {
+            if self.isTerminal {
+                return vec![newPartial];
+            }
+            return vec![];
+        }
+
+        let newChar = pattern.as_bytes()[0] as char;
+
+        if newChar == ' ' {
+            let mut result = vec![];
+            for child in self.children.values() {
+                let tmp = child.clone().words(newPattern.clone(), newPartial.clone());
+                result.extend(tmp.clone());
+            }
+            return result;
+        }
+
+        match self.children.get(&newChar) {
+            Some(child) => {
+                return child.clone().words(newPattern, newPartial);
+            }
+            None => {
+                return vec![];
+            }
+        }
+    }
 }
 
 impl fmt::Display for TrieNode {
@@ -124,7 +135,8 @@ impl Trie {
     }
 
     fn words(self, pattern: String) -> Vec<String> {
-        todo!()
+
+        self.root.words(pattern, String::from(""))
     }
 
     fn is_word(self, pattern: String) -> bool {
@@ -192,7 +204,7 @@ mod tests {
         println!("{}", anotherRoot)
     }
 
-    #[test]
+    #[test] 
     fn build_works() {
         println!(
             "{}",
@@ -202,4 +214,20 @@ mod tests {
                 ])
         );
     }
+
+    #[test]
+    fn words_works() {
+        let trie = Trie::build(vec![
+            String::from("bass"),
+            String::from("bats"),
+            String::from("bess")
+        ]);
+
+        assert_eq!(
+            vec![String::from("bass"), String::from("bess")],
+            trie.words(String::from("b ss")),
+        )
+    }
+
+
 }
