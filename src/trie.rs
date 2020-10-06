@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
 #[derive(Clone)]
 struct TrieNode {
@@ -28,7 +28,6 @@ impl TrieNode {
         //     }
         // }
 
-
         // if self.children.get(&val).is_none() {
 
         // }
@@ -38,18 +37,22 @@ impl TrieNode {
     fn add_sequence(mut self, chars: &str) -> TrieNode {
         match chars.as_bytes().get(0) {
             Some(val) => {
-
                 match self.children.get(&(*val as char)) {
                     Some(child) => {
-                        self.children.insert(*val as char, child.clone().add_sequence(&chars[1..]));
+                        self.children
+                            .insert(*val as char, child.clone().add_sequence(&chars[1..]));
                     }
                     None => {
                         // create child and iterate on it
-                        self.children.insert(*val as char, TrieNode{
-                            children: HashMap::new(),
-                            contents: Some(*val as char),
-                            isTerminal: false,
-                        }.add_sequence(&chars[1..]));
+                        self.children.insert(
+                            *val as char,
+                            TrieNode {
+                                children: HashMap::new(),
+                                contents: Some(*val as char),
+                                isTerminal: false,
+                            }
+                            .add_sequence(&chars[1..]),
+                        );
                     }
                 }
             }
@@ -57,6 +60,40 @@ impl TrieNode {
         }
 
         self
+    }
+
+
+    fn display_helper(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        depth: usize,
+        firstChild: bool,
+    ) -> std::result::Result<(), std::fmt::Error> {
+
+        if !firstChild {
+            for _ in 0..depth {
+                write!(f, "\t")?;
+            }
+        } else {
+            write!(f, "\t")?;
+        }
+        write!(f, "{}", self.contents.unwrap_or('*'))?;
+
+        if self.children.len() == 0 {
+            return write!(f, "\n");
+        }
+
+        for (index, key) in self.children.keys().into_iter().enumerate() {
+            self.children.get(key).unwrap().display_helper(f, depth + 1, index == 0);
+        }
+
+        Ok(())
+    }
+}
+
+impl fmt::Display for TrieNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        self.display_helper(f, 1, true)
     }
 }
 
@@ -89,16 +126,16 @@ impl Trie {
 
         //     let b = word.as_bytes().first().unwrap();
 
-            // for letter in word.as_bytes() {
-            //     let newNode = TrieNode {
-            //         contents: Some(*letter as char),
-            //         children: HashMap::new(),
-            //         isTerminal: false,
-            //     };
+        // for letter in word.as_bytes() {
+        //     let newNode = TrieNode {
+        //         contents: Some(*letter as char),
+        //         children: HashMap::new(),
+        //         isTerminal: false,
+        //     };
 
-            //     curr.add_child(newNode);
-            //     curr = newNode;
-            // }
+        //     curr.add_child(newNode);
+        //     curr = newNode;
+        // }
         // }
 
         // Trie {
@@ -117,31 +154,56 @@ impl Trie {
 
 #[cfg(test)]
 mod tests {
-        use std::collections::HashMap;
+    use std::collections::HashMap;
 
-use super::{Trie, TrieNode};
+    use super::{Trie, TrieNode};
 
     #[test]
-    fn it_works() {
-        let root = TrieNode{
+    fn display_works() {
+        let mut root = TrieNode {
             contents: None,
             children: HashMap::new(),
             isTerminal: false,
         };
 
-        root.add_sequence("asdf");
+        root.children.insert('b', TrieNode {
+            contents: Some('b'),
+            children: HashMap::new(),
+            isTerminal: false,
+        });
+
+        let mut c = TrieNode {
+            contents: Some('c'),
+            children: HashMap::new(),
+            isTerminal: false,
+        };
 
 
-        // let trie = Trie::build(vec![String::from("cat")]);
+        c.children.insert('d', TrieNode {
+            contents: Some('d'),
+            children: HashMap::new(),
+            isTerminal: false,
+        });
 
-        // assert!(trie.is_word(String::from("cat")));
-        // assert!(
-        //     !trie.is_word(String::from("cbt"))
-        // );
+        root.children.insert('c', c);
 
-        // assert_eq!(
-        //     vec![String::from("cat")],
-        //     trie.words(String::from("c t"))
-        // );
+        println!("{}", root);
+    }
+
+    #[test]
+    fn add_sequence_works() {
+        let mut root = TrieNode {
+            contents: Some('a'),
+            children: HashMap::new(),
+            isTerminal: false,
+        };
+
+        let newRoot = root.add_sequence("itsyaboi");
+
+        println!("{}", newRoot);
+
+        let anotherRoot = newRoot.add_sequence("wereallyouthere");
+
+        println!("{}", anotherRoot)
     }
 }
