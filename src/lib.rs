@@ -177,7 +177,7 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
 fn is_viable(candidate: &Crossword) -> bool {
     for word in parse_words(candidate) {
-        if !ALL_WORDS.contains(&word.contents) && !word.contents.contains(" ") {
+        if !word.contents.contains(" ") && !ALL_WORDS.contains(&word.contents) {
             return false;
         }
     }

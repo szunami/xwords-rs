@@ -71,8 +71,7 @@ impl TrieNode {
         Ok(())
     }
 
-    fn words(self, pattern: String, partial: String) -> Vec<String> {
-
+    fn words(&self, pattern: String, partial: String) -> Vec<String> {
         let mut newPartial = partial.clone();
         if self.contents.is_some() {
             newPartial.push(self.contents.unwrap());
@@ -92,7 +91,7 @@ impl TrieNode {
         if newChar == ' ' {
             let mut result = vec![];
             for child in self.children.values() {
-                let tmp = child.clone().words(newPattern.clone(), newPartial.clone());
+                let tmp = child.words(newPattern.clone(), newPartial.clone());
                 result.extend(tmp.clone());
             }
             return result;
@@ -100,11 +99,26 @@ impl TrieNode {
 
         match self.children.get(&newChar) {
             Some(child) => {
-                return child.clone().words(newPattern, newPartial);
+                return child.words(newPattern, newPartial);
             }
             None => {
                 return vec![];
             }
+        }
+    }
+
+    fn is_word(&self, pattern: String) -> bool {
+        if pattern.len() == 0 {
+            return self.isTerminal;
+        }
+
+        let mut newPattern = pattern[1..].to_owned();
+
+        let newChar = pattern.as_bytes()[0] as char;
+
+        match self.children.get(&newChar) {
+            Some(child) => child.is_word(newPattern),
+            None => false,
         }
     }
 }
@@ -140,13 +154,12 @@ impl Trie {
         Trie { root }
     }
 
-    fn words(self, pattern: String) -> Vec<String> {
-
+    fn words(&self, pattern: String) -> Vec<String> {
         self.root.words(pattern, String::from(""))
     }
 
-    fn is_word(self, pattern: String) -> bool {
-        todo!()
+    fn is_word(&self, pattern: String) -> bool {
+        self.root.is_word(pattern)
     }
 }
 
@@ -210,14 +223,18 @@ mod tests {
         println!("{}", anotherRoot)
     }
 
-    #[test] 
+    #[test]
     fn build_works() {
         println!(
             "{}",
             Trie::build(vec![
-                String::from("asdf"), String::from("asset"),
-                String::from("bass"), String::from("baseball"), String::from("bassooon"), String::from("basset"),
-                ])
+                String::from("asdf"),
+                String::from("asset"),
+                String::from("bass"),
+                String::from("baseball"),
+                String::from("bassooon"),
+                String::from("basset"),
+            ])
         );
     }
 
@@ -238,5 +255,20 @@ mod tests {
         )
     }
 
+    #[test]
+    fn is_word_works() {
+        let trie = Trie::build(vec![
+            String::from("bass"),
+            String::from("bats"),
+            String::from("bess"),
+            String::from("be"),
+        ]);
 
+        println!("{}", trie);
+
+        assert!(trie.is_word(String::from("bass")));
+        assert!(trie.is_word(String::from("bats")));
+        assert!(trie.is_word(String::from("be")));
+        assert!(!trie.is_word(String::from("bat")));
+    }
 }
