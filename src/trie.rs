@@ -30,7 +30,9 @@ impl TrieNode {
                     }
                 }
             }
-            None => {}
+            None => {
+                self.isTerminal = true;
+            }
         }
 
         self
@@ -51,6 +53,10 @@ impl TrieNode {
         }
         write!(f, "{}", self.contents.unwrap_or('*'))?;
 
+        if self.isTerminal {
+            write!(f, "'")?;
+        }
+
         if self.children.len() == 0 {
             return write!(f, "\n");
         }
@@ -67,12 +73,11 @@ impl TrieNode {
 
     fn words(self, pattern: String, partial: String) -> Vec<String> {
 
-        let mut newPartial = partial.clone();
-        let mut newPattern = pattern.clone();
-        if self.contents.is_some() {
-            newPartial.push(self.contents.unwrap());
-            newPattern = pattern[1..].to_owned();
-        }
+        let mut newPartial = self.contents.map(|x|  x.to_string()).unwrap_or(String::from(""));
+        newPartial.push_str(&partial);
+
+        let mut newPattern = pattern[1..].to_owned();
+
 
         if pattern.len() == 0 {
             if self.isTerminal {
@@ -220,8 +225,11 @@ mod tests {
         let trie = Trie::build(vec![
             String::from("bass"),
             String::from("bats"),
-            String::from("bess")
+            String::from("bess"),
+            String::from("be"),
         ]);
+
+        println!("{}", trie);
 
         assert_eq!(
             vec![String::from("bass"), String::from("bess")],
