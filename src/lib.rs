@@ -1,3 +1,4 @@
+use crate::trie::Trie;
 use std::fmt::Display;
 use std::sync::Arc;
 use std::sync::{mpsc, Mutex};
@@ -391,7 +392,7 @@ impl Word {
 }
 
 lazy_static! {
-    static ref ALL_WORDS: HashSet<String> = {
+    static ref ALL_WORDS: Trie = {
         let file = File::open("wordlist.json").unwrap();
 
         let json: serde_json::Value =
@@ -399,9 +400,9 @@ lazy_static! {
 
         match json.as_object() {
             Some(obj) => {
-                return obj.keys().into_iter().map(String::to_owned).collect();
+                return Trie::build(obj.keys().collect());
             }
-            None => return HashSet::new(),
+            None => panic!("Failed to load words"),
         }
     };
 }
