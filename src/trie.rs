@@ -73,11 +73,10 @@ impl TrieNode {
 
     fn words(self, pattern: String, partial: String) -> Vec<String> {
 
-        let mut newPartial = self.contents.map(|x|  x.to_string()).unwrap_or(String::from(""));
-        newPartial.push_str(&partial);
-
-        let mut newPattern = pattern[1..].to_owned();
-
+        let mut newPartial = partial.clone();
+        if self.contents.is_some() {
+            newPartial.push(self.contents.unwrap());
+        }
 
         if pattern.len() == 0 {
             if self.isTerminal {
@@ -85,6 +84,8 @@ impl TrieNode {
             }
             return vec![];
         }
+
+        let mut newPattern = pattern[1..].to_owned();
 
         let newChar = pattern.as_bytes()[0] as char;
 
