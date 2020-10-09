@@ -15,5 +15,5 @@ lazy_static = "1.4.0"
 criterion = "0.3"
 
 [[bench]]
-name = "fill"
+name = "clone"
 harness = false

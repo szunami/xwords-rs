@@ -8,7 +8,7 @@ use std::{
     fs::File,
 };
 
-mod trie;
+pub mod trie;
 
 #[macro_use]
 extern crate lazy_static;
@@ -178,7 +178,7 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
 fn is_viable(candidate: &Crossword) -> bool {
     for word in parse_words(candidate) {
-        if !word.contents.contains(" ") && !ALL_WORDS.contains(&word.contents) {
+        if !word.contents.contains(" ") && !ALL_WORDS.is_word(word.contents) {
             return false;
         }
     }
@@ -220,31 +220,42 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
 }
 
 pub fn find_fills(word: Word) -> Vec<Word> {
-    let mut result = vec![];
-
-    for real_word in ALL_WORDS.iter() {
-        if real_word.len() != word.contents.len() {
-            continue;
-        }
-        let mut is_valid = true;
-        for i in 0..word.contents.len() {
-            if word.contents.as_bytes()[i] == b' '
-                || word.contents.as_bytes()[i] == real_word.as_bytes()[i]
-            {
-                continue;
-            } else {
-                is_valid = false;
-            }
-        }
-        if is_valid {
-            result.push(Word {
-                contents: real_word.to_string(),
+    ALL_WORDS
+        .words(word.contents.clone())
+        .iter()
+        .map(|newWord| {
+            let tmp = Word {
+                contents: newWord.clone(),
                 ..word.clone()
-            })
-        }
-    }
+            };
+            tmp
+        })
+        .collect()
+    // let mut result = vec![];
 
-    result
+    // for real_word in ALL_WORDS.iter() {
+    //     if real_word.len() != word.contents.len() {
+    //         continue;
+    //     }
+    //     let mut is_valid = true;
+    //     for i in 0..word.contents.len() {
+    //         if word.contents.as_bytes()[i] == b' '
+    //             || word.contents.as_bytes()[i] == real_word.as_bytes()[i]
+    //         {
+    //             continue;
+    //         } else {
+    //             is_valid = false;
+    //         }
+    //     }
+    //     if is_valid {
+    //         result.push(Word {
+    //             contents: real_word.to_string(),
+    //             ..word.clone()
+    //         })
+    //     }
+    // }
+
+    // result
 }
 
 fn parse_words(crossword: &Crossword) -> Vec<Word> {
@@ -400,7 +411,8 @@ lazy_static! {
 
         match json.as_object() {
             Some(obj) => {
-                return Trie::build(obj.keys().collect());
+                let x = obj.keys().map(|key| key.to_owned()).collect();
+                return Trie::build(x);
             }
             None => panic!("Failed to load words"),
         }

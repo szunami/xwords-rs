@@ -129,7 +129,7 @@ impl fmt::Display for TrieNode {
     }
 }
 
-struct Trie {
+pub struct Trie {
     root: TrieNode,
 }
 
@@ -140,25 +140,29 @@ impl fmt::Display for Trie {
 }
 
 impl Trie {
-    fn build(words: Vec<String>) -> Trie {
+    pub fn build(words: Vec<String>) -> Trie {
         let mut root = TrieNode {
             contents: None,
             children: HashMap::new(),
             isTerminal: false,
         };
 
+        println!("Building {} words", words.len());
+
         for (index, word) in words.iter().enumerate() {
-            root = root.clone().add_sequence(&word);
+            root = root.add_sequence(&word);
         }
+
+        println!("Done building");
 
         Trie { root }
     }
 
-    fn words(&self, pattern: String) -> Vec<String> {
+    pub fn words(&self, pattern: String) -> Vec<String> {
         self.root.words(pattern, String::from(""))
     }
 
-    fn is_word(&self, pattern: String) -> bool {
+    pub fn is_word(&self, pattern: String) -> bool {
         self.root.is_word(pattern)
     }
 }
