@@ -385,9 +385,8 @@ lazy_static! {
 
         match json.as_object() {
             Some(obj) => {
-                let x = obj.keys().map(|key| key.to_owned()).collect();
-                return Trie::build(x);
-            }
+                Trie::build(obj.keys().map(|key| key.to_owned()).collect())
+            },
             None => panic!("Failed to load words"),
         }
     };
