@@ -422,7 +422,8 @@ lazy_static! {
 #[cfg(test)]
 mod tests {
 
-    use crate::{fill_one_word, find_fills, is_viable, parse_words, Crossword, Direction, Word};
+    use crate::ALL_WORDS;
+use crate::{Crossword, Direction, Word, fill_crossword, fill_one_word, find_fills, is_viable, parse_words};
 
     #[test]
     fn it_works() {
@@ -650,5 +651,17 @@ mod tests {
             width: 3,
             height: 3,
         }));
+    }
+
+    #[test]
+    fn fill_crossword_works() {
+        ALL_WORDS.is_word(String::from(""));
+        let input = Crossword::new(String::from("                ")).unwrap();
+
+        let result = fill_crossword(&input);
+
+        assert!(result.is_ok());
+
+        println!("{}", result.unwrap());
     }
 }
