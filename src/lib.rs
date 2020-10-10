@@ -177,8 +177,19 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 }
 
 fn is_viable(candidate: &Crossword) -> bool {
+    let mut already_used = HashSet::new();
     for word in parse_words(candidate) {
-        if !word.contents.contains(" ") && !ALL_WORDS.is_word(word.contents) {
+
+        if word.contents.contains(" ") {
+            continue;
+        }
+
+        if already_used.contains(&word.contents) {
+            return false;
+        }
+        already_used.insert(word.contents.clone());
+
+        if !ALL_WORDS.is_word(word.contents) {
             return false;
         }
     }
@@ -624,6 +635,12 @@ use crate::{Crossword, Direction, Word, fill_crossword, fill_one_word, find_fill
             width: 3,
             height: 3,
         }));
+
+        assert!(!is_viable(&Crossword {
+            contents: String::from("ABCB  C  "),
+            width: 3,
+            height: 3,
+        }))
     }
 
     #[test]
@@ -637,4 +654,5 @@ use crate::{Crossword, Direction, Word, fill_crossword, fill_one_word, find_fill
 
         println!("{}", result.unwrap());
     }
+
 }
