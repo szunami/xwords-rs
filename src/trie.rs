@@ -4,7 +4,7 @@ use std::{collections::HashMap, fmt};
 pub struct TrieNode {
     contents: Option<char>,
     children: HashMap<char, TrieNode>,
-    isTerminal: bool,
+    is_terminal: bool,
 }
 
 impl TrieNode {
@@ -20,7 +20,7 @@ impl TrieNode {
                         let tmp = TrieNode {
                             children: HashMap::new(),
                             contents: Some(*val as char),
-                            isTerminal: false,
+                            is_terminal: false,
                         };
                         // create child and iterate on it
                         self.children.insert(
@@ -31,7 +31,7 @@ impl TrieNode {
                 }
             }
             None => {
-                self.isTerminal = true;
+                self.is_terminal = true;
             }
         }
 
@@ -42,9 +42,9 @@ impl TrieNode {
         &self,
         f: &mut std::fmt::Formatter<'_>,
         depth: usize,
-        firstChild: bool,
+        first_child: bool,
     ) -> std::result::Result<(), std::fmt::Error> {
-        if !firstChild {
+        if !first_child {
             for _ in 0..depth {
                 write!(f, "\t")?;
             }
@@ -53,7 +53,7 @@ impl TrieNode {
         }
         write!(f, "{}", self.contents.unwrap_or('*'))?;
 
-        if self.isTerminal {
+        if self.is_terminal {
             write!(f, "'")?;
         }
 
@@ -65,41 +65,42 @@ impl TrieNode {
             self.children
                 .get(key)
                 .unwrap()
-                .display_helper(f, depth + 1, index == 0);
+                .display_helper(f, depth + 1, index == 0)?;
         }
 
         Ok(())
     }
 
+    // TODO: pattern could be a ref!
     fn words(&self, pattern: String, partial: String) -> Vec<String> {
-        let mut newPartial = partial.clone();
+        let mut new_partial = partial.clone();
         if self.contents.is_some() {
-            newPartial.push(self.contents.unwrap());
+            new_partial.push(self.contents.unwrap());
         }
 
         if pattern.len() == 0 {
-            if self.isTerminal {
-                return vec![newPartial];
+            if self.is_terminal {
+                return vec![new_partial];
             }
             return vec![];
         }
 
-        let mut newPattern = pattern[1..].to_owned();
+        let new_pattern = pattern[1..].to_owned();
 
-        let newChar = pattern.as_bytes()[0] as char;
+        let new_char = pattern.as_bytes()[0] as char;
 
-        if newChar == ' ' {
+        if new_char == ' ' {
             let mut result = vec![];
             for child in self.children.values() {
-                let tmp = child.words(newPattern.clone(), newPartial.clone());
+                let tmp = child.words(new_pattern.clone(), new_partial.clone());
                 result.extend(tmp.clone());
             }
             return result;
         }
 
-        match self.children.get(&newChar) {
+        match self.children.get(&new_char) {
             Some(child) => {
-                return child.words(newPattern, newPartial);
+                return child.words(new_pattern, new_partial);
             }
             None => {
                 return vec![];
@@ -107,17 +108,18 @@ impl TrieNode {
         }
     }
 
+    // TODO: pattern could be a ref
     fn is_word(&self, pattern: String) -> bool {
         if pattern.len() == 0 {
-            return self.isTerminal;
+            return self.is_terminal;
         }
 
-        let mut newPattern = pattern[1..].to_owned();
+        let new_pattern = pattern[1..].to_owned();
 
-        let newChar = pattern.as_bytes()[0] as char;
+        let new_char = pattern.as_bytes()[0] as char;
 
-        match self.children.get(&newChar) {
-            Some(child) => child.is_word(newPattern),
+        match self.children.get(&new_char) {
+            Some(child) => child.is_word(new_pattern),
             None => false,
         }
     }
@@ -144,12 +146,12 @@ impl  Trie {
         let mut root = TrieNode {
             contents: None,
             children: HashMap::new(),
-            isTerminal: false,
+            is_terminal: false,
         };
 
         println!("Building {} words", words.len());
 
-        for (index, word) in words.iter().enumerate() {
+        for word in words.iter(){
             root = root.add_sequence(&word);
         }
 
@@ -178,7 +180,7 @@ mod tests {
         let mut root = TrieNode {
             contents: None,
             children: HashMap::new(),
-            isTerminal: false,
+            is_terminal: false,
         };
 
         root.children.insert(
@@ -186,14 +188,14 @@ mod tests {
             TrieNode {
                 contents: Some('b'),
                 children: HashMap::new(),
-                isTerminal: false,
+                is_terminal: false,
             },
         );
 
         let mut c = TrieNode {
             contents: Some('c'),
             children: HashMap::new(),
-            isTerminal: false,
+            is_terminal: false,
         };
 
         c.children.insert(
@@ -201,7 +203,7 @@ mod tests {
             TrieNode {
                 contents: Some('d'),
                 children: HashMap::new(),
-                isTerminal: false,
+                is_terminal: false,
             },
         );
 
@@ -212,19 +214,19 @@ mod tests {
 
     #[test]
     fn add_sequence_works() {
-        let mut root = TrieNode {
+        let root = TrieNode {
             contents: Some('a'),
             children: HashMap::new(),
-            isTerminal: false,
+            is_terminal: false,
         };
 
-        let newRoot = root.add_sequence("itsyaboi");
+        let new_root = root.add_sequence("itsyaboi");
 
-        println!("{}", newRoot);
+        println!("{}", new_root);
 
-        let anotherRoot = newRoot.add_sequence("wereallyouthere");
+        let another_root = new_root.add_sequence("wereallyouthere");
 
-        println!("{}", anotherRoot)
+        println!("{}", another_root)
     }
 
     #[test]
