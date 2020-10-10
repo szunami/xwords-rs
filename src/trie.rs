@@ -171,7 +171,8 @@ impl  Trie {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::collections::HashSet;
+use std::collections::HashMap;
 
     use super::{Trie, TrieNode};
 
@@ -253,11 +254,11 @@ mod tests {
             String::from("be"),
         ]);
 
-        println!("{}", trie);
-
+        let expected: HashSet<String> = vec![String::from("bass"), String::from("bess")].iter().cloned().collect();
+        let actual:HashSet<String> = trie.words(String::from("b ss")).iter().cloned().collect();
         assert_eq!(
-            vec![String::from("bass"), String::from("bess")],
-            trie.words(String::from("b ss")),
+            expected,
+            actual,
         )
     }
 
