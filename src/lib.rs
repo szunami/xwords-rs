@@ -1,5 +1,5 @@
 use crate::trie::Trie;
-use std::fmt::Display;
+
 use std::sync::Arc;
 use std::sync::{mpsc, Mutex};
 use std::{

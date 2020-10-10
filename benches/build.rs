@@ -2,7 +2,7 @@ use std::fs::File;
 
 use criterion::BenchmarkId;
 use criterion::{criterion_group, criterion_main, Criterion};
-use xwords::{find_fills, Direction, Word, trie::Trie};
+use xwords::{trie::Trie};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
  
@@ -18,16 +18,16 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         None => panic!("Failed to load words"),
     };
 
-    let mut subVec: Vec<String> = vec![];
+    let mut sub_vec: Vec<String> = vec![];
 
-    for i in 0..10_000 {
-        subVec.push(words.pop().unwrap());
+    for _ in 0..10_000 {
+        sub_vec.push(words.pop().unwrap());
     }
 
 
     c.bench_with_input(
         BenchmarkId::new("build_trie", 123),
-        &subVec.clone(),
+        &sub_vec.clone(),
         |b, s| {
             b.iter(|| Trie::build(s.to_owned()));
         },

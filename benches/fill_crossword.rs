@@ -1,6 +1,6 @@
-use criterion::{Benchmark, BenchmarkId};
+use criterion::{Benchmark};
 use criterion::{criterion_group, criterion_main, Criterion};
-use xwords::{Crossword, Direction, Word, fill_crossword, find_fills};
+use xwords::{Crossword, fill_crossword};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
 
