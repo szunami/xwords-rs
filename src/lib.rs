@@ -231,31 +231,6 @@ pub fn find_fills(word: Word) -> Vec<Word> {
             tmp
         })
         .collect()
-    // let mut result = vec![];
-
-    // for real_word in ALL_WORDS.iter() {
-    //     if real_word.len() != word.contents.len() {
-    //         continue;
-    //     }
-    //     let mut is_valid = true;
-    //     for i in 0..word.contents.len() {
-    //         if word.contents.as_bytes()[i] == b' '
-    //             || word.contents.as_bytes()[i] == real_word.as_bytes()[i]
-    //         {
-    //             continue;
-    //         } else {
-    //             is_valid = false;
-    //         }
-    //     }
-    //     if is_valid {
-    //         result.push(Word {
-    //             contents: real_word.to_string(),
-    //             ..word.clone()
-    //         })
-    //     }
-    // }
-
-    // result
 }
 
 fn parse_words(crossword: &Crossword) -> Vec<Word> {
