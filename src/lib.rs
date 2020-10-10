@@ -1,4 +1,5 @@
-use std::fmt::Display;
+use crate::trie::Trie;
+
 use std::sync::Arc;
 use std::sync::{mpsc, Mutex};
 use std::{
@@ -6,6 +7,8 @@ use std::{
     fmt,
     fs::File,
 };
+
+pub mod trie;
 
 #[macro_use]
 extern crate lazy_static;
@@ -175,7 +178,7 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 
 fn is_viable(candidate: &Crossword) -> bool {
     for word in parse_words(candidate) {
-        if !ALL_WORDS.contains(&word.contents) && !word.contents.contains(" ") {
+        if !word.contents.contains(" ") && !ALL_WORDS.is_word(word.contents) {
             return false;
         }
     }
@@ -217,31 +220,16 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
 }
 
 pub fn find_fills(word: Word) -> Vec<Word> {
-    let mut result = vec![];
-
-    for real_word in ALL_WORDS.iter() {
-        if real_word.len() != word.contents.len() {
-            continue;
-        }
-        let mut is_valid = true;
-        for i in 0..word.contents.len() {
-            if word.contents.as_bytes()[i] == b' '
-                || word.contents.as_bytes()[i] == real_word.as_bytes()[i]
-            {
-                continue;
-            } else {
-                is_valid = false;
-            }
-        }
-        if is_valid {
-            result.push(Word {
-                contents: real_word.to_string(),
+    ALL_WORDS
+        .words(word.contents.clone())
+        .iter()
+        .map(|new_word| {
+            Word {
+                contents: new_word.clone(),
                 ..word.clone()
-            })
-        }
-    }
-
-    result
+            }
+        })
+        .collect()
 }
 
 fn parse_words(crossword: &Crossword) -> Vec<Word> {
@@ -389,7 +377,7 @@ impl Word {
 }
 
 lazy_static! {
-    static ref ALL_WORDS: HashSet<String> = {
+    static ref ALL_WORDS: Trie = {
         let file = File::open("wordlist.json").unwrap();
 
         let json: serde_json::Value =
@@ -397,9 +385,9 @@ lazy_static! {
 
         match json.as_object() {
             Some(obj) => {
-                return obj.keys().into_iter().map(String::to_owned).collect();
-            }
-            None => return HashSet::new(),
+                Trie::build(obj.keys().map(|key| key.to_owned()).collect())
+            },
+            None => panic!("Failed to load words"),
         }
     };
 }
@@ -407,7 +395,8 @@ lazy_static! {
 #[cfg(test)]
 mod tests {
 
-    use crate::{fill_one_word, find_fills, is_viable, parse_words, Crossword, Direction, Word};
+    use crate::ALL_WORDS;
+use crate::{Crossword, Direction, Word, fill_crossword, fill_one_word, find_fills, is_viable, parse_words};
 
     #[test]
     fn it_works() {
@@ -635,5 +624,17 @@ mod tests {
             width: 3,
             height: 3,
         }));
+    }
+
+    #[test]
+    fn fill_crossword_works() {
+        ALL_WORDS.is_word(String::from(""));
+        let input = Crossword::new(String::from("                ")).unwrap();
+
+        let result = fill_crossword(&input);
+
+        assert!(result.is_ok());
+
+        println!("{}", result.unwrap());
     }
 }
