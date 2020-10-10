@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt};
 
 #[derive(Clone)]
-struct TrieNode {
+pub struct TrieNode {
     contents: Option<char>,
     children: HashMap<char, TrieNode>,
     isTerminal: bool,
@@ -11,21 +11,21 @@ impl TrieNode {
     fn add_sequence(mut self, chars: &str) -> TrieNode {
         match chars.as_bytes().get(0) {
             Some(val) => {
-                match self.children.get(&(*val as char)) {
-                    Some(child) => {
+                match self.children.remove_entry(&(*val as char)) {
+                    Some((_, child)) => {
                         self.children
-                            .insert(*val as char, child.clone().add_sequence(&chars[1..]));
+                            .insert(*val as char, child.add_sequence(&chars[1..]));
                     }
                     None => {
+                        let tmp = TrieNode {
+                            children: HashMap::new(),
+                            contents: Some(*val as char),
+                            isTerminal: false,
+                        };
                         // create child and iterate on it
                         self.children.insert(
                             *val as char,
-                            TrieNode {
-                                children: HashMap::new(),
-                                contents: Some(*val as char),
-                                isTerminal: false,
-                            }
-                            .add_sequence(&chars[1..]),
+                            tmp.add_sequence(&chars[1..]),
                         );
                     }
                 }
@@ -130,16 +130,16 @@ impl fmt::Display for TrieNode {
 }
 
 pub struct Trie {
-    root: TrieNode,
+    pub root: TrieNode,
 }
 
-impl fmt::Display for Trie {
+impl  fmt::Display for Trie {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         self.root.fmt(f)
     }
 }
 
-impl Trie {
+impl  Trie {
     pub fn build(words: Vec<String>) -> Trie {
         let mut root = TrieNode {
             contents: None,
