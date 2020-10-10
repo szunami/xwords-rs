@@ -223,12 +223,11 @@ pub fn find_fills(word: Word) -> Vec<Word> {
     ALL_WORDS
         .words(word.contents.clone())
         .iter()
-        .map(|newWord| {
-            let tmp = Word {
-                contents: newWord.clone(),
+        .map(|new_word| {
+            Word {
+                contents: new_word.clone(),
                 ..word.clone()
-            };
-            tmp
+            }
         })
         .collect()
 }
