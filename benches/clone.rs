@@ -13,7 +13,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
     let mut words: Vec<String> = match json.as_object() {
         Some(obj) => {
-            obj.keys().map(|key| key.to_owned()).collect()
+            obj.keys().into_iter().cloned().collect()
         }
         None => panic!("Failed to load words"),
     };
