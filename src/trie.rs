@@ -109,12 +109,12 @@ impl TrieNode {
     }
 
     // TODO: pattern could be a ref
-    fn is_word(&self, pattern: String) -> bool {
+    fn is_word(&self, pattern: &str) -> bool {
         if pattern.len() == 0 {
             return self.is_terminal;
         }
 
-        let new_pattern = pattern[1..].to_owned();
+        let new_pattern = &pattern[1..];
 
         let new_char = pattern.as_bytes()[0] as char;
 
@@ -164,7 +164,7 @@ impl  Trie {
         self.root.words(pattern, String::from(""))
     }
 
-    pub fn is_word(&self, pattern: String) -> bool {
+    pub fn is_word(&self, pattern: &str) -> bool {
         self.root.is_word(pattern)
     }
 }
@@ -273,9 +273,9 @@ use std::collections::HashMap;
 
         println!("{}", trie);
 
-        assert!(trie.is_word(String::from("bass")));
-        assert!(trie.is_word(String::from("bats")));
-        assert!(trie.is_word(String::from("be")));
-        assert!(!trie.is_word(String::from("bat")));
+        assert!(trie.is_word("bass"));
+        assert!(trie.is_word("bats"));
+        assert!(trie.is_word("be"));
+        assert!(!trie.is_word("bat"));
     }
 }
