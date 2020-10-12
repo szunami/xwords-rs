@@ -1,6 +1,6 @@
 use crate::trie::Trie;
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 use std::sync::{mpsc, Mutex};
 use std::{
     collections::{HashSet, VecDeque},
@@ -231,12 +231,11 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
 }
 
 pub fn find_fills(word: Word) -> Vec<Word> {
-    ALL_WORDS
-        .words(word.contents.clone())
-        .iter()
+    ALL_WORDS.words(word.contents.clone())
+        .drain(0..)
         .map(|new_word| {
             Word {
-                contents: new_word.clone(),
+                contents: new_word,
                 ..word.clone()
             }
         })
@@ -387,26 +386,28 @@ impl Word {
     }
 }
 
+
 lazy_static! {
     static ref ALL_WORDS: Trie = {
+        println!("Building Trie");
+        let now = Instant::now();
+
         let file = File::open("wordlist.json").unwrap();
 
-        let json: serde_json::Value =
-            serde_json::from_reader(file).expect("JSON was not well-formatted");
-
-        match json.as_object() {
-            Some(obj) => {
-                Trie::build(obj.keys().map(|key| key.to_owned()).collect())
-            },
-            None => panic!("Failed to load words"),
-        }
+        let words: Vec<String> = serde_json::from_reader(file).expect("JSON was not well-formatted");
+        println!("Done parsing file");
+        let result = Trie::build(words);
+        println!("Done building Trie in {} seconds", now.elapsed().as_secs());
+        return result;
     };
 }
 
 #[cfg(test)]
 mod tests {
 
-    use crate::ALL_WORDS;
+        use std::time::Instant;
+
+use crate::ALL_WORDS;
 use crate::{Crossword, Direction, Word, fill_crossword, fill_one_word, find_fills, is_viable, parse_words};
 
     #[test]
@@ -655,4 +656,16 @@ use crate::{Crossword, Direction, Word, fill_crossword, fill_one_word, find_fill
         println!("{}", result.unwrap());
     }
 
+    // #[test]
+    // fn puz_2020_10_12_works() {
+    //     ALL_WORDS.is_word(String::from("asdf"));
+
+    //     let real_puz = Crossword::new(String::from("    *    *         *    *              *        *   *   *   **    *              *     ***     *    *       *       *       *    *     ***     *              *    **   *   *   *        *              *    *         *    *    ")).unwrap();
+    //     println!("{}", real_puz);
+
+    //     let now = Instant::now();
+    //     let filled_puz = fill_crossword(&real_puz).unwrap();
+    //     println!("Filled in {} seconds.", now.elapsed().as_secs());
+    //     println!("{}", filled_puz);
+    // }
 }
