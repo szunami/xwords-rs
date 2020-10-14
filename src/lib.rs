@@ -97,17 +97,20 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     let candidates = Arc::new(Mutex::new(crossword_fill_state));
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
+    let guard = pprof::ProfilerGuard::new(100).unwrap();
 
-    for thread_index in 0..32 {
+    for thread_index in 0..1 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
 
-        std::thread::spawn(move || {
+
+        std::thread::Builder::new()
+            .name(String::from("thread"))
+            .spawn(move || {
             println!("Hello from thread {}", thread_index);
 
-            // let guard = pprof::ProfilerGuard::new(100).unwrap();
-
             loop {
+
                 {
                     let queue = new_arc.lock().unwrap();
                     if queue.done {
@@ -167,8 +170,21 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
                     }
                 }
             }
-        });
+        }).unwrap();
     }
+
+    std::thread::spawn(move || {
+        loop {
+            match guard.report().build() {
+                Ok(report) => {
+                    let file = File::create("flamegraph.svg").unwrap();
+                    report.flamegraph(file).unwrap();
+                },
+                Err(_) => {}
+            };
+            std::thread::sleep(std::time::Duration::from_secs(5))
+        }
+    });
 
     match rx.recv() {
         Ok(result) => Ok(result),
@@ -189,7 +205,7 @@ fn is_viable(candidate: &Crossword) -> bool {
         }
         already_used.insert(word.contents.clone());
 
-        if !ALL_WORDS.is_word(word.contents) {
+        if !ALL_WORDS.is_word(&word.contents) {
             return false;
         }
     }
@@ -646,7 +662,7 @@ use crate::{Crossword, Direction, Word, fill_crossword, fill_one_word, find_fill
 
     #[test]
     fn fill_crossword_works() {
-        ALL_WORDS.is_word(String::from(""));
+        ALL_WORDS.is_word("");
         let input = Crossword::new(String::from("                ")).unwrap();
 
         let result = fill_crossword(&input);
@@ -658,7 +674,7 @@ use crate::{Crossword, Direction, Word, fill_crossword, fill_one_word, find_fill
 
     // #[test]
     // fn puz_2020_10_12_works() {
-    //     ALL_WORDS.is_word(String::from("asdf"));
+    //     ALL_WORDS.is_word("asdf");
 
     //     let real_puz = Crossword::new(String::from("    *    *         *    *              *        *   *   *   **    *              *     ***     *    *       *       *       *    *     ***     *              *    **   *   *   *        *              *    *         *    *    ")).unwrap();
     //     println!("{}", real_puz);
