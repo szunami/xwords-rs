@@ -672,16 +672,16 @@ use crate::{Crossword, Direction, Word, fill_crossword, fill_one_word, find_fill
         println!("{}", result.unwrap());
     }
 
-    #[test]
-    fn puz_2020_10_12_works() {
-        ALL_WORDS.is_word("asdf");
+    // #[test]
+    // fn puz_2020_10_12_works() {
+    //     ALL_WORDS.is_word("asdf");
 
-        let real_puz = Crossword::new(String::from("    *    *         *    *              *        *   *   *   **    *              *     ***     *    *       *       *       *    *     ***     *              *    **   *   *   *        *              *    *         *    *    ")).unwrap();
-        println!("{}", real_puz);
+    //     let real_puz = Crossword::new(String::from("    *    *         *    *              *        *   *   *   **    *              *     ***     *    *       *       *       *    *     ***     *              *    **   *   *   *        *              *    *         *    *    ")).unwrap();
+    //     println!("{}", real_puz);
 
-        let now = Instant::now();
-        let filled_puz = fill_crossword(&real_puz).unwrap();
-        println!("Filled in {} seconds.", now.elapsed().as_secs());
-        println!("{}", filled_puz);
-    }
+    //     let now = Instant::now();
+    //     let filled_puz = fill_crossword(&real_puz).unwrap();
+    //     println!("Filled in {} seconds.", now.elapsed().as_secs());
+    //     println!("{}", filled_puz);
+    // }
 }
