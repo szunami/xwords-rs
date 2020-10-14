@@ -33,6 +33,37 @@ impl Crossword {
     }
 }
 
+struct CrosswordWordIterator<'s> {
+    crossword: &'s Crossword,
+    word_boundary: &'s WordBoundary,
+    index: usize,
+}
+
+impl<'s> Iterator for CrosswordWordIterator<'s> {
+    type Item = char;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.word_boundary.length {
+            return None;
+        }
+
+        match self.word_boundary.direction {
+            Direction::Across => {
+                let char_index = self.word_boundary.start_row * self.crossword.width + self.word_boundary.start_col + self.index;
+                let result = self.crossword.contents.as_bytes()[char_index] as char;
+                self.index += 1;
+                return Some(result)
+            }
+            Direction::Down => {
+                let char_index = (self.word_boundary.start_row + self.index) * self.crossword.width + self.word_boundary.start_col;
+                let result = self.crossword.contents.as_bytes()[char_index] as char;
+                self.index += 1;
+                return Some(result)
+            }
+        }
+    }
+}
+
 impl fmt::Display for Crossword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for row in 0..self.height {
@@ -125,28 +156,27 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
                             None => continue,
                         }
                     };
-                    let to_fill = choose_word(&candidate, &word_boundaries);
+                    // let to_fill = choose_word(&candidate, &word_boundaries);
 
-                    // let words = parse_words(&candidate);
-                    // let to_fill = words
-                    //     .iter()
-                    //     .max_by_key(|word| {
-                    //         let empty_squares: i32 = word.contents.matches(" ").count() as i32;
-                    //         // we want to identify highly constrained words
-                    //         // very unscientifically: we want longer words, with fewer spaces.
-                    //         if empty_squares == 0 {
-                    //             return -1;
-                    //         }
-                    //         return 2 * word.contents.len() as i32 - empty_squares;
-                    //     })
-                    //     .unwrap();
+                    let words = parse_words(&candidate);
+                    let to_fill = words
+                        .iter()
+                        .max_by_key(|word| {
+                            let empty_squares: i32 = word.contents.matches(" ").count() as i32;
+                            // we want to identify highly constrained words
+                            // very unscientifically: we want longer words, with fewer spaces.
+                            if empty_squares == 0 {
+                                return -1;
+                            }
+                            return 2 * word.contents.len() as i32 - empty_squares;
+                        })
+                        .unwrap();
                     // find valid fills for word;
                     // for each fill:
                     //   are all complete words legit?
                     //     if so, push
 
-                    let potential_fills = find_fills(&candidate, to_fill);
-
+                    let potential_fills = find_fills(to_fill.clone());
                     for potential_fill in potential_fills {
                         let new_candidate = fill_one_word(&candidate, potential_fill);
 
@@ -193,9 +223,10 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     }
 }
 
-fn choose_word(crossword: &Crossword, word_boundaries: &Vec<WordBoundary>) -> &WordBoundary {
-    return &word_boundaries.first().unwrap();
-}
+// fn choose_word(crossword: &Crossword, word_boundaries: &Vec<WordBoundary>) -> &WordBoundary {
+//     todo!();
+//     // return &word_boundaries.first().unwrap();
+// }
 
 fn is_viable(candidate: &Crossword) -> bool {
     let mut already_used = HashSet::new();
@@ -530,10 +561,7 @@ mod tests {
 
     use std::time::Instant;
 
-    use crate::{
-        fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword, Direction,
-        Word,
-    };
+    use crate::{Crossword, CrosswordWordIterator, Direction, Word, fill_crossword, fill_one_word, find_fills, is_viable, parse_words};
     use crate::{parse_word_boundaries, WordBoundary, ALL_WORDS};
 
     #[test]
@@ -842,4 +870,37 @@ mod tests {
     //     println!("Filled in {} seconds.", now.elapsed().as_secs());
     //     println!("{}", filled_puz);
     // }
+
+    #[test]
+    fn crossword_iterator_works() {
+        let input = Crossword::new(String::from("ABCDEFGHI")).unwrap();
+        let word_boundary = WordBoundary{
+            start_col: 0, start_row: 0, direction: Direction::Across, length: 3,
+        };
+
+        let t = CrosswordWordIterator{
+            crossword: &input,
+            word_boundary: &word_boundary,
+            index: 0
+        };
+
+        let s: String = t.collect();
+
+        assert_eq!(String::from("ABC"), s);
+
+        let word_boundary = WordBoundary{
+            start_col: 0, start_row: 0, direction: Direction::Down, length: 3,
+        };
+
+                let t = CrosswordWordIterator{
+            crossword: &input,
+            word_boundary: &word_boundary,
+            index: 0
+        };
+
+        let s: String = t.collect();
+
+        assert_eq!(String::from("ADG"), s);
+
+    }
 }

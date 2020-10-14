@@ -109,9 +109,9 @@ impl TrieNode {
         }
     }
 
-    fn words(&self, crossword: &Crossword, word_boundary: &WordBoundary, index: usize) -> Vec<String> {
-        todo!();
-    }
+    // fn words(&self, crossword: &Crossword, word_boundary: &WordBoundary, index: usize) -> Vec<String> {
+    //     todo!();
+    // }
 
     fn is_word(&self, pattern: &str) -> bool {
         if pattern.len() == 0 {
@@ -168,9 +168,9 @@ impl  Trie {
         self.root.words(pattern, String::from(""))
     }
 
-    pub fn words(&self, crossword: &Crossword, word_boundary: &WordBoundary) -> Vec<String> {
-        self.root.words(crossword, word_boundary, 0)
-    }
+    // pub fn words(&self, crossword: &Crossword, word_boundary: &WordBoundary) -> Vec<String> {
+    //     self.root.words(crossword, word_boundary, 0)
+    // }
 
     pub fn is_word(&self, pattern: &str) -> bool {
         self.root.is_word(pattern)
