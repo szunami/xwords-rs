@@ -1,3 +1,4 @@
+use crate::{Crossword, WordBoundary};
 use std::{collections::HashMap, fmt};
 
 #[derive(Clone)]
@@ -108,7 +109,10 @@ impl TrieNode {
         }
     }
 
-    // TODO: pattern could be a ref
+    fn words(&self, crossword: &Crossword, word_boundary: &WordBoundary, index: usize) -> Vec<String> {
+        todo!();
+    }
+
     fn is_word(&self, pattern: &str) -> bool {
         if pattern.len() == 0 {
             return self.is_terminal;
@@ -162,6 +166,10 @@ impl  Trie {
 
     pub fn words(&self, pattern: String) -> Vec<String> {
         self.root.words(pattern, String::from(""))
+    }
+
+    pub fn words(&self, crossword: &Crossword, word_boundary: &WordBoundary) -> Vec<String> {
+        self.root.words(crossword, word_boundary, 0)
     }
 
     pub fn is_word(&self, pattern: &str) -> bool {
