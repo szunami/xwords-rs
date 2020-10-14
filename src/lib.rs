@@ -1,12 +1,12 @@
 use crate::trie::Trie;
 
-use std::{sync::Arc, time::Instant};
 use std::sync::{mpsc, Mutex};
 use std::{
     collections::{HashSet, VecDeque},
     fmt,
     fs::File,
 };
+use std::{sync::Arc, time::Instant};
 
 pub mod trie;
 
@@ -30,6 +30,37 @@ impl Crossword {
             width,
             height: width,
         })
+    }
+}
+
+struct CrosswordWordIterator<'s> {
+    crossword: &'s Crossword,
+    word_boundary: &'s WordBoundary,
+    index: usize,
+}
+
+impl<'s> Iterator for CrosswordWordIterator<'s> {
+    type Item = char;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.word_boundary.length {
+            return None;
+        }
+
+        match self.word_boundary.direction {
+            Direction::Across => {
+                let char_index = self.word_boundary.start_row * self.crossword.width + self.word_boundary.start_col + self.index;
+                let result = self.crossword.contents.as_bytes()[char_index] as char;
+                self.index += 1;
+                return Some(result)
+            }
+            Direction::Down => {
+                let char_index = (self.word_boundary.start_row + self.index) * self.crossword.width + self.word_boundary.start_col;
+                let result = self.crossword.contents.as_bytes()[char_index] as char;
+                self.index += 1;
+                return Some(result)
+            }
+        }
     }
 }
 
@@ -103,87 +134,84 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
 
-
         std::thread::Builder::new()
             .name(String::from("thread"))
             .spawn(move || {
-            println!("Hello from thread {}", thread_index);
+                println!("Hello from thread {}", thread_index);
 
-            loop {
-
-                {
-                    let queue = new_arc.lock().unwrap();
-                    if queue.done {
-                        return;
-                    }
-                }
-
-                let candidate = {
-                    let mut queue = new_arc.lock().unwrap();
-                    match queue.take_candidate() {
-                        Some(candidate) => candidate,
-                        None => continue,
-                    }
-                };
-                let words = parse_words(&candidate);
-                let to_fill = words
-                    .iter()
-                    .max_by_key(|word| {
-                        let empty_squares: i32 = word.contents.matches(" ").count() as i32;
-                        // we want to identify highly constrained words
-                        // very unscientifically: we want longer words, with fewer spaces.
-                        if empty_squares == 0 {
-                            return -1;
+                loop {
+                    {
+                        let queue = new_arc.lock().unwrap();
+                        if queue.done {
+                            return;
                         }
-                        return 2 * word.contents.len() as i32 - empty_squares;
-                    })
-                    .unwrap();
-                // find valid fills for word;
-                // for each fill:
-                //   are all complete words legit?
-                //     if so, push
+                    }
 
-                let potential_fills = find_fills(to_fill.to_owned());
+                    let candidate = {
+                        let mut queue = new_arc.lock().unwrap();
+                        match queue.take_candidate() {
+                            Some(candidate) => candidate,
+                            None => continue,
+                        }
+                    };
 
-                for potential_fill in potential_fills {
-                    let new_candidate = fill_one_word(&candidate, potential_fill);
+                    let words = parse_words(&candidate);
+                    let to_fill = words
+                        .iter()
+                        .max_by_key(|word| {
+                            let empty_squares: i32 = word.contents.matches(" ").count() as i32;
+                            // we want to identify highly constrained words
+                            // very unscientifically: we want longer words, with fewer spaces.
+                            if empty_squares == 0 {
+                                return -1;
+                            }
+                            return 2 * word.contents.len() as i32 - empty_squares;
+                        })
+                        .unwrap();
+                    // find valid fills for word;
+                    // for each fill:
+                    //   are all complete words legit?
+                    //     if so, push
 
-                    if is_viable(&new_candidate) {
-                        if !new_candidate.contents.contains(" ") {
-                            let mut queue = new_arc.lock().unwrap();
-                            queue.mark_done();
+                    let potential_fills = find_fills(to_fill.clone());
+                    for potential_fill in potential_fills {
+                        let new_candidate = fill_one_word(&candidate, potential_fill);
 
-                            match new_tx.send(new_candidate.clone()) {
-                                Ok(_) => {
-                                    println!("Just sent a result.");
-                                    return;
-                                }
-                                Err(err) => {
-                                    println!("Failed to send a result, error was {}", err);
-                                    return;
+                        if is_viable(&new_candidate) {
+                            if !new_candidate.contents.contains(" ") {
+                                let mut queue = new_arc.lock().unwrap();
+                                queue.mark_done();
+
+                                match new_tx.send(new_candidate.clone()) {
+                                    Ok(_) => {
+                                        println!("Just sent a result.");
+                                        return;
+                                    }
+                                    Err(err) => {
+                                        println!("Failed to send a result, error was {}", err);
+                                        return;
+                                    }
                                 }
                             }
-                        }
 
-                        let mut queue = new_arc.lock().unwrap();
-                        queue.add_candidate(new_candidate);
+                            let mut queue = new_arc.lock().unwrap();
+                            queue.add_candidate(new_candidate);
+                        }
                     }
                 }
-            }
-        }).unwrap();
+            })
+            .unwrap();
     }
 
-    std::thread::spawn(move || {
-        loop {
-            match guard.report().build() {
-                Ok(report) => {
-                    let file = File::create("flamegraph.svg").unwrap();
-                    report.flamegraph(file).unwrap();
-                },
-                Err(_) => {}
-            };
-            std::thread::sleep(std::time::Duration::from_secs(5))
-        }
+    std::thread::spawn(move || loop {
+        match guard.report().build() {
+            Ok(report) => {
+                let file = File::create("flamegraph.svg").unwrap();
+                report.flamegraph(file).unwrap();
+            }
+            Err(_) => {}
+        };
+        std::thread::sleep(std::time::Duration::from_secs(5))
     });
 
     match rx.recv() {
@@ -195,7 +223,6 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
 fn is_viable(candidate: &Crossword) -> bool {
     let mut already_used = HashSet::new();
     for word in parse_words(candidate) {
-
         if word.contents.contains(" ") {
             continue;
         }
@@ -246,14 +273,14 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
     }
 }
 
+// TODO: use RO behavior here
 pub fn find_fills(word: Word) -> Vec<Word> {
-    ALL_WORDS.words(word.contents.clone())
+    ALL_WORDS
+        .words(word.contents.clone())
         .drain(0..)
-        .map(|new_word| {
-            Word {
-                contents: new_word,
-                ..word.clone()
-            }
+        .map(|new_word| Word {
+            contents: new_word,
+            ..word.clone()
         })
         .collect()
 }
@@ -364,6 +391,109 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
     result
 }
 
+fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
+    let mut result = vec![];
+
+    let byte_array = crossword.contents.as_bytes();
+
+    let mut start_row = None;
+    let mut start_col = None;
+    let mut length = 0;
+
+    for row in 0..crossword.height {
+        for col in 0..crossword.width {
+            let current_char = byte_array[row * crossword.width + col] as char;
+            if current_char != '*' {
+                // found a char; is it our first?
+                if start_row == None {
+                    start_row = Some(row);
+                    start_col = Some(col);
+                }
+                length += 1;
+            } else {
+                // If we don't have any data yet, just keep going
+                if start_row == None {
+                    continue;
+                }
+                let new_word = WordBoundary {
+                    start_row: start_row.unwrap(),
+                    start_col: start_col.unwrap(),
+                    length: length,
+                    direction: Direction::Across,
+                };
+                result.push(new_word);
+                length = 0;
+                start_row = None;
+                start_col = None;
+            }
+        }
+        // have to process end of row
+        if length > 0 {
+            let new_word = WordBoundary {
+                start_row: start_row.unwrap(),
+                start_col: start_col.unwrap(),
+                length: length,
+                direction: Direction::Across,
+            };
+            result.push(new_word);
+            length = 0;
+            start_row = None;
+            start_col = None;
+        }
+    }
+
+    for col in 0..crossword.width {
+        for row in 0..crossword.height {
+            let current_char = byte_array[row * crossword.width + col] as char;
+            if current_char != '*' {
+                // found a char; is it our first?
+                if start_row == None {
+                    start_row = Some(row);
+                    start_col = Some(col);
+                }
+                length += 1;
+            } else {
+                if start_row == None {
+                    continue;
+                }
+                let new_word = WordBoundary {
+                    start_row: start_row.unwrap(),
+                    start_col: start_col.unwrap(),
+                    length: length,
+                    direction: Direction::Down,
+                };
+                result.push(new_word);
+                length = 0;
+                start_row = None;
+                start_col = None;
+            }
+        }
+        // have to process end of row
+        if length > 0 {
+            let new_word = WordBoundary {
+                start_row: start_row.unwrap(),
+                start_col: start_col.unwrap(),
+                length: length,
+                direction: Direction::Down,
+            };
+            result.push(new_word);
+            length = 0;
+            start_row = None;
+            start_col = None;
+        }
+    }
+
+    return result;
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct WordBoundary {
+    start_row: usize,
+    start_col: usize,
+    length: usize,
+    direction: Direction,
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Direction {
     Across,
@@ -402,7 +532,6 @@ impl Word {
     }
 }
 
-
 lazy_static! {
     static ref ALL_WORDS: Trie = {
         println!("Building Trie");
@@ -410,7 +539,8 @@ lazy_static! {
 
         let file = File::open("wordlist.json").unwrap();
 
-        let words: Vec<String> = serde_json::from_reader(file).expect("JSON was not well-formatted");
+        let words: Vec<String> =
+            serde_json::from_reader(file).expect("JSON was not well-formatted");
         println!("Done parsing file");
         let result = Trie::build(words);
         println!("Done building Trie in {} seconds", now.elapsed().as_secs());
@@ -421,10 +551,10 @@ lazy_static! {
 #[cfg(test)]
 mod tests {
 
-        use std::time::Instant;
+    
 
-use crate::ALL_WORDS;
-use crate::{Crossword, Direction, Word, fill_crossword, fill_one_word, find_fills, is_viable, parse_words};
+    use crate::{Crossword, CrosswordWordIterator, Direction, Word, fill_crossword, fill_one_word, find_fills, is_viable, parse_words};
+    use crate::{parse_word_boundaries, WordBoundary, ALL_WORDS};
 
     #[test]
     fn it_works() {
@@ -535,6 +665,54 @@ use crate::{Crossword, Direction, Word, fill_crossword, fill_one_word, find_fill
             result[3],
             Word {
                 contents: String::from("adg"),
+                start_col: 0,
+                start_row: 0,
+                length: 3,
+                direction: Direction::Down,
+            }
+        )
+    }
+
+    #[test]
+    fn parse_word_boundaries_works() {
+        let c = Crossword {
+            contents: String::from("abcdefghi"),
+            width: 3,
+            height: 3,
+        };
+        let result = parse_word_boundaries(&c);
+
+        assert_eq!(result.len(), 6);
+        assert_eq!(
+            result[0],
+            WordBoundary {
+                start_col: 0,
+                start_row: 0,
+                length: 3,
+                direction: Direction::Across
+            }
+        );
+        assert_eq!(
+            result[1],
+            WordBoundary {
+                start_col: 0,
+                start_row: 1,
+                length: 3,
+                direction: Direction::Across
+            }
+        );
+        assert_eq!(
+            result[2],
+            WordBoundary {
+                start_col: 0,
+                start_row: 2,
+                length: 3,
+                direction: Direction::Across
+            }
+        );
+        assert_eq!(
+            result[3],
+            WordBoundary {
                 start_col: 0,
                 start_row: 0,
                 length: 3,
@@ -684,4 +862,37 @@ use crate::{Crossword, Direction, Word, fill_crossword, fill_one_word, find_fill
     //     println!("Filled in {} seconds.", now.elapsed().as_secs());
     //     println!("{}", filled_puz);
     // }
+
+    #[test]
+    fn crossword_iterator_works() {
+        let input = Crossword::new(String::from("ABCDEFGHI")).unwrap();
+        let word_boundary = WordBoundary{
+            start_col: 0, start_row: 0, direction: Direction::Across, length: 3,
+        };
+
+        let t = CrosswordWordIterator{
+            crossword: &input,
+            word_boundary: &word_boundary,
+            index: 0
+        };
+
+        let s: String = t.collect();
+
+        assert_eq!(String::from("ABC"), s);
+
+        let word_boundary = WordBoundary{
+            start_col: 0, start_row: 0, direction: Direction::Down, length: 3,
+        };
+
+                let t = CrosswordWordIterator{
+            crossword: &input,
+            word_boundary: &word_boundary,
+            index: 0
+        };
+
+        let s: String = t.collect();
+
+        assert_eq!(String::from("ADG"), s);
+
+    }
 }
