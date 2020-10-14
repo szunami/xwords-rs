@@ -130,8 +130,6 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     // want to spawn multiple threads, have each of them perform the below
     let guard = pprof::ProfilerGuard::new(100).unwrap();
 
-    // let word_boundaries = parse_word_boundaries(&crossword);
-
     for thread_index in 0..1 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
@@ -156,7 +154,6 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
                             None => continue,
                         }
                     };
-                    // let to_fill = choose_word(&candidate, &word_boundaries);
 
                     let words = parse_words(&candidate);
                     let to_fill = words
@@ -222,11 +219,6 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
         Err(_) => Err(String::from("Failed to receive")),
     }
 }
-
-// fn choose_word(crossword: &Crossword, word_boundaries: &Vec<WordBoundary>) -> &WordBoundary {
-//     todo!();
-//     // return &word_boundaries.first().unwrap();
-// }
 
 fn is_viable(candidate: &Crossword) -> bool {
     let mut already_used = HashSet::new();
