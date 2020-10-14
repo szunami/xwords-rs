@@ -130,7 +130,7 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     // want to spawn multiple threads, have each of them perform the below
     let guard = pprof::ProfilerGuard::new(100).unwrap();
 
-    let word_boundaries = parse_word_boundaries(&crossword);
+    // let word_boundaries = parse_word_boundaries(&crossword);
 
     for thread_index in 0..1 {
         let new_arc = Arc::clone(&candidates);
@@ -559,7 +559,7 @@ lazy_static! {
 #[cfg(test)]
 mod tests {
 
-    use std::time::Instant;
+    
 
     use crate::{Crossword, CrosswordWordIterator, Direction, Word, fill_crossword, fill_one_word, find_fills, is_viable, parse_words};
     use crate::{parse_word_boundaries, WordBoundary, ALL_WORDS};
