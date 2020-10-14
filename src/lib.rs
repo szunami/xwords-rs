@@ -1,12 +1,12 @@
 use crate::trie::Trie;
 
-use std::{sync::Arc, time::Instant};
 use std::sync::{mpsc, Mutex};
 use std::{
     collections::{HashSet, VecDeque},
     fmt,
     fs::File,
 };
+use std::{sync::Arc, time::Instant};
 
 pub mod trie;
 
@@ -105,89 +105,86 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
 
-
         std::thread::Builder::new()
             .name(String::from("thread"))
             .spawn(move || {
-            println!("Hello from thread {}", thread_index);
+                println!("Hello from thread {}", thread_index);
 
-            loop {
-
-                {
-                    let queue = new_arc.lock().unwrap();
-                    if queue.done {
-                        return;
+                loop {
+                    {
+                        let queue = new_arc.lock().unwrap();
+                        if queue.done {
+                            return;
+                        }
                     }
-                }
 
-                let candidate = {
-                    let mut queue = new_arc.lock().unwrap();
-                    match queue.take_candidate() {
-                        Some(candidate) => candidate,
-                        None => continue,
-                    }
-                };
-                let to_fill = choose_word(&candidate, &word_boundaries);
+                    let candidate = {
+                        let mut queue = new_arc.lock().unwrap();
+                        match queue.take_candidate() {
+                            Some(candidate) => candidate,
+                            None => continue,
+                        }
+                    };
+                    let to_fill = choose_word(&candidate, &word_boundaries);
 
-                // let words = parse_words(&candidate);
-                // let to_fill = words
-                //     .iter()
-                //     .max_by_key(|word| {
-                //         let empty_squares: i32 = word.contents.matches(" ").count() as i32;
-                //         // we want to identify highly constrained words
-                //         // very unscientifically: we want longer words, with fewer spaces.
-                //         if empty_squares == 0 {
-                //             return -1;
-                //         }
-                //         return 2 * word.contents.len() as i32 - empty_squares;
-                //     })
-                //     .unwrap();
-                // find valid fills for word;
-                // for each fill:
-                //   are all complete words legit?
-                //     if so, push
+                    // let words = parse_words(&candidate);
+                    // let to_fill = words
+                    //     .iter()
+                    //     .max_by_key(|word| {
+                    //         let empty_squares: i32 = word.contents.matches(" ").count() as i32;
+                    //         // we want to identify highly constrained words
+                    //         // very unscientifically: we want longer words, with fewer spaces.
+                    //         if empty_squares == 0 {
+                    //             return -1;
+                    //         }
+                    //         return 2 * word.contents.len() as i32 - empty_squares;
+                    //     })
+                    //     .unwrap();
+                    // find valid fills for word;
+                    // for each fill:
+                    //   are all complete words legit?
+                    //     if so, push
 
-                let potential_fills = find_fills(&candidate, to_fill);
+                    let potential_fills = find_fills(&candidate, to_fill);
 
-                for potential_fill in potential_fills {
-                    let new_candidate = fill_one_word(&candidate, potential_fill);
+                    for potential_fill in potential_fills {
+                        let new_candidate = fill_one_word(&candidate, potential_fill);
 
-                    if is_viable(&new_candidate) {
-                        if !new_candidate.contents.contains(" ") {
-                            let mut queue = new_arc.lock().unwrap();
-                            queue.mark_done();
+                        if is_viable(&new_candidate) {
+                            if !new_candidate.contents.contains(" ") {
+                                let mut queue = new_arc.lock().unwrap();
+                                queue.mark_done();
 
-                            match new_tx.send(new_candidate.clone()) {
-                                Ok(_) => {
-                                    println!("Just sent a result.");
-                                    return;
-                                }
-                                Err(err) => {
-                                    println!("Failed to send a result, error was {}", err);
-                                    return;
+                                match new_tx.send(new_candidate.clone()) {
+                                    Ok(_) => {
+                                        println!("Just sent a result.");
+                                        return;
+                                    }
+                                    Err(err) => {
+                                        println!("Failed to send a result, error was {}", err);
+                                        return;
+                                    }
                                 }
                             }
-                        }
 
-                        let mut queue = new_arc.lock().unwrap();
-                        queue.add_candidate(new_candidate);
+                            let mut queue = new_arc.lock().unwrap();
+                            queue.add_candidate(new_candidate);
+                        }
                     }
                 }
-            }
-        }).unwrap();
+            })
+            .unwrap();
     }
 
-    std::thread::spawn(move || {
-        loop {
-            match guard.report().build() {
-                Ok(report) => {
-                    let file = File::create("flamegraph.svg").unwrap();
-                    report.flamegraph(file).unwrap();
-                },
-                Err(_) => {}
-            };
-            std::thread::sleep(std::time::Duration::from_secs(5))
-        }
+    std::thread::spawn(move || loop {
+        match guard.report().build() {
+            Ok(report) => {
+                let file = File::create("flamegraph.svg").unwrap();
+                report.flamegraph(file).unwrap();
+            }
+            Err(_) => {}
+        };
+        std::thread::sleep(std::time::Duration::from_secs(5))
     });
 
     match rx.recv() {
@@ -203,7 +200,6 @@ fn choose_word(crossword: &Crossword, word_boundaries: &Vec<WordBoundary>) -> &W
 fn is_viable(candidate: &Crossword) -> bool {
     let mut already_used = HashSet::new();
     for word in parse_words(candidate) {
-
         if word.contents.contains(" ") {
             continue;
         }
@@ -254,14 +250,14 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
     }
 }
 
-pub fn find_fills(crossword: &Crossword, word_boundary: WordBoundary) -> Vec<Word> {
-    ALL_WORDS.words(crossword, word_boundary)
+// TODO: use RO behavior here
+pub fn find_fills(word: Word) -> Vec<Word> {
+    ALL_WORDS
+        .words(word.contents.clone())
         .drain(0..)
-        .map(|new_word| {
-            Word {
-                contents: new_word,
-                ..word.clone()
-            }
+        .map(|new_word| Word {
+            contents: new_word,
+            ..word.clone()
         })
         .collect()
 }
@@ -513,7 +509,6 @@ impl Word {
     }
 }
 
-
 lazy_static! {
     static ref ALL_WORDS: Trie = {
         println!("Building Trie");
@@ -521,7 +516,8 @@ lazy_static! {
 
         let file = File::open("wordlist.json").unwrap();
 
-        let words: Vec<String> = serde_json::from_reader(file).expect("JSON was not well-formatted");
+        let words: Vec<String> =
+            serde_json::from_reader(file).expect("JSON was not well-formatted");
         println!("Done parsing file");
         let result = Trie::build(words);
         println!("Done building Trie in {} seconds", now.elapsed().as_secs());
@@ -532,10 +528,13 @@ lazy_static! {
 #[cfg(test)]
 mod tests {
 
-        use std::time::Instant;
+    use std::time::Instant;
 
-use crate::{ALL_WORDS, WordBoundary, parse_word_boundaries};
-use crate::{Crossword, Direction, Word, fill_crossword, fill_one_word, find_fills, is_viable, parse_words};
+    use crate::{
+        fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword, Direction,
+        Word,
+    };
+    use crate::{parse_word_boundaries, WordBoundary, ALL_WORDS};
 
     #[test]
     fn it_works() {
