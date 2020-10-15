@@ -130,7 +130,7 @@ impl TrieNode {
         }
     }
 
-    fn is_word_iter(&self, chars: CrosswordWordIterator) -> bool {
+    fn is_word_iter(&self, mut chars: CrosswordWordIterator) -> bool {
 
         match chars.next() {
             Some(c) => {
@@ -192,7 +192,7 @@ impl  Trie {
         self.root.is_word(pattern)
     }
 
-    pub fn is_word_iter(&self, chars: dyn Iterator<char>) -> bool {
+    pub fn is_word_iter(&self, chars: CrosswordWordIterator) -> bool {
         self.root.is_word_iter(chars)
     }
 }

@@ -34,7 +34,7 @@ impl Crossword {
 }
 
 #[derive(Clone, Debug)]
-struct CrosswordWordIterator<'s> {
+pub struct CrosswordWordIterator<'s> {
     crossword: &'s Crossword,
     word_boundary: &'s WordBoundary,
     index: usize,
@@ -136,7 +136,6 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     // parse crossword into partially filled words
     // fill a word
 
-    let word_boundaries = parse_word_boundaries(&crossword);
 
     let crossword_fill_state = {
         let mut temp_state = CrosswordFillState {
@@ -156,6 +155,7 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     for thread_index in 0..1 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
+        let word_boundaries = parse_word_boundaries(&crossword);
 
         std::thread::Builder::new()
             .name(String::from("thread"))
@@ -257,7 +257,7 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>) -> bool
         }
         already_used.insert(iter.clone());
 
-        if !ALL_WORDS.is_word_iter(&word.contents) {
+        if !ALL_WORDS.is_word_iter(iter) {
             return false;
         }
     }
@@ -861,23 +861,27 @@ use crate::{Crossword, CrosswordWordIterator, Direction, Word, fill_crossword, f
 
     #[test]
     fn is_viable_works() {
-        assert!(is_viable(&Crossword {
+        let crossword = Crossword {
             contents: String::from("         "),
             width: 3,
             height: 3,
-        }));
+        };
+
+        let word_boundaries= parse_word_boundaries(&crossword);
+
+        assert!(is_viable(&crossword, &word_boundaries));
 
         assert!(!is_viable(&Crossword {
             contents: String::from("ABCDEFGH "),
             width: 3,
             height: 3,
-        }));
+        }, &word_boundaries));
 
         assert!(!is_viable(&Crossword {
             contents: String::from("ABCB  C  "),
             width: 3,
             height: 3,
-        }))
+        }, &word_boundaries))
     }
 
     #[test]
