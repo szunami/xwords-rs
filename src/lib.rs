@@ -903,6 +903,16 @@ mod tests {
     // #[test]
     fn puz_2020_10_12_works() {
         let guard = pprof::ProfilerGuard::new(100).unwrap();
+        std::thread::spawn(move || loop {
+            match guard.report().build() {
+                Ok(report) => {
+                    let file = File::create("flamegraph.svg").unwrap();
+                    report.flamegraph(file).unwrap();
+                }
+                Err(_) => {}
+            };
+            std::thread::sleep(std::time::Duration::from_secs(5))
+        });
 
         ALL_WORDS.is_word("asdf");
 
@@ -914,16 +924,7 @@ mod tests {
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
 
-        std::thread::spawn(move || loop {
-            match guard.report().build() {
-                Ok(report) => {
-                    let file = File::create("flamegraph.svg").unwrap();
-                    report.flamegraph(file).unwrap();
-                }
-                Err(_) => {}
-            };
-            std::thread::sleep(std::time::Duration::from_secs(5))
-        });
+
     }
 
     #[test]
