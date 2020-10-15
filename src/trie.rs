@@ -1,6 +1,8 @@
 
 use std::{collections::HashMap, fmt};
 
+use crate::CrosswordWordIterator;
+
 #[derive(Clone)]
 pub struct TrieNode {
     contents: Option<char>,
@@ -127,6 +129,24 @@ impl TrieNode {
             None => false,
         }
     }
+
+    fn is_word_iter(&self, chars: CrosswordWordIterator) -> bool {
+
+        match chars.next() {
+            Some(c) => {
+                match self.children.get(&c) {
+                    Some(child) => {
+                        return child.is_word_iter(chars);
+                    }
+                    None => false,
+                }
+            }
+            None => {
+                return self.is_terminal;
+            }
+        }
+
+    }
 }
 
 impl fmt::Display for TrieNode {
@@ -170,6 +190,10 @@ impl  Trie {
 
     pub fn is_word(&self, pattern: &str) -> bool {
         self.root.is_word(pattern)
+    }
+
+    pub fn is_word_iter(&self, chars: dyn Iterator<char>) -> bool {
+        self.root.is_word_iter(chars)
     }
 }
 

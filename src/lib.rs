@@ -136,6 +136,8 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     // parse crossword into partially filled words
     // fill a word
 
+    let word_boundaries = parse_word_boundaries(&crossword);
+
     let crossword_fill_state = {
         let mut temp_state = CrosswordFillState {
             processed_candidates: HashSet::new(),
@@ -198,7 +200,7 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
                     for potential_fill in potential_fills {
                         let new_candidate = fill_one_word(&candidate, potential_fill);
 
-                        if is_viable(&new_candidate) {
+                        if is_viable(&new_candidate, &word_boundaries) {
                             if !new_candidate.contents.contains(" ") {
                                 let mut queue = new_arc.lock().unwrap();
                                 queue.mark_done();
@@ -241,22 +243,39 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     }
 }
 
-fn is_viable(candidate: &Crossword) -> bool {
+fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>) -> bool {
     let mut already_used = HashSet::new();
-    for word in parse_words(candidate) {
-        if word.contents.contains(" ") {
+
+    for word_boundary in word_boundaries {
+        let iter = CrosswordWordIterator{crossword: candidate, word_boundary: word_boundary, index: 0};
+        if iter.clone().any(|c| c == ' ') {
             continue;
         }
 
-        if already_used.contains(&word.contents) {
+        if already_used.contains(&iter) {
             return false;
         }
-        already_used.insert(word.contents.clone());
+        already_used.insert(iter.clone());
 
-        if !ALL_WORDS.is_word(&word.contents) {
+        if !ALL_WORDS.is_word_iter(&word.contents) {
             return false;
         }
     }
+
+    // for word in parse_words(candidate) {
+    //     if word.contents.contains(" ") {
+    //         continue;
+    //     }
+
+    //     if already_used.contains(&word.contents) {
+    //         return false;
+    //     }
+    //     already_used.insert(word.contents.clone());
+
+    //     if !ALL_WORDS.is_word(&word.contents) {
+    //         return false;
+    //     }
+    // }
     true
 }
 
