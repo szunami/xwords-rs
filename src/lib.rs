@@ -1,10 +1,13 @@
 use crate::trie::Trie;
 
-use std::{hash::Hash, sync::{mpsc, Mutex}};
 use std::{
     collections::{HashSet, VecDeque},
     fmt,
     fs::File,
+};
+use std::{
+    hash::Hash,
+    sync::{mpsc, Mutex},
 };
 use std::{sync::Arc, time::Instant};
 
@@ -50,16 +53,19 @@ impl<'s> Iterator for CrosswordWordIterator<'s> {
 
         match self.word_boundary.direction {
             Direction::Across => {
-                let char_index = self.word_boundary.start_row * self.crossword.width + self.word_boundary.start_col + self.index;
+                let char_index = self.word_boundary.start_row * self.crossword.width
+                    + self.word_boundary.start_col
+                    + self.index;
                 let result = self.crossword.contents.as_bytes()[char_index] as char;
                 self.index += 1;
-                return Some(result)
+                return Some(result);
             }
             Direction::Down => {
-                let char_index = (self.word_boundary.start_row + self.index) * self.crossword.width + self.word_boundary.start_col;
+                let char_index = (self.word_boundary.start_row + self.index) * self.crossword.width
+                    + self.word_boundary.start_col;
                 let result = self.crossword.contents.as_bytes()[char_index] as char;
                 self.index += 1;
-                return Some(result)
+                return Some(result);
             }
         }
     }
@@ -136,7 +142,6 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     // parse crossword into partially filled words
     // fill a word
 
-
     let crossword_fill_state = {
         let mut temp_state = CrosswordFillState {
             processed_candidates: HashSet::new(),
@@ -150,7 +155,6 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     let candidates = Arc::new(Mutex::new(crossword_fill_state));
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
-    let guard = pprof::ProfilerGuard::new(100).unwrap();
 
     for thread_index in 0..1 {
         let new_arc = Arc::clone(&candidates);
@@ -226,17 +230,6 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
             .unwrap();
     }
 
-    std::thread::spawn(move || loop {
-        match guard.report().build() {
-            Ok(report) => {
-                let file = File::create("flamegraph.svg").unwrap();
-                report.flamegraph(file).unwrap();
-            }
-            Err(_) => {}
-        };
-        std::thread::sleep(std::time::Duration::from_secs(5))
-    });
-
     match rx.recv() {
         Ok(result) => Ok(result),
         Err(_) => Err(String::from("Failed to receive")),
@@ -247,7 +240,11 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>) -> bool
     let mut already_used = HashSet::new();
 
     for word_boundary in word_boundaries {
-        let iter = CrosswordWordIterator{crossword: candidate, word_boundary: word_boundary, index: 0};
+        let iter = CrosswordWordIterator {
+            crossword: candidate,
+            word_boundary: word_boundary,
+            index: 0,
+        };
         if iter.clone().any(|c| c == ' ') {
             continue;
         }
@@ -591,11 +588,12 @@ lazy_static! {
 #[cfg(test)]
 mod tests {
 
-    
+    use std::{collections::HashSet, fs::File, time::Instant};
 
-        use std::collections::HashSet;
-
-use crate::{Crossword, CrosswordWordIterator, Direction, Word, fill_crossword, fill_one_word, find_fills, is_viable, parse_words};
+    use crate::{
+        fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword,
+        CrosswordWordIterator, Direction, Word,
+    };
     use crate::{parse_word_boundaries, WordBoundary, ALL_WORDS};
 
     #[test]
@@ -867,21 +865,27 @@ use crate::{Crossword, CrosswordWordIterator, Direction, Word, fill_crossword, f
             height: 3,
         };
 
-        let word_boundaries= parse_word_boundaries(&crossword);
+        let word_boundaries = parse_word_boundaries(&crossword);
 
         assert!(is_viable(&crossword, &word_boundaries));
 
-        assert!(!is_viable(&Crossword {
-            contents: String::from("ABCDEFGH "),
-            width: 3,
-            height: 3,
-        }, &word_boundaries));
+        assert!(!is_viable(
+            &Crossword {
+                contents: String::from("ABCDEFGH "),
+                width: 3,
+                height: 3,
+            },
+            &word_boundaries
+        ));
 
-        assert!(!is_viable(&Crossword {
-            contents: String::from("ABCB  C  "),
-            width: 3,
-            height: 3,
-        }, &word_boundaries))
+        assert!(!is_viable(
+            &Crossword {
+                contents: String::from("ABCB  C  "),
+                width: 3,
+                height: 3,
+            },
+            &word_boundaries
+        ))
     }
 
     #[test]
@@ -897,43 +901,62 @@ use crate::{Crossword, CrosswordWordIterator, Direction, Word, fill_crossword, f
     }
 
     // #[test]
-    // fn puz_2020_10_12_works() {
-    //     ALL_WORDS.is_word("asdf");
+    fn puz_2020_10_12_works() {
+        let guard = pprof::ProfilerGuard::new(100).unwrap();
 
-    //     let real_puz = Crossword::new(String::from("    *    *         *    *              *        *   *   *   **    *              *     ***     *    *       *       *       *    *     ***     *              *    **   *   *   *        *              *    *         *    *    ")).unwrap();
-    //     println!("{}", real_puz);
+        ALL_WORDS.is_word("asdf");
 
-    //     let now = Instant::now();
-    //     let filled_puz = fill_crossword(&real_puz).unwrap();
-    //     println!("Filled in {} seconds.", now.elapsed().as_secs());
-    //     println!("{}", filled_puz);
-    // }
+        let real_puz = Crossword::new(String::from("    *    *         *    *              *        *   *   *   **    *              *     ***     *    *       *       *       *    *     ***     *              *    **   *   *   *        *              *    *         *    *    ")).unwrap();
+        println!("{}", real_puz);
+
+        let now = Instant::now();
+        let filled_puz = fill_crossword(&real_puz).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
+
+        std::thread::spawn(move || loop {
+            match guard.report().build() {
+                Ok(report) => {
+                    let file = File::create("flamegraph.svg").unwrap();
+                    report.flamegraph(file).unwrap();
+                }
+                Err(_) => {}
+            };
+            std::thread::sleep(std::time::Duration::from_secs(5))
+        });
+    }
 
     #[test]
     fn crossword_iterator_works() {
         let input = Crossword::new(String::from("ABCDEFGHI")).unwrap();
-        let word_boundary = WordBoundary{
-            start_col: 0, start_row: 0, direction: Direction::Across, length: 3,
+        let word_boundary = WordBoundary {
+            start_col: 0,
+            start_row: 0,
+            direction: Direction::Across,
+            length: 3,
         };
 
-        let t = CrosswordWordIterator{
+        let t = CrosswordWordIterator {
             crossword: &input,
             word_boundary: &word_boundary,
-            index: 0
+            index: 0,
         };
 
         let s: String = t.collect();
 
         assert_eq!(String::from("ABC"), s);
 
-        let word_boundary = WordBoundary{
-            start_col: 0, start_row: 0, direction: Direction::Down, length: 3,
+        let word_boundary = WordBoundary {
+            start_col: 0,
+            start_row: 0,
+            direction: Direction::Down,
+            length: 3,
         };
 
-        let t = CrosswordWordIterator{
+        let t = CrosswordWordIterator {
             crossword: &input,
             word_boundary: &word_boundary,
-            index: 0
+            index: 0,
         };
 
         let s: String = t.collect();
@@ -942,50 +965,62 @@ use crate::{Crossword, CrosswordWordIterator, Direction, Word, fill_crossword, f
     }
 
     #[test]
-    fn crossword_iterator_eq_works() { 
+    fn crossword_iterator_eq_works() {
         let input = Crossword::new(String::from("ABCB  C  ")).unwrap();
-        let a = WordBoundary{
-            start_col: 0, start_row: 0, direction: Direction::Across, length: 3,
+        let a = WordBoundary {
+            start_col: 0,
+            start_row: 0,
+            direction: Direction::Across,
+            length: 3,
         };
-        let b = WordBoundary{
-            start_col: 0, start_row: 0, direction: Direction::Down, length: 3,
+        let b = WordBoundary {
+            start_col: 0,
+            start_row: 0,
+            direction: Direction::Down,
+            length: 3,
         };
 
-        let a_iter = CrosswordWordIterator{
+        let a_iter = CrosswordWordIterator {
             crossword: &input,
             word_boundary: &a,
-            index: 0
+            index: 0,
         };
 
-        let b_iter = CrosswordWordIterator{
+        let b_iter = CrosswordWordIterator {
             crossword: &input,
             word_boundary: &b,
-            index: 0
+            index: 0,
         };
 
         assert_eq!(a_iter, b_iter);
     }
 
     #[test]
-    fn crossword_iterator_hash_works() { 
+    fn crossword_iterator_hash_works() {
         let input = Crossword::new(String::from("ABCB  C  ")).unwrap();
-        let a = WordBoundary{
-            start_col: 0, start_row: 0, direction: Direction::Across, length: 3,
+        let a = WordBoundary {
+            start_col: 0,
+            start_row: 0,
+            direction: Direction::Across,
+            length: 3,
         };
-        let b = WordBoundary{
-            start_col: 0, start_row: 0, direction: Direction::Down, length: 3,
+        let b = WordBoundary {
+            start_col: 0,
+            start_row: 0,
+            direction: Direction::Down,
+            length: 3,
         };
 
-        let a_iter = CrosswordWordIterator{
+        let a_iter = CrosswordWordIterator {
             crossword: &input,
             word_boundary: &a,
-            index: 0
+            index: 0,
         };
 
-        let b_iter = CrosswordWordIterator{
+        let b_iter = CrosswordWordIterator {
             crossword: &input,
             word_boundary: &b,
-            index: 0
+            index: 0,
         };
 
         let mut set = HashSet::new();
