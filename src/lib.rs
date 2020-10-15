@@ -33,7 +33,7 @@ impl Crossword {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct CrosswordWordIterator<'s> {
     crossword: &'s Crossword,
     word_boundary: &'s WordBoundary,
@@ -574,7 +574,9 @@ mod tests {
 
     
 
-    use crate::{Crossword, CrosswordWordIterator, Direction, Word, fill_crossword, fill_one_word, find_fills, is_viable, parse_words};
+        use std::collections::HashSet;
+
+use crate::{Crossword, CrosswordWordIterator, Direction, Word, fill_crossword, fill_one_word, find_fills, is_viable, parse_words};
     use crate::{parse_word_boundaries, WordBoundary, ALL_WORDS};
 
     #[test]
@@ -905,7 +907,7 @@ mod tests {
             start_col: 0, start_row: 0, direction: Direction::Down, length: 3,
         };
 
-                let t = CrosswordWordIterator{
+        let t = CrosswordWordIterator{
             crossword: &input,
             word_boundary: &word_boundary,
             index: 0
@@ -914,6 +916,59 @@ mod tests {
         let s: String = t.collect();
 
         assert_eq!(String::from("ADG"), s);
+    }
 
+    #[test]
+    fn crossword_iterator_eq_works() { 
+        let input = Crossword::new(String::from("ABCB  C  ")).unwrap();
+        let a = WordBoundary{
+            start_col: 0, start_row: 0, direction: Direction::Across, length: 3,
+        };
+        let b = WordBoundary{
+            start_col: 0, start_row: 0, direction: Direction::Down, length: 3,
+        };
+
+        let a_iter = CrosswordWordIterator{
+            crossword: &input,
+            word_boundary: &a,
+            index: 0
+        };
+
+        let b_iter = CrosswordWordIterator{
+            crossword: &input,
+            word_boundary: &b,
+            index: 0
+        };
+
+        assert_eq!(a_iter, b_iter);
+    }
+
+    #[test]
+    fn crossword_iterator_hash_works() { 
+        let input = Crossword::new(String::from("ABCB  C  ")).unwrap();
+        let a = WordBoundary{
+            start_col: 0, start_row: 0, direction: Direction::Across, length: 3,
+        };
+        let b = WordBoundary{
+            start_col: 0, start_row: 0, direction: Direction::Down, length: 3,
+        };
+
+        let a_iter = CrosswordWordIterator{
+            crossword: &input,
+            word_boundary: &a,
+            index: 0
+        };
+
+        let b_iter = CrosswordWordIterator{
+            crossword: &input,
+            word_boundary: &b,
+            index: 0
+        };
+
+        let mut set = HashSet::new();
+
+        set.insert(a_iter);
+
+        assert!(set.contains(&b_iter));
     }
 }
