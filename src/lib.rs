@@ -883,7 +883,7 @@ mod tests {
         println!("{}", result.unwrap());
     }
 
-    #[test]
+    // #[test]
     fn puz_2020_10_12_works() {
         let guard = pprof::ProfilerGuard::new(100).unwrap();
         std::thread::spawn(move || loop {
