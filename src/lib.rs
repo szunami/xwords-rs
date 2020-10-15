@@ -1,6 +1,6 @@
 use crate::trie::Trie;
 
-use std::sync::{mpsc, Mutex};
+use std::{hash::Hash, sync::{mpsc, Mutex}};
 use std::{
     collections::{HashSet, VecDeque},
     fmt,
@@ -33,6 +33,7 @@ impl Crossword {
     }
 }
 
+#[derive(Clone)]
 struct CrosswordWordIterator<'s> {
     crossword: &'s Crossword,
     word_boundary: &'s WordBoundary,
@@ -63,6 +64,26 @@ impl<'s> Iterator for CrosswordWordIterator<'s> {
         }
     }
 }
+
+impl Hash for CrosswordWordIterator<'_> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        for c in (*self).clone() {
+            c.hash(state);
+        }
+    }
+}
+
+impl PartialEq for CrosswordWordIterator<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        if self.word_boundary.length != other.word_boundary.length {
+            return false;
+        }
+
+        self.clone().zip(other.clone()).all(|(a, b)| a == b)
+    }
+}
+
+impl Eq for CrosswordWordIterator<'_> {}
 
 impl fmt::Display for Crossword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
