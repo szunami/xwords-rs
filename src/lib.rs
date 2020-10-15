@@ -156,31 +156,29 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..1 {
+    for thread_index in 0..32    {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
         let word_boundaries = parse_word_boundaries(&crossword);
 
         std::thread::Builder::new()
-            .name(String::from("thread"))
+            .name(format!("{}", thread_index))
             .spawn(move || {
                 println!("Hello from thread {}", thread_index);
 
                 loop {
-                    {
-                        let queue = new_arc.lock().unwrap();
+                    let candidate = {
+                        let mut queue = new_arc.lock().unwrap();
                         if queue.done {
                             return;
                         }
-                    }
-
-                    let candidate = {
-                        let mut queue = new_arc.lock().unwrap();
                         match queue.take_candidate() {
                             Some(candidate) => candidate,
                             None => continue,
                         }
                     };
+
+                    // println!("Thread {} just got a candidate", thread_index);
 
                     let words = parse_words(&candidate);
                     let to_fill = words
@@ -258,21 +256,6 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>) -> bool
             return false;
         }
     }
-
-    // for word in parse_words(candidate) {
-    //     if word.contents.contains(" ") {
-    //         continue;
-    //     }
-
-    //     if already_used.contains(&word.contents) {
-    //         return false;
-    //     }
-    //     already_used.insert(word.contents.clone());
-
-    //     if !ALL_WORDS.is_word(&word.contents) {
-    //         return false;
-    //     }
-    // }
     true
 }
 
@@ -900,7 +883,7 @@ mod tests {
         println!("{}", result.unwrap());
     }
 
-    // #[test]
+    #[test]
     fn puz_2020_10_12_works() {
         let guard = pprof::ProfilerGuard::new(100).unwrap();
         std::thread::spawn(move || loop {
