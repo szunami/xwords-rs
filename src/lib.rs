@@ -138,7 +138,7 @@ impl CrosswordFillState {
     }
 }
 
-pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
+pub fn fill_crossword(crossword: &Crossword, trie: &'static Trie) -> Result<Crossword, String> {
     // parse crossword into partially filled words
     // fill a word
 
@@ -198,11 +198,11 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
                     //   are all complete words legit?
                     //     if so, push
 
-                    let potential_fills = find_fills(to_fill.clone());
+                    let potential_fills = find_fills(to_fill.clone(), trie);
                     for potential_fill in potential_fills {
                         let new_candidate = fill_one_word(&candidate, potential_fill);
 
-                        if is_viable(&new_candidate, &word_boundaries) {
+                        if is_viable(&new_candidate, &word_boundaries, trie) {
                             if !new_candidate.contents.contains(" ") {
                                 let mut queue = new_arc.lock().unwrap();
                                 queue.mark_done();
@@ -234,7 +234,7 @@ pub fn fill_crossword(crossword: &Crossword) -> Result<Crossword, String> {
     }
 }
 
-fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>) -> bool {
+fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &Trie) -> bool {
     let mut already_used = HashSet::new();
 
     for word_boundary in word_boundaries {
@@ -252,7 +252,7 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>) -> bool
         }
         already_used.insert(iter.clone());
 
-        if !ALL_WORDS.is_word_iter(iter) {
+        if !trie.is_word_iter(iter) {
             return false;
         }
     }
@@ -294,8 +294,8 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
 }
 
 // TODO: use RO behavior here
-pub fn find_fills(word: Word) -> Vec<Word> {
-    ALL_WORDS
+pub fn find_fills(word: Word, trie: &Trie) -> Vec<Word> {
+    trie
         .words(word.contents.clone())
         .drain(0..)
         .map(|new_word| Word {
@@ -571,13 +571,14 @@ lazy_static! {
 #[cfg(test)]
 mod tests {
 
-    use std::{collections::HashSet, fs::File, time::Instant};
+    use crate::ALL_WORDS;
+use std::{collections::HashSet, fs::File, time::Instant};
 
     use crate::{
         fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword,
         CrosswordWordIterator, Direction, Word,
     };
-    use crate::{parse_word_boundaries, WordBoundary, ALL_WORDS};
+    use crate::{parse_word_boundaries, WordBoundary};
 
     #[test]
     fn it_works() {
@@ -791,6 +792,8 @@ mod tests {
 
     #[test]
     fn find_fill_works() {
+        let trie = &ALL_WORDS;
+
         let input = Word {
             contents: String::from("   "),
             length: 3,
@@ -798,7 +801,7 @@ mod tests {
             start_col: 0,
             direction: Direction::Across,
         };
-        assert!(find_fills(input.clone()).contains(&Word {
+        assert!(find_fills(input.clone(), trie).contains(&Word {
             contents: String::from("CAT"),
             ..input.clone()
         }));
@@ -810,7 +813,7 @@ mod tests {
             start_col: 0,
             direction: Direction::Across,
         };
-        assert!(find_fills(input.clone()).contains(&Word {
+        assert!(find_fills(input.clone(), trie).contains(&Word {
             contents: String::from("CAT"),
             ..input.clone()
         }));
@@ -822,7 +825,7 @@ mod tests {
             start_col: 0,
             direction: Direction::Across,
         };
-        assert!(find_fills(input.clone()).contains(&Word {
+        assert!(find_fills(input.clone(), trie).contains(&Word {
             contents: String::from("CAT"),
             ..input.clone()
         }));
@@ -834,7 +837,7 @@ mod tests {
             start_col: 0,
             direction: Direction::Across,
         };
-        assert!(find_fills(input.clone()).contains(&Word {
+        assert!(find_fills(input.clone(), &trie).contains(&Word {
             contents: String::from("CAT"),
             ..input.clone()
         }));
@@ -842,6 +845,8 @@ mod tests {
 
     #[test]
     fn is_viable_works() {
+        let trie = &ALL_WORDS;
+
         let crossword = Crossword {
             contents: String::from("         "),
             width: 3,
@@ -850,7 +855,7 @@ mod tests {
 
         let word_boundaries = parse_word_boundaries(&crossword);
 
-        assert!(is_viable(&crossword, &word_boundaries));
+        assert!(is_viable(&crossword, &word_boundaries, &trie));
 
         assert!(!is_viable(
             &Crossword {
@@ -858,7 +863,8 @@ mod tests {
                 width: 3,
                 height: 3,
             },
-            &word_boundaries
+            &word_boundaries,
+            &trie
         ));
 
         assert!(!is_viable(
@@ -867,16 +873,18 @@ mod tests {
                 width: 3,
                 height: 3,
             },
-            &word_boundaries
+            &word_boundaries,
+            &trie
         ))
     }
 
     #[test]
     fn fill_crossword_works() {
-        ALL_WORDS.is_word("");
+        let trie = &ALL_WORDS;
+
         let input = Crossword::new(String::from("                ")).unwrap();
 
-        let result = fill_crossword(&input);
+        let result = fill_crossword(&input, &trie);
 
         assert!(result.is_ok());
 
@@ -885,6 +893,8 @@ mod tests {
 
     // #[test]
     fn puz_2020_10_12_works() {
+        let trie = &ALL_WORDS;
+
         let guard = pprof::ProfilerGuard::new(100).unwrap();
         std::thread::spawn(move || loop {
             match guard.report().build() {
@@ -897,13 +907,11 @@ mod tests {
             std::thread::sleep(std::time::Duration::from_secs(5))
         });
 
-        ALL_WORDS.is_word("asdf");
-
         let real_puz = Crossword::new(String::from("    *    *         *    *              *        *   *   *   **    *              *     ***     *    *       *       *       *    *     ***     *              *    **   *   *   *        *              *    *         *    *    ")).unwrap();
         println!("{}", real_puz);
 
         let now = Instant::now();
-        let filled_puz = fill_crossword(&real_puz).unwrap();
+        let filled_puz = fill_crossword(&real_puz, &trie).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
 
