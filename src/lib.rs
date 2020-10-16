@@ -24,13 +24,15 @@ pub struct Crossword {
 
 impl Crossword {
     pub fn new(contents: String) -> Result<Crossword, String> {
-        let width = (contents.len() as f64).sqrt() as usize;
-        if width * width != contents.len() {
-            return Err(String::from("Invalid string."));
+        let without_newlines: String = contents.chars().filter(|c| *c != '\n').collect();
+
+        let width = (without_newlines.len() as f64).sqrt() as usize;
+        if width * width != without_newlines.len() {
+            return Err(String::from("Contents are not a square."));
         }
         Ok(Crossword {
-            contents,
-            width,
+            contents: without_newlines,
+            width: width,
             height: width,
         })
     }
@@ -581,12 +583,18 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let c = Crossword {
-            contents: String::from("abcdefghi"),
-            width: 3,
-            height: 3,
-        };
+        let result = Crossword::new(String::from("
+abc
+def
+ghi
+"));
 
+        assert!(result.is_ok());
+
+        let c = result.unwrap();
+        assert_eq!(String::from("abcdefghi"), c.contents);
+        assert_eq!(3, c.width);
+        assert_eq!(3, c.height);
         println!("{}", c);
     }
 
