@@ -600,11 +600,16 @@ ghi
 
     #[test]
     fn bigger_parse_works() {
-        let c = Crossword {
-            contents: String::from("**   ***     *                     *     ***   **"),
-            width: 7,
-            height: 7,
-        };
+        let c = Crossword::new(
+            String::from("
+**   **
+*     *
+       
+       
+       
+*     *
+**   **
+")).unwrap();
         let result = parse_words(&c);
 
         assert_eq!(
