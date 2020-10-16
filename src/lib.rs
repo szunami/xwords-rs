@@ -583,11 +583,13 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let result = Crossword::new(String::from("
+        let result = Crossword::new(String::from(
+            "
 abc
 def
 ghi
-"));
+",
+        ));
 
         assert!(result.is_ok());
 
@@ -600,8 +602,8 @@ ghi
 
     #[test]
     fn bigger_parse_works() {
-        let c = Crossword::new(
-            String::from("
+        let c = Crossword::new(String::from(
+            "
 **   **
 *     *
        
@@ -609,7 +611,9 @@ ghi
        
 *     *
 **   **
-")).unwrap();
+",
+        ))
+        .unwrap();
         let result = parse_words(&c);
 
         assert_eq!(
@@ -659,11 +663,14 @@ ghi
 
     #[test]
     fn parse_works() {
-        let c = Crossword {
-            contents: String::from("abcdefghi"),
-            width: 3,
-            height: 3,
-        };
+        let c = Crossword::new(String::from(
+            "
+abc
+def
+ghi
+",
+        ))
+        .unwrap();
         let result = parse_words(&c);
 
         assert_eq!(result.len(), 6);
@@ -711,11 +718,13 @@ ghi
 
     #[test]
     fn parse_word_boundaries_works() {
-        let c = Crossword {
-            contents: String::from("abcdefghi"),
-            width: 3,
-            height: 3,
-        };
+        let c = Crossword::new(String::from(
+            "
+abc
+def
+ghi
+",
+        )).unwrap();
         let result = parse_word_boundaries(&c);
 
         assert_eq!(result.len(), 6);
@@ -759,11 +768,13 @@ ghi
 
     #[test]
     fn fill_one_word_works() {
-        let c = Crossword {
-            contents: String::from("abcdefghi"),
-            width: 3,
-            height: 3,
-        };
+        let c = Crossword::new(String::from(
+            "
+abc
+def
+ghi
+",
+        )).unwrap();
 
         assert_eq!(
             fill_one_word(
@@ -776,11 +787,13 @@ ghi
                     direction: Direction::Across,
                 }
             ),
-            Crossword {
-                contents: String::from("catdefghi"),
-                width: 3,
-                height: 3,
-            }
+            Crossword::new(String::from(
+                "
+cat
+def
+ghi
+",
+            )).unwrap()
         );
 
         assert_eq!(
@@ -794,11 +807,13 @@ ghi
                     direction: Direction::Down,
                 }
             ),
-            Crossword {
-                contents: String::from("cbcaefthi"),
-                width: 3,
-                height: 3,
-            }
+            Crossword::new(String::from(
+                "
+cbc
+aef
+thi
+    ",
+            )).unwrap()
         );
     }
 
@@ -859,35 +874,29 @@ ghi
     fn is_viable_works() {
         let trie = &ALL_WORDS;
 
-        let crossword = Crossword {
-            contents: String::from("         "),
-            width: 3,
-            height: 3,
-        };
+        let crossword = Crossword::new(
+            String::from("
+   
+   
+   
+")
+        ).unwrap();
 
         let word_boundaries = parse_word_boundaries(&crossword);
 
         assert!(is_viable(&crossword, &word_boundaries, &trie));
 
         assert!(!is_viable(
-            &Crossword {
-                contents: String::from("ABCDEFGH "),
-                width: 3,
-                height: 3,
-            },
+            &Crossword::new(String::from("ABCDEFGH ")).unwrap(),
             &word_boundaries,
             &trie
         ));
 
         assert!(!is_viable(
-            &Crossword {
-                contents: String::from("ABCB  C  "),
-                width: 3,
-                height: 3,
-            },
+            &Crossword::new(String::from("ABCB  C  ")).unwrap(),
             &word_boundaries,
             &trie
-        ))
+        ));
     }
 
     #[test]
