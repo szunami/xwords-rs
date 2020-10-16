@@ -24,13 +24,15 @@ pub struct Crossword {
 
 impl Crossword {
     pub fn new(contents: String) -> Result<Crossword, String> {
-        let width = (contents.len() as f64).sqrt() as usize;
-        if width * width != contents.len() {
-            return Err(String::from("Invalid string."));
+        let without_newlines: String = contents.chars().filter(|c| *c != '\n').collect();
+
+        let width = (without_newlines.len() as f64).sqrt() as usize;
+        if width * width != without_newlines.len() {
+            return Err(String::from("Contents are not a square."));
         }
         Ok(Crossword {
-            contents,
-            width,
+            contents: without_newlines,
+            width: width,
             height: width,
         })
     }
@@ -581,22 +583,37 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let c = Crossword {
-            contents: String::from("abcdefghi"),
-            width: 3,
-            height: 3,
-        };
+        let result = Crossword::new(String::from(
+            "
+abc
+def
+ghi
+",
+        ));
 
+        assert!(result.is_ok());
+
+        let c = result.unwrap();
+        assert_eq!(String::from("abcdefghi"), c.contents);
+        assert_eq!(3, c.width);
+        assert_eq!(3, c.height);
         println!("{}", c);
     }
 
     #[test]
     fn bigger_parse_works() {
-        let c = Crossword {
-            contents: String::from("**   ***     *                     *     ***   **"),
-            width: 7,
-            height: 7,
-        };
+        let c = Crossword::new(String::from(
+            "
+**   **
+*     *
+       
+       
+       
+*     *
+**   **
+",
+        ))
+        .unwrap();
         let result = parse_words(&c);
 
         assert_eq!(
@@ -646,11 +663,14 @@ mod tests {
 
     #[test]
     fn parse_works() {
-        let c = Crossword {
-            contents: String::from("abcdefghi"),
-            width: 3,
-            height: 3,
-        };
+        let c = Crossword::new(String::from(
+            "
+abc
+def
+ghi
+",
+        ))
+        .unwrap();
         let result = parse_words(&c);
 
         assert_eq!(result.len(), 6);
@@ -698,11 +718,14 @@ mod tests {
 
     #[test]
     fn parse_word_boundaries_works() {
-        let c = Crossword {
-            contents: String::from("abcdefghi"),
-            width: 3,
-            height: 3,
-        };
+        let c = Crossword::new(String::from(
+            "
+abc
+def
+ghi
+",
+        ))
+        .unwrap();
         let result = parse_word_boundaries(&c);
 
         assert_eq!(result.len(), 6);
@@ -746,11 +769,14 @@ mod tests {
 
     #[test]
     fn fill_one_word_works() {
-        let c = Crossword {
-            contents: String::from("abcdefghi"),
-            width: 3,
-            height: 3,
-        };
+        let c = Crossword::new(String::from(
+            "
+abc
+def
+ghi
+",
+        ))
+        .unwrap();
 
         assert_eq!(
             fill_one_word(
@@ -763,11 +789,14 @@ mod tests {
                     direction: Direction::Across,
                 }
             ),
-            Crossword {
-                contents: String::from("catdefghi"),
-                width: 3,
-                height: 3,
-            }
+            Crossword::new(String::from(
+                "
+cat
+def
+ghi
+",
+            ))
+            .unwrap()
         );
 
         assert_eq!(
@@ -781,11 +810,14 @@ mod tests {
                     direction: Direction::Down,
                 }
             ),
-            Crossword {
-                contents: String::from("cbcaefthi"),
-                width: 3,
-                height: 3,
-            }
+            Crossword::new(String::from(
+                "
+cbc
+aef
+thi
+",
+            ))
+            .unwrap()
         );
     }
 
@@ -846,35 +878,30 @@ mod tests {
     fn is_viable_works() {
         let trie = &ALL_WORDS;
 
-        let crossword = Crossword {
-            contents: String::from("         "),
-            width: 3,
-            height: 3,
-        };
+        let crossword = Crossword::new(String::from(
+            "
+   
+   
+   
+",
+        ))
+        .unwrap();
 
         let word_boundaries = parse_word_boundaries(&crossword);
 
         assert!(is_viable(&crossword, &word_boundaries, &trie));
 
         assert!(!is_viable(
-            &Crossword {
-                contents: String::from("ABCDEFGH "),
-                width: 3,
-                height: 3,
-            },
+            &Crossword::new(String::from("ABCDEFGH ")).unwrap(),
             &word_boundaries,
             &trie
         ));
 
         assert!(!is_viable(
-            &Crossword {
-                contents: String::from("ABCB  C  "),
-                width: 3,
-                height: 3,
-            },
+            &Crossword::new(String::from("ABCB  C  ")).unwrap(),
             &word_boundaries,
             &trie
-        ))
+        ));
     }
 
     #[test]
@@ -991,7 +1018,27 @@ mod tests {
             std::thread::sleep(std::time::Duration::from_secs(5))
         });
 
-        let real_puz = Crossword::new(String::from("    *    *         *    *              *        *   *   *   **    *              *     ***     *    *       *       *       *    *     ***     *              *    **   *   *   *        *              *    *         *    *    ")).unwrap();
+        let real_puz = Crossword::new(String::from(
+            "
+    *    *     
+    *    *     
+         *     
+   *   *   *   
+**    *        
+      *     ***
+     *    *    
+   *       *   
+    *    *     
+***     *      
+        *    **
+   *   *   *   
+     *         
+     *    *    
+     *    *    
+",
+        ))
+        .unwrap();
+
         println!("{}", real_puz);
 
         let now = Instant::now();
