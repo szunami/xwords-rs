@@ -724,7 +724,8 @@ abc
 def
 ghi
 ",
-        )).unwrap();
+        ))
+        .unwrap();
         let result = parse_word_boundaries(&c);
 
         assert_eq!(result.len(), 6);
@@ -774,7 +775,8 @@ abc
 def
 ghi
 ",
-        )).unwrap();
+        ))
+        .unwrap();
 
         assert_eq!(
             fill_one_word(
@@ -793,7 +795,8 @@ cat
 def
 ghi
 ",
-            )).unwrap()
+            ))
+            .unwrap()
         );
 
         assert_eq!(
@@ -813,7 +816,8 @@ cbc
 aef
 thi
     ",
-            )).unwrap()
+            ))
+            .unwrap()
         );
     }
 
@@ -874,13 +878,14 @@ thi
     fn is_viable_works() {
         let trie = &ALL_WORDS;
 
-        let crossword = Crossword::new(
-            String::from("
+        let crossword = Crossword::new(String::from(
+            "
    
    
    
-")
-        ).unwrap();
+",
+        ))
+        .unwrap();
 
         let word_boundaries = parse_word_boundaries(&crossword);
 
@@ -1013,7 +1018,27 @@ thi
             std::thread::sleep(std::time::Duration::from_secs(5))
         });
 
-        let real_puz = Crossword::new(String::from("    *    *         *    *              *        *   *   *   **    *              *     ***     *    *       *       *       *    *     ***     *              *    **   *   *   *        *              *    *         *    *    ")).unwrap();
+        let real_puz = Crossword::new(String::from(
+            "
+    *    *     
+    *    *     
+         *     
+   *   *   *   
+**    *        
+      *     ***
+     *    *    
+   *       *   
+    *    *     
+***     *      
+        *    **
+   *   *   *   
+     *         
+     *    *    
+     *    *    
+",
+        ))
+        .unwrap();
+
         println!("{}", real_puz);
 
         let now = Instant::now();
