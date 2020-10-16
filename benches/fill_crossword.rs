@@ -1,6 +1,6 @@
 use criterion::{Benchmark};
 use criterion::{criterion_group, criterion_main, Criterion};
-use xwords::{Crossword, fill_crossword};
+use xwords::{Crossword, fill_crossword, ALL_WORDS};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
 
@@ -9,7 +9,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         "fill_crosswords",
         Benchmark::new("fill_3x3_crossword",
         move |b| {
-            b.iter(|| fill_crossword(&input));
+            b.iter(|| fill_crossword(&input, &ALL_WORDS));
         })
     );
 
@@ -19,7 +19,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         "fill_crosswords",
         Benchmark::new("fill_4x4_crossword",
         move |b| {
-            b.iter(|| fill_crossword(&input));
+            b.iter(|| fill_crossword(&input, &ALL_WORDS));
         })
     );
 }

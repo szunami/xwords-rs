@@ -1,3 +1,4 @@
+use xwords::ALL_WORDS;
 use criterion::BenchmarkId;
 use criterion::{criterion_group, criterion_main, Criterion};
 use xwords::{find_fills, Direction, Word};
@@ -9,7 +10,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         BenchmarkId::new("find_fills", &input),
         &input.clone(),
         |b, s| {
-            b.iter(|| find_fills(s.clone()));
+            b.iter(|| find_fills(s.clone(), &ALL_WORDS));
         },
     );
 }

@@ -552,7 +552,7 @@ impl Word {
 }
 
 lazy_static! {
-    static ref ALL_WORDS: Trie = {
+    pub static ref ALL_WORDS: Trie = {
         println!("Building Trie");
         let now = Instant::now();
 
