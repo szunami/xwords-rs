@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use crate::ngram::bigrams;
 use crate::trie::Trie;
 
 use std::{
@@ -13,6 +15,7 @@ use std::{
 use std::{sync::Arc, time::Instant};
 
 pub mod trie;
+mod ngram;
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub struct Crossword {
@@ -577,24 +580,21 @@ impl Word {
     }
 }
 
-pub fn default_word_list() -> Trie {
-    println!("Building Trie");
-    let now = Instant::now();
-
+pub fn default_words() -> Vec<String> {
     let file = File::open("wordlist.json").unwrap();
+    return serde_json::from_reader(file).expect("JSON was not well-formatted");
+}
 
-    let words: Vec<String> = serde_json::from_reader(file).expect("JSON was not well-formatted");
-    println!("Done parsing file");
-    let result = Trie::build(words);
-    println!("Done building Trie in {} seconds", now.elapsed().as_secs());
-    return result;
+fn index_words(raw_data: Vec<String>) -> (HashMap<(char, char), usize>, Trie) {
+    let bigram = bigrams(&raw_data);
+    let trie = Trie::build(raw_data);
+    return (bigram, trie);
 }
 
 #[cfg(test)]
 mod tests {
 
-    use crate::default_word_list;
-    use crate::trie::Trie;
+    use crate::{default_words, index_words, trie::Trie};
     use std::{cmp::Ordering, collections::HashSet, fs::File, sync::Arc, time::Instant};
 
     use crate::{
@@ -845,7 +845,7 @@ thi
 
     #[test]
     fn find_fill_works() {
-        let trie = default_word_list();
+        let (_, trie) = index_words(default_words());
 
         let input = Word {
             contents: String::from("   "),
@@ -898,7 +898,7 @@ thi
 
     #[test]
     fn is_viable_works() {
-        let trie = default_word_list();
+        let (_, trie) = index_words(default_words());
 
         let crossword = Crossword::new(String::from(
             "
@@ -928,7 +928,7 @@ thi
 
     #[test]
     fn fill_crossword_works() {
-        let trie = default_word_list();
+        let (_, trie) = index_words(default_words());
 
         let input = Crossword::new(String::from("                ")).unwrap();
 
