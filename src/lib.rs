@@ -146,7 +146,8 @@ impl CrosswordFillState {
 
     fn add_candidate(&mut self, candidate: Crossword) {
         if !self.processed_candidates.contains(&candidate) {
-            self.candidate_queue.push(candidate);
+            self.candidate_queue.push(candidate.clone());
+            self.processed_candidates.insert(candidate);
         }
     }
 
@@ -248,7 +249,13 @@ pub fn fill_crossword(crossword: &Crossword, trie: Arc<Trie>) -> Result<Crosswor
     }
 
     match rx.recv() {
-        Ok(result) => Ok(result),
+        Ok(result) => {
+
+            let queue = candidates.lock().unwrap();
+
+            println!("Processed {} candidates", queue.processed_candidates.len());
+            Ok(result)
+        },
         Err(_) => Err(String::from("Failed to receive")),
     }
 }
