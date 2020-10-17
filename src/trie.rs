@@ -1,4 +1,3 @@
-
 use std::{collections::HashMap, fmt};
 
 use crate::CrosswordWordIterator;
@@ -26,10 +25,8 @@ impl TrieNode {
                             is_terminal: false,
                         };
                         // create child and iterate on it
-                        self.children.insert(
-                            *val as char,
-                            tmp.add_sequence(&chars[1..]),
-                        );
+                        self.children
+                            .insert(*val as char, tmp.add_sequence(&chars[1..]));
                     }
                 }
             }
@@ -61,7 +58,7 @@ impl TrieNode {
         }
 
         if self.children.len() == 0 {
-            return write!(f, "\n");
+            return writeln!(f);
         }
 
         for (index, key) in self.children.keys().into_iter().enumerate() {
@@ -102,12 +99,8 @@ impl TrieNode {
         }
 
         match self.children.get(&new_char) {
-            Some(child) => {
-                return child.words(new_pattern, new_partial);
-            }
-            None => {
-                return vec![];
-            }
+            Some(child) => child.words(new_pattern, new_partial),
+            None => vec![],
         }
     }
 
@@ -131,21 +124,17 @@ impl TrieNode {
     }
 
     fn is_word_iter(&self, mut chars: CrosswordWordIterator) -> bool {
-
         match chars.next() {
-            Some(c) => {
-                match self.children.get(&c) {
-                    Some(child) => {
-                        return child.is_word_iter(chars);
-                    }
-                    None => false,
+            Some(c) => match self.children.get(&c) {
+                Some(child) => {
+                    return child.is_word_iter(chars);
                 }
-            }
+                None => false,
+            },
             None => {
                 return self.is_terminal;
             }
         }
-
     }
 }
 
@@ -159,13 +148,13 @@ pub struct Trie {
     pub root: TrieNode,
 }
 
-impl  fmt::Display for Trie {
+impl fmt::Display for Trie {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         self.root.fmt(f)
     }
 }
 
-impl  Trie {
+impl Trie {
     pub fn build(words: Vec<String>) -> Trie {
         let mut root = TrieNode {
             contents: None,
@@ -175,7 +164,7 @@ impl  Trie {
 
         println!("Building {} words", words.len());
 
-        for word in words.iter(){
+        for word in words.iter() {
             root = root.add_sequence(&word);
         }
 
@@ -199,8 +188,8 @@ impl  Trie {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::collections::HashSet;
-use std::collections::HashMap;
 
     use super::{Trie, TrieNode};
 
@@ -282,12 +271,12 @@ use std::collections::HashMap;
             String::from("be"),
         ]);
 
-        let expected: HashSet<String> = vec![String::from("bass"), String::from("bess")].iter().cloned().collect();
-        let actual:HashSet<String> = trie.words(String::from("b ss")).iter().cloned().collect();
-        assert_eq!(
-            expected,
-            actual,
-        )
+        let expected: HashSet<String> = vec![String::from("bass"), String::from("bess")]
+            .iter()
+            .cloned()
+            .collect();
+        let actual: HashSet<String> = trie.words(String::from("b ss")).iter().cloned().collect();
+        assert_eq!(expected, actual,)
     }
 
     #[test]
