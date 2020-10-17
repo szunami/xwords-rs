@@ -13,8 +13,6 @@ use std::{sync::Arc, time::Instant};
 
 pub mod trie;
 
-#[macro_use]
-extern crate lazy_static;
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub struct Crossword {
     contents: String,
@@ -140,7 +138,7 @@ impl CrosswordFillState {
     }
 }
 
-pub fn fill_crossword(crossword: &Crossword, trie: &'static Trie) -> Result<Crossword, String> {
+pub fn fill_crossword(crossword: &Crossword, trie: Trie) -> Result<Crossword, String> {
     // parse crossword into partially filled words
     // fill a word
 
@@ -158,10 +156,14 @@ pub fn fill_crossword(crossword: &Crossword, trie: &'static Trie) -> Result<Cros
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
+    let trie = Arc::new(trie);
+
     for thread_index in 0..32 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
         let word_boundaries = parse_word_boundaries(&crossword);
+
+        let trie = trie.clone();
 
         std::thread::Builder::new()
             .name(format!("{}", thread_index))
@@ -200,11 +202,11 @@ pub fn fill_crossword(crossword: &Crossword, trie: &'static Trie) -> Result<Cros
                     //   are all complete words legit?
                     //     if so, push
 
-                    let potential_fills = find_fills(to_fill.clone(), trie);
+                    let potential_fills = find_fills(to_fill.clone(), trie.as_ref());
                     for potential_fill in potential_fills {
                         let new_candidate = fill_one_word(&candidate, potential_fill);
 
-                        if is_viable(&new_candidate, &word_boundaries, trie) {
+                        if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
                             if !new_candidate.contents.contains(" ") {
                                 let mut queue = new_arc.lock().unwrap();
                                 queue.mark_done();
@@ -553,8 +555,7 @@ impl Word {
     }
 }
 
-lazy_static! {
-    pub static ref ALL_WORDS: Trie = {
+fn default_word_list() -> Trie  {
         println!("Building Trie");
         let now = Instant::now();
 
@@ -566,13 +567,13 @@ lazy_static! {
         let result = Trie::build(words);
         println!("Done building Trie in {} seconds", now.elapsed().as_secs());
         return result;
-    };
 }
 
 #[cfg(test)]
 mod tests {
 
-    use crate::{trie::Trie, ALL_WORDS};
+    use crate::default_word_list;
+use crate::{trie::Trie};
     use std::{collections::HashSet, fs::File, time::Instant};
 
     use crate::{
@@ -823,7 +824,7 @@ thi
 
     #[test]
     fn find_fill_works() {
-        let trie = &ALL_WORDS;
+        let trie = default_word_list();
 
         let input = Word {
             contents: String::from("   "),
@@ -832,7 +833,7 @@ thi
             start_col: 0,
             direction: Direction::Across,
         };
-        assert!(find_fills(input.clone(), trie).contains(&Word {
+        assert!(find_fills(input.clone(), &trie).contains(&Word {
             contents: String::from("CAT"),
             ..input.clone()
         }));
@@ -844,7 +845,7 @@ thi
             start_col: 0,
             direction: Direction::Across,
         };
-        assert!(find_fills(input.clone(), trie).contains(&Word {
+        assert!(find_fills(input.clone(), &trie).contains(&Word {
             contents: String::from("CAT"),
             ..input.clone()
         }));
@@ -856,7 +857,7 @@ thi
             start_col: 0,
             direction: Direction::Across,
         };
-        assert!(find_fills(input.clone(), trie).contains(&Word {
+        assert!(find_fills(input.clone(), &trie).contains(&Word {
             contents: String::from("CAT"),
             ..input.clone()
         }));
@@ -876,7 +877,7 @@ thi
 
     #[test]
     fn is_viable_works() {
-        let trie = &ALL_WORDS;
+        let trie = default_word_list();
 
         let crossword = Crossword::new(String::from(
             "
@@ -906,20 +907,56 @@ thi
 
     #[test]
     fn fill_crossword_works() {
-        let trie = &ALL_WORDS;
+        let trie = default_word_list();
 
         let input = Crossword::new(String::from("                ")).unwrap();
 
-        let result = fill_crossword(&input, &trie);
+        let result = fill_crossword(&input, trie);
 
         assert!(result.is_ok());
 
         println!("{}", result.unwrap());
     }
 
-    lazy_static! {
-        static ref TEST_ALL_WORDS: Trie = {
-            return Trie::build(vec![
+    #[test]
+    fn puz_2020_10_12_works() {
+        let guard = pprof::ProfilerGuard::new(100).unwrap();
+        std::thread::spawn(move || loop {
+            match guard.report().build() {
+                Ok(report) => {
+                    let file = File::create("flamegraph.svg").unwrap();
+                    report.flamegraph(file).unwrap();
+                }
+                Err(_) => {}
+            };
+            std::thread::sleep(std::time::Duration::from_secs(5))
+        });
+
+        let real_puz = Crossword::new(String::from(
+            "
+    *    *     
+    *    *     
+         *     
+   *   *   *   
+**    *        
+      *     ***
+     *    *    
+   *       *   
+    *    *     
+***     *      
+        *    **
+   *   *   *   
+     *         
+     *    *    
+     *    *    
+",
+        ))
+        .unwrap();
+
+        println!("{}", real_puz);
+
+        let now = Instant::now();
+        let trie = Trie::build(vec![
                 String::from("BEST"),
                 String::from("FRAN"),
                 String::from("BANAL"),
@@ -1001,48 +1038,8 @@ thi
                 String::from("CEOS"),
                 String::from("EGOS"),
             ]);
-        };
-    }
 
-    #[test]
-    fn puz_2020_10_12_works() {
-        let guard = pprof::ProfilerGuard::new(100).unwrap();
-        std::thread::spawn(move || loop {
-            match guard.report().build() {
-                Ok(report) => {
-                    let file = File::create("flamegraph.svg").unwrap();
-                    report.flamegraph(file).unwrap();
-                }
-                Err(_) => {}
-            };
-            std::thread::sleep(std::time::Duration::from_secs(5))
-        });
-
-        let real_puz = Crossword::new(String::from(
-            "
-    *    *     
-    *    *     
-         *     
-   *   *   *   
-**    *        
-      *     ***
-     *    *    
-   *       *   
-    *    *     
-***     *      
-        *    **
-   *   *   *   
-     *         
-     *    *    
-     *    *    
-",
-        ))
-        .unwrap();
-
-        println!("{}", real_puz);
-
-        let now = Instant::now();
-        let filled_puz = fill_crossword(&real_puz, &TEST_ALL_WORDS).unwrap();
+        let filled_puz = fill_crossword(&real_puz, trie).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
     }
