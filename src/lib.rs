@@ -30,7 +30,7 @@ impl Crossword {
         }
         Ok(Crossword {
             contents: without_newlines,
-            width: width,
+            width,
             height: width,
         })
     }
@@ -104,10 +104,10 @@ impl fmt::Display for Crossword {
                     write!(f, " ")?;
                 }
             }
-            write!(f, "\n")?;
+            writeln!(f)?;
 
             if row != self.height - 1 {
-                write!(f, "\n")?;
+                writeln!(f)?;
             }
         }
         Ok(())
@@ -242,7 +242,7 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &
     for word_boundary in word_boundaries {
         let iter = CrosswordWordIterator {
             crossword: candidate,
-            word_boundary: word_boundary,
+            word_boundary,
             index: 0,
         };
         if iter.clone().any(|c| c == ' ') {
@@ -336,7 +336,7 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
                     contents: current_word,
                     start_row: start_row.unwrap(),
                     start_col: start_col.unwrap(),
-                    length: length,
+                    length,
                     direction: Direction::Across,
                 };
                 result.push(new_word);
@@ -352,7 +352,7 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
                 contents: current_word,
                 start_row: start_row.unwrap(),
                 start_col: start_col.unwrap(),
-                length: length,
+                length,
                 direction: Direction::Across,
             };
             result.push(new_word);
@@ -398,7 +398,7 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
                 contents: current_word,
                 start_row: start_row.unwrap(),
                 start_col: start_col.unwrap(),
-                length: length,
+                length,
                 direction: Direction::Down,
             };
             result.push(new_word);
@@ -439,7 +439,7 @@ fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
                 let new_word = WordBoundary {
                     start_row: start_row.unwrap(),
                     start_col: start_col.unwrap(),
-                    length: length,
+                    length,
                     direction: Direction::Across,
                 };
                 result.push(new_word);
