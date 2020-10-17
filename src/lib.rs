@@ -1,7 +1,8 @@
 use crate::trie::Trie;
 
 use std::{
-    collections::{HashSet, VecDeque},
+    cmp::Ordering,
+    collections::{BinaryHeap, HashSet},
     fmt,
     fs::File,
 };
@@ -33,6 +34,22 @@ impl Crossword {
             width,
             height: width,
         })
+    }
+}
+
+impl PartialOrd for Crossword {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Crossword {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+
+        let our_empties = self.contents.chars().filter(|c| *c == ' ').count();
+        let their_empties = other.contents.chars().filter(|c| *c == ' ').count();
+
+        return their_empties.cmp(&our_empties);
     }
 }
 
@@ -118,18 +135,19 @@ struct CrosswordFillState {
     // Used to ensure we only enqueue each crossword once.
     // Contains crosswords that are queued or have already been visited
     processed_candidates: HashSet<Crossword>,
-    candidate_queue: VecDeque<Crossword>,
+    candidate_queue: BinaryHeap<Crossword>,
     done: bool,
 }
 
 impl CrosswordFillState {
     fn take_candidate(&mut self) -> Option<Crossword> {
-        self.candidate_queue.pop_back()
+        self.candidate_queue.pop()
     }
 
     fn add_candidate(&mut self, candidate: Crossword) {
         if !self.processed_candidates.contains(&candidate) {
-            self.candidate_queue.push_back(candidate);
+            self.candidate_queue.push(candidate.clone());
+            self.processed_candidates.insert(candidate);
         }
     }
 
@@ -145,7 +163,7 @@ pub fn fill_crossword(crossword: &Crossword, trie: Arc<Trie>) -> Result<Crosswor
     let crossword_fill_state = {
         let mut temp_state = CrosswordFillState {
             processed_candidates: HashSet::new(),
-            candidate_queue: VecDeque::new(),
+            candidate_queue: BinaryHeap::new(),
             done: false,
         };
         temp_state.add_candidate(crossword.clone());
@@ -231,7 +249,13 @@ pub fn fill_crossword(crossword: &Crossword, trie: Arc<Trie>) -> Result<Crosswor
     }
 
     match rx.recv() {
-        Ok(result) => Ok(result),
+        Ok(result) => {
+
+            let queue = candidates.lock().unwrap();
+
+            println!("Processed {} candidates", queue.processed_candidates.len());
+            Ok(result)
+        },
         Err(_) => Err(String::from("Failed to receive")),
     }
 }
@@ -553,26 +577,25 @@ impl Word {
     }
 }
 
-pub fn default_word_list() -> Trie  {
-        println!("Building Trie");
-        let now = Instant::now();
+pub fn default_word_list() -> Trie {
+    println!("Building Trie");
+    let now = Instant::now();
 
-        let file = File::open("wordlist.json").unwrap();
+    let file = File::open("wordlist.json").unwrap();
 
-        let words: Vec<String> =
-            serde_json::from_reader(file).expect("JSON was not well-formatted");
-        println!("Done parsing file");
-        let result = Trie::build(words);
-        println!("Done building Trie in {} seconds", now.elapsed().as_secs());
-        return result;
+    let words: Vec<String> = serde_json::from_reader(file).expect("JSON was not well-formatted");
+    println!("Done parsing file");
+    let result = Trie::build(words);
+    println!("Done building Trie in {} seconds", now.elapsed().as_secs());
+    return result;
 }
 
 #[cfg(test)]
 mod tests {
 
     use crate::default_word_list;
-use crate::{trie::Trie};
-    use std::{collections::HashSet, fs::File, sync::Arc, time::Instant};
+    use crate::trie::Trie;
+    use std::{cmp::Ordering, collections::HashSet, fs::File, sync::Arc, time::Instant};
 
     use crate::{
         fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword,
@@ -955,87 +978,87 @@ thi
 
         let now = Instant::now();
         let trie = Trie::build(vec![
-                String::from("BEST"),
-                String::from("FRAN"),
-                String::from("BANAL"),
-                String::from("AVER"),
-                String::from("LEGO"),
-                String::from("ALIBI"),
-                String::from("BARITONES"),
-                String::from("NACHO"),
-                String::from("ENV"),
-                String::from("OWE"),
-                String::from("ETD"),
-                String::from("HON"),
-                String::from("ELLE"),
-                String::from("BROILERS"),
-                String::from("RATEDR"),
-                String::from("AINTI"),
-                String::from("AMITY"),
-                String::from("BING"),
-                String::from("ACDC"),
-                String::from("MMM"),
-                String::from("AMALGAM"),
-                String::from("RUE"),
-                String::from("POET"),
-                String::from("ALES"),
-                String::from("AMINO"),
-                String::from("ACIDY"),
-                String::from("GRATES"),
-                String::from("ENDZONES"),
-                String::from("AGRI"),
-                String::from("KIA"),
-                String::from("ASA"),
-                String::from("BRO"),
-                String::from("COE"),
-                String::from("EVILS"),
-                String::from("GOODTHING"),
-                String::from("BERET"),
-                String::from("LANE"),
-                String::from("ISTO"),
-                String::from("YAYAS"),
-                String::from("ETON"),
-                String::from("DMVS"),
-                String::from("BABE"),
-                String::from("RAMP"),
-                String::from("EKEBY"),
-                String::from("EVAN"),
-                String::from("AMMO"),
-                String::from("NIVEA"),
-                String::from("SERVETIME"),
-                String::from("DAIRY"),
-                String::from("TRI"),
-                String::from("LET"),
-                String::from("TAZ"),
-                String::from("LEA"),
-                String::from("TOLDYA"),
-                String::from("COASTS"),
-                String::from("FLOWER"),
-                String::from("MAINS"),
-                String::from("RENE"),
-                String::from("BALDEAGLE"),
-                String::from("AGE"),
-                String::from("BAILEYS"),
-                String::from("OAT"),
-                String::from("NOSERINGS"),
-                String::from("BONO"),
-                String::from("TONGA"),
-                String::from("GARDEN"),
-                String::from("BANDIT"),
-                String::from("MARGOT"),
-                String::from("ALA"),
-                String::from("LIA"),
-                String::from("MAR"),
-                String::from("HID"),
-                String::from("NICHE"),
-                String::from("CRITICISM"),
-                String::from("ABHOR"),
-                String::from("DUNE"),
-                String::from("ONTV"),
-                String::from("LIONS"),
-                String::from("CEOS"),
-                String::from("EGOS"),
-            ]);
+            String::from("BEST"),
+            String::from("FRAN"),
+            String::from("BANAL"),
+            String::from("AVER"),
+            String::from("LEGO"),
+            String::from("ALIBI"),
+            String::from("BARITONES"),
+            String::from("NACHO"),
+            String::from("ENV"),
+            String::from("OWE"),
+            String::from("ETD"),
+            String::from("HON"),
+            String::from("ELLE"),
+            String::from("BROILERS"),
+            String::from("RATEDR"),
+            String::from("AINTI"),
+            String::from("AMITY"),
+            String::from("BING"),
+            String::from("ACDC"),
+            String::from("MMM"),
+            String::from("AMALGAM"),
+            String::from("RUE"),
+            String::from("POET"),
+            String::from("ALES"),
+            String::from("AMINO"),
+            String::from("ACIDY"),
+            String::from("GRATES"),
+            String::from("ENDZONES"),
+            String::from("AGRI"),
+            String::from("KIA"),
+            String::from("ASA"),
+            String::from("BRO"),
+            String::from("COE"),
+            String::from("EVILS"),
+            String::from("GOODTHING"),
+            String::from("BERET"),
+            String::from("LANE"),
+            String::from("ISTO"),
+            String::from("YAYAS"),
+            String::from("ETON"),
+            String::from("DMVS"),
+            String::from("BABE"),
+            String::from("RAMP"),
+            String::from("EKEBY"),
+            String::from("EVAN"),
+            String::from("AMMO"),
+            String::from("NIVEA"),
+            String::from("SERVETIME"),
+            String::from("DAIRY"),
+            String::from("TRI"),
+            String::from("LET"),
+            String::from("TAZ"),
+            String::from("LEA"),
+            String::from("TOLDYA"),
+            String::from("COASTS"),
+            String::from("FLOWER"),
+            String::from("MAINS"),
+            String::from("RENE"),
+            String::from("BALDEAGLE"),
+            String::from("AGE"),
+            String::from("BAILEYS"),
+            String::from("OAT"),
+            String::from("NOSERINGS"),
+            String::from("BONO"),
+            String::from("TONGA"),
+            String::from("GARDEN"),
+            String::from("BANDIT"),
+            String::from("MARGOT"),
+            String::from("ALA"),
+            String::from("LIA"),
+            String::from("MAR"),
+            String::from("HID"),
+            String::from("NICHE"),
+            String::from("CRITICISM"),
+            String::from("ABHOR"),
+            String::from("DUNE"),
+            String::from("ONTV"),
+            String::from("LIONS"),
+            String::from("CEOS"),
+            String::from("EGOS"),
+        ]);
 
         let filled_puz = fill_crossword(&real_puz, Arc::new(trie)).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
@@ -1144,5 +1167,13 @@ thi
         set.insert(a_iter);
 
         assert!(set.contains(&b_iter));
+    }
+
+    #[test]
+    fn crossword_ord_works() {
+        let a = Crossword::new(String::from("ABCDEFGHI")).unwrap();
+        let b = Crossword::new(String::from("         ")).unwrap();
+
+        assert_eq!(a.cmp(&b), Ordering::Greater)
     }
 }
