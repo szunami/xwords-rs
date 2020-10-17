@@ -135,18 +135,18 @@ struct CrosswordFillState {
     // Used to ensure we only enqueue each crossword once.
     // Contains crosswords that are queued or have already been visited
     processed_candidates: HashSet<Crossword>,
-    candidate_queue: VecDeque<Crossword>,
+    candidate_queue: BinaryHeap<Crossword>,
     done: bool,
 }
 
 impl CrosswordFillState {
     fn take_candidate(&mut self) -> Option<Crossword> {
-        self.candidate_queue.pop_back()
+        self.candidate_queue.pop()
     }
 
     fn add_candidate(&mut self, candidate: Crossword) {
         if !self.processed_candidates.contains(&candidate) {
-            self.candidate_queue.push_back(candidate);
+            self.candidate_queue.push(candidate);
         }
     }
 
@@ -162,7 +162,7 @@ pub fn fill_crossword(crossword: &Crossword, trie: Arc<Trie>) -> Result<Crosswor
     let crossword_fill_state = {
         let mut temp_state = CrosswordFillState {
             processed_candidates: HashSet::new(),
-            candidate_queue: VecDeque::new(),
+            candidate_queue: BinaryHeap::new(),
             done: false,
         };
         temp_state.add_candidate(crossword.clone());
