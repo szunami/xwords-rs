@@ -138,7 +138,7 @@ impl CrosswordFillState {
     }
 }
 
-pub fn fill_crossword(crossword: &Crossword, trie: Trie) -> Result<Crossword, String> {
+pub fn fill_crossword(crossword: &Crossword, trie: Arc<Trie>) -> Result<Crossword, String> {
     // parse crossword into partially filled words
     // fill a word
 
@@ -155,8 +155,6 @@ pub fn fill_crossword(crossword: &Crossword, trie: Trie) -> Result<Crossword, St
     let candidates = Arc::new(Mutex::new(crossword_fill_state));
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
-
-    let trie = Arc::new(trie);
 
     for thread_index in 0..32 {
         let new_arc = Arc::clone(&candidates);
@@ -555,7 +553,7 @@ impl Word {
     }
 }
 
-fn default_word_list() -> Trie  {
+pub fn default_word_list() -> Trie  {
         println!("Building Trie");
         let now = Instant::now();
 
@@ -574,7 +572,7 @@ mod tests {
 
     use crate::default_word_list;
 use crate::{trie::Trie};
-    use std::{collections::HashSet, fs::File, time::Instant};
+    use std::{collections::HashSet, fs::File, sync::Arc, time::Instant};
 
     use crate::{
         fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword,
@@ -911,7 +909,7 @@ thi
 
         let input = Crossword::new(String::from("                ")).unwrap();
 
-        let result = fill_crossword(&input, trie);
+        let result = fill_crossword(&input, Arc::new(trie));
 
         assert!(result.is_ok());
 
@@ -1039,7 +1037,7 @@ thi
                 String::from("EGOS"),
             ]);
 
-        let filled_puz = fill_crossword(&real_puz, trie).unwrap();
+        let filled_puz = fill_crossword(&real_puz, Arc::new(trie)).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
     }
