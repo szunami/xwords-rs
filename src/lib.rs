@@ -2,7 +2,7 @@ use crate::trie::Trie;
 
 use std::{
     cmp::Ordering,
-    collections::{BinaryHeap, HashSet, VecDeque},
+    collections::{BinaryHeap, HashSet},
     fmt,
     fs::File,
 };
