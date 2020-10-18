@@ -591,11 +591,42 @@ fn index_words(raw_data: Vec<String>) -> (HashMap<(char, char), usize>, Trie) {
     return (bigram, trie);
 }
 
+fn score_crossword(bigrams: &HashMap<(char, char), usize>, crossword: &Crossword) -> usize {
+    
+    let mut result = std::usize::MAX;
+    let byte_array = crossword.contents.as_bytes();
+    for row in 0..crossword.height {
+        for col in 1..(crossword.width - 1) {
+            let current_char = byte_array[row * crossword.width + col] as char;
+            let prev_char = byte_array[row * crossword.width + col - 1] as char;
+            let key = (prev_char, current_char);
+            let score = *bigrams.get(&key).unwrap_or(&std::usize::MIN);
+            if result > score {
+                result = score;
+            }
+        }
+    }
+    for row in 1..(crossword.height - 1) {
+        for col in 0..crossword.width {
+            let current_char = byte_array[row * crossword.width + col] as char;
+            let prev_char = byte_array[(row - 1) * crossword.width + col] as char;
+            let key = (prev_char, current_char);
+            let score = *bigrams.get(&key).unwrap_or(&std::usize::MIN);
+            if result > score {
+                result = score
+            }
+        }
+    }
+    
+    return result;
+}
+
 #[cfg(test)]
 mod tests {
 
-    use crate::{default_words, index_words, trie::Trie};
-    use std::{cmp::Ordering, collections::HashSet, fs::File, sync::Arc, time::Instant};
+    use crate::ngram::bigrams;
+use crate::{default_words, index_words, score_crossword, trie::Trie};
+    use std::{cmp::Ordering, collections::HashMap, collections::HashSet, fs::File, sync::Arc, time::Instant};
 
     use crate::{
         fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword,
@@ -1175,5 +1206,40 @@ thi
         let b = Crossword::new(String::from("         ")).unwrap();
 
         assert_eq!(a.cmp(&b), Ordering::Greater)
+    }
+
+    #[test]
+    fn score_crossword_words() {
+        let words = vec![
+            String::from("ABC"),
+            String::from("DEF"),
+            String::from("GHI"),
+            String::from("ADG"),
+            String::from("BEH"),
+            String::from("CFI"),
+        ];
+
+        let bigrams = bigrams(&words);
+
+        let crossword = Crossword::new(String::from("
+ABC
+DEF
+GHI
+")).unwrap();
+
+        assert_eq!(
+            1,
+            score_crossword(&bigrams, &crossword
+        ));
+
+        let crossword = Crossword::new(String::from("
+AXX
+DEF
+GHI
+")).unwrap();
+        assert_eq!(
+            0,
+            score_crossword(&bigrams, &crossword
+        ));
     }
 }
