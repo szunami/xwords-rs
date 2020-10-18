@@ -12,7 +12,7 @@ use std::{
     hash::Hash,
     sync::{mpsc, Mutex},
 };
-use std::{sync::Arc, time::Instant};
+use std::{sync::Arc};
 
 mod ngram;
 pub mod trie;
@@ -164,7 +164,6 @@ struct CrosswordFillState {
     // Contains crosswords that are queued or have already been visited
     processed_candidates: HashSet<Crossword>,
     candidate_queue: BinaryHeap<FrequencyOrderableCrossword>,
-    bigrams: HashMap<(char, char), usize>,
     done: bool,
 }
 
@@ -173,9 +172,9 @@ impl CrosswordFillState {
         self.candidate_queue.pop().map(|x| x.crossword)
     }
 
-    fn add_candidate(&mut self, candidate: Crossword) {
+    fn add_candidate(&mut self, candidate: Crossword, bigrams: &HashMap<(char, char), usize>) {
         if !self.processed_candidates.contains(&candidate) {
-            let orderable = FrequencyOrderableCrossword::new(candidate.clone(), &self.bigrams);
+            let orderable = FrequencyOrderableCrossword::new(candidate.clone(), bigrams);
 
             self.candidate_queue.push(orderable);
             self.processed_candidates.insert(candidate);
@@ -192,7 +191,7 @@ impl CrosswordFillState {
 pub fn fill_crossword(
     crossword: &Crossword,
     trie: Arc<Trie>,
-    bigrams: HashMap<(char, char), usize>,
+    bigrams: Arc<HashMap<(char, char), usize>>,
 ) -> Result<Crossword, String> {
     // parse crossword into partially filled words
     // fill a word
@@ -201,10 +200,9 @@ pub fn fill_crossword(
         let mut temp_state = CrosswordFillState {
             processed_candidates: HashSet::new(),
             candidate_queue: BinaryHeap::new(),
-            bigrams,
             done: false,
         };
-        temp_state.add_candidate(crossword.clone());
+        temp_state.add_candidate(crossword.clone(), bigrams.as_ref());
         temp_state
     };
 
@@ -218,6 +216,7 @@ pub fn fill_crossword(
         let word_boundaries = parse_word_boundaries(&crossword);
 
         let trie = trie.clone();
+        let bigrams = bigrams.clone();
 
         std::thread::Builder::new()
             .name(format!("{}", thread_index))
@@ -278,7 +277,7 @@ pub fn fill_crossword(
                             }
 
                             let mut queue = new_arc.lock().unwrap();
-                            queue.add_candidate(new_candidate);
+                            queue.add_candidate(new_candidate, bigrams.as_ref());
                         }
                     }
                 }
@@ -619,7 +618,7 @@ pub fn default_words() -> Vec<String> {
     return serde_json::from_reader(file).expect("JSON was not well-formatted");
 }
 
-fn index_words(raw_data: Vec<String>) -> (HashMap<(char, char), usize>, Trie) {
+pub fn index_words(raw_data: Vec<String>) -> (HashMap<(char, char), usize>, Trie) {
     let bigram = bigrams(&raw_data);
     let trie = Trie::build(raw_data);
     return (bigram, trie);
@@ -657,10 +656,10 @@ fn score_crossword(bigrams: &HashMap<(char, char), usize>, crossword: &Crossword
 #[cfg(test)]
 mod tests {
 
-    use crate::{default_words, index_words, score_crossword, trie::Trie};
+    use crate::{default_words, index_words, score_crossword};
     use crate::{ngram::bigrams, FrequencyOrderableCrossword};
     use std::{
-        cmp::Ordering, collections::HashMap, collections::HashSet, fs::File, sync::Arc,
+        cmp::Ordering, collections::HashSet, fs::File, sync::Arc,
         time::Instant,
     };
 
@@ -999,7 +998,7 @@ thi
 
         let input = Crossword::new(String::from("                ")).unwrap();
 
-        let result = fill_crossword(&input, Arc::new(trie), bigrams);
+        let result = fill_crossword(&input, Arc::new(trie), Arc::new(bigrams));
 
         assert!(result.is_ok());
 
@@ -1127,7 +1126,7 @@ thi
             String::from("EGOS"),
         ]);
 
-        let filled_puz = fill_crossword(&real_puz, Arc::new(trie), bigrams).unwrap();
+        let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
     }
