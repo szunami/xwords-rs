@@ -241,14 +241,8 @@ pub fn fill_crossword(
                     let words = parse_words(&candidate);
                     let to_fill = words
                         .iter()
-                        .max_by_key(|word| {
-                            let empty_squares: i32 = word.contents.matches(" ").count() as i32;
-                            // we want to identify highly constrained words
-                            // very unscientifically: we want longer words, with fewer spaces.
-                            if empty_squares == 0 {
-                                return -1;
-                            }
-                            return 2 * word.contents.len() as i32 - empty_squares;
+                        .min_by_key(|word| {
+                            score_word(&word.contents, bigrams.as_ref())
                         })
                         .unwrap();
                     // find valid fills for word;
@@ -672,10 +666,24 @@ fn score_crossword(bigrams: &HashMap<(char, char), usize>, crossword: &Crossword
     return result;
 }
 
+fn score_word(word: &String, bigrams: &HashMap<(char, char), usize>) -> usize {
+    let mut result = std::usize::MAX;
+    for (prev, curr) in word.chars().zip(
+    word.chars().skip(1)
+    ) {
+        let score = *bigrams.get(&(prev, curr)).unwrap_or(&std::usize::MIN);
+        if result > score {
+            result = score;
+        }
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
 
-    use crate::{default_words, index_words, score_crossword};
+    use crate::score_word;
+use crate::{default_words, index_words, score_crossword};
     use crate::{ngram::bigrams, FrequencyOrderableCrossword};
     use std::{
         cmp::Ordering, collections::HashSet, fs::File, sync::Arc,
@@ -1319,5 +1327,19 @@ GHI
         ))
         .unwrap();
         assert_eq!(1, score_crossword(&bigrams, &crossword));
+    }
+
+    #[test]
+    fn score_word_works() {
+        let bigrams = bigrams(&vec![
+            String::from("ASDF"),
+            String::from("DF"),
+        ]);
+
+        let input = String::from("ASDF");
+        assert_eq!(1, score_word(&input, &bigrams));
+
+        let input = String::from("DF");
+        assert_eq!(2, score_word(&input, &bigrams));
     }
 }
