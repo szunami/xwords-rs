@@ -211,18 +211,21 @@ pub fn fill_crossword(
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..32 {
+    for thread_index in 0..1 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
         let word_boundaries = parse_word_boundaries(&crossword);
 
         let trie = trie.clone();
         let bigrams = bigrams.clone();
+        let mut candidate_count = 0;
 
         std::thread::Builder::new()
             .name(format!("{}", thread_index))
             .spawn(move || {
                 println!("Hello from thread {}", thread_index);
+
+                
 
                 loop {
                     let candidate = {
@@ -236,6 +239,11 @@ pub fn fill_crossword(
                         }
                     };
 
+                    candidate_count += 1;
+
+                    if candidate_count % 100 == 0 {
+                        println!("{}", candidate);
+                    }
                     // println!("Thread {} just got a candidate", thread_index);
 
                     let words = parse_words(&candidate);
@@ -1026,17 +1034,17 @@ thi
 
     #[test]
     fn puz_2020_10_12_works() {
-        let guard = pprof::ProfilerGuard::new(100).unwrap();
-        std::thread::spawn(move || loop {
-            match guard.report().build() {
-                Ok(report) => {
-                    let file = File::create("flamegraph.svg").unwrap();
-                    report.flamegraph(file).unwrap();
-                }
-                Err(_) => {}
-            };
-            std::thread::sleep(std::time::Duration::from_secs(5))
-        });
+        // let guard = pprof::ProfilerGuard::new(100).unwrap();
+        // std::thread::spawn(move || loop {
+        //     match guard.report().build() {
+        //         Ok(report) => {
+        //             let file = File::create("flamegraph.svg").unwrap();
+        //             report.flamegraph(file).unwrap();
+        //         }
+        //         Err(_) => {}
+        //     };
+        //     std::thread::sleep(std::time::Duration::from_secs(5))
+        // });
 
         let real_puz = Crossword::new(String::from(
             "
