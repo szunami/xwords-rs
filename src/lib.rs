@@ -2,6 +2,7 @@ use crate::ngram::bigrams;
 use crate::trie::Trie;
 use std::collections::HashMap;
 
+use std::sync::Arc;
 use std::{
     cmp::Ordering,
     collections::{BinaryHeap, HashSet},
@@ -12,7 +13,6 @@ use std::{
     hash::Hash,
     sync::{mpsc, Mutex},
 };
-use std::{sync::Arc};
 
 mod ngram;
 pub mod trie;
@@ -68,17 +68,12 @@ impl PartialOrd for FrequencyOrderableCrossword {
 
 impl Ord for FrequencyOrderableCrossword {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-
         // fewer spaces wins
         if self.space_count != other.space_count {
             return other.space_count.cmp(&self.space_count);
         }
         // higher fillability wins
-        if self.fillability_score != other.fillability_score {
-            return self.fillability_score.cmp(&other.fillability_score);
-        }
-        // tiebreaker for determinism
-        return self.crossword.contents.cmp(&other.crossword.contents);
+        return self.fillability_score.cmp(&other.fillability_score);
     }
 }
 
@@ -211,7 +206,7 @@ pub fn fill_crossword(
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..1 {
+    for thread_index in 0..16 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
         let word_boundaries = parse_word_boundaries(&crossword);
@@ -221,11 +216,9 @@ pub fn fill_crossword(
         let mut candidate_count = 0;
 
         std::thread::Builder::new()
-            .name(format!("{}", thread_index))
+            .name(format!("worker"))
             .spawn(move || {
                 println!("Hello from thread {}", thread_index);
-
-                
 
                 loop {
                     let candidate = {
@@ -249,9 +242,8 @@ pub fn fill_crossword(
                     let words = parse_words(&candidate);
                     let to_fill = words
                         .iter()
-                        .min_by_key(|word| {
-                            score_word(&word.contents, bigrams.as_ref())
-                        })
+                        .filter(|word| word.contents.chars().filter(|c| *c == ' ').count() > 0)
+                        .min_by_key(|word| score_word(&word.contents, bigrams.as_ref()))
                         .unwrap();
                     // find valid fills for word;
                     // for each fill:
@@ -674,29 +666,59 @@ fn score_crossword(bigrams: &HashMap<(char, char), usize>, crossword: &Crossword
     return result;
 }
 
-fn score_word(word: &String, bigrams: &HashMap<(char, char), usize>) -> usize {
-    let mut result = std::usize::MAX;
-    for (prev, curr) in word.chars().zip(
-    word.chars().skip(1)
-    ) {
+#[derive(Eq, PartialEq, Debug)]
+struct WordScore {
+    length: usize,
+    space_count: usize,
+    fillability_score: usize,
+}
+
+impl PartialOrd for WordScore {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for WordScore {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // shorter words are more fillable
+        if self.length != other.length {
+            return other.length.cmp(&self.length);
+        }
+
+        // more spaces wins
+        if self.space_count != other.space_count {
+            return self.space_count.cmp(&other.space_count);
+        }
+        // higher fillability wins
+        return self.fillability_score.cmp(&other.fillability_score);
+    }
+}
+
+fn score_word(word: &String, bigrams: &HashMap<(char, char), usize>) -> WordScore {
+    // what if word has spaces?
+    let mut fillability_score = std::usize::MAX;
+    for (prev, curr) in word.chars().zip(word.chars().skip(1)) {
         let score = *bigrams.get(&(prev, curr)).unwrap_or(&std::usize::MIN);
-        if result > score {
-            result = score;
+        if fillability_score > score {
+            fillability_score = score;
         }
     }
-    result
+    WordScore {
+        length: word.len(),
+        space_count: word.matches(' ').count(),
+        fillability_score,
+    }
 }
 
 #[cfg(test)]
 mod tests {
 
     use crate::score_word;
-use crate::{default_words, index_words, score_crossword};
+    use crate::WordScore;
+    use crate::{default_words, index_words, score_crossword};
     use crate::{ngram::bigrams, FrequencyOrderableCrossword};
-    use std::{
-        cmp::Ordering, collections::HashSet, fs::File, sync::Arc,
-        time::Instant,
-    };
+    use std::{cmp::Ordering, collections::HashSet, fs::File, sync::Arc, time::Instant};
 
     use crate::{
         fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword,
@@ -1041,36 +1063,36 @@ thi
     }
 
     #[test]
-    fn puz_2020_10_12_works() {
-        // let guard = pprof::ProfilerGuard::new(100).unwrap();
-        // std::thread::spawn(move || loop {
-        //     match guard.report().build() {
-        //         Ok(report) => {
-        //             let file = File::create("flamegraph.svg").unwrap();
-        //             report.flamegraph(file).unwrap();
-        //         }
-        //         Err(_) => {}
-        //     };
-        //     std::thread::sleep(std::time::Duration::from_secs(5))
-        // });
+    fn           _2020_10_12_works() {
+        let guard = pprof::ProfilerGuard::new(100).unwrap();
+        std::thread::spawn(move || loop {
+            match guard.report().build() {
+                Ok(report) => {
+                    let file = File::create("flamegraph.svg").unwrap();
+                    report.flamegraph(file).unwrap();
+                }
+                Err(_) => {}
+            };
+            std::thread::sleep(std::time::Duration::from_secs(5))
+        });
 
         let real_puz = Crossword::new(String::from(
             "
-  S *    *     
-  E *    *     
-BARITONES*     
-  V*   *   *   
-**E   *        
-RATEDR*     ***
-  I  *    * C  
-  M*       *R  
-  E *    *  I  
-***     *   T  
-        *   I**
-   *   *   *C  
-     *GOODTHING
-     *    * S  
-     *    * M  
+  S *F  N*BANAL
+  E *L  O*ALIBI
+BARITONES*N    
+  V* W *E D*   
+**E  E*BROILERS
+RATEDR*AINTI***
+  I  *B N * C  
+  M*AMALGAM*R  
+  E * L S*AMINO
+***ACIDY*GRATES
+ENDZONES*A  I**
+KIA*  A* R *C  
+EVILS*GOODTHING
+B    *L  E* S  
+YAYAS*E  N* M  
 ",
         ))
         .unwrap();
@@ -1078,91 +1100,90 @@ RATEDR*     ***
         println!("{}", real_puz);
 
         let now = Instant::now();
-        let (bigrams, trie) = index_words(default_words()
-            
-        //     vec![
-        //     String::from("BEST"),
-        //     String::from("FRAN"),
-        //     String::from("BANAL"),
-        //     String::from("AVER"),
-        //     String::from("LEGO"),
-        //     String::from("ALIBI"),
-        //     String::from("BARITONES"),
-        //     String::from("NACHO"),
-        //     String::from("ENV"),
-        //     String::from("OWE"),
-        //     String::from("ETD"),
-        //     String::from("HON"),
-        //     String::from("ELLE"),
-        //     String::from("BROILERS"),
-        //     String::from("RATEDR"),
-        //     String::from("AINTI"),
-        //     String::from("AMITY"),
-        //     String::from("BING"),
-        //     String::from("ACDC"),
-        //     String::from("MMM"),
-        //     String::from("AMALGAM"),
-        //     String::from("RUE"),
-        //     String::from("POET"),
-        //     String::from("ALES"),
-        //     String::from("AMINO"),
-        //     String::from("ACIDY"),
-        //     String::from("GRATES"),
-        //     String::from("ENDZONES"),
-        //     String::from("AGRI"),
-        //     String::from("KIA"),
-        //     String::from("ASA"),
-        //     String::from("BRO"),
-        //     String::from("COE"),
-        //     String::from("EVILS"),
-        //     String::from("GOODTHING"),
-        //     String::from("BERET"),
-        //     String::from("LANE"),
-        //     String::from("ISTO"),
-        //     String::from("YAYAS"),
-        //     String::from("ETON"),
-        //     String::from("DMVS"),
-        //     String::from("BABE"),
-        //     String::from("RAMP"),
-        //     String::from("EKEBY"),
-        //     String::from("EVAN"),
-        //     String::from("AMMO"),
-        //     String::from("NIVEA"),
-        //     String::from("SERVETIME"),
-        //     String::from("DAIRY"),
-        //     String::from("TRI"),
-        //     String::from("LET"),
-        //     String::from("TAZ"),
-        //     String::from("LEA"),
-        //     String::from("TOLDYA"),
-        //     String::from("COASTS"),
-        //     String::from("FLOWER"),
-        //     String::from("MAINS"),
-        //     String::from("RENE"),
-        //     String::from("BALDEAGLE"),
-        //     String::from("AGE"),
-        //     String::from("BAILEYS"),
-        //     String::from("OAT"),
-        //     String::from("NOSERINGS"),
-        //     String::from("BONO"),
-        //     String::from("TONGA"),
-        //     String::from("GARDEN"),
-        //     String::from("BANDIT"),
-        //     String::from("MARGOT"),
-        //     String::from("ALA"),
-        //     String::from("LIA"),
-        //     String::from("MAR"),
-        //     String::from("HID"),
-        //     String::from("NICHE"),
-        //     String::from("CRITICISM"),
-        //     String::from("ABHOR"),
-        //     String::from("DUNE"),
-        //     String::from("ONTV"),
-        //     String::from("LIONS"),
-        //     String::from("CEOS"),
-        //     String::from("EGOS"),
-        // ]
-    );
+        let (bigrams, trie) = index_words(
+            default_words(), //     vec![
+                             //     String::from("BEST"),
+                             //     String::from("FRAN"),
+                             //     String::from("BANAL"),
+                             //     String::from("AVER"),
+                             //     String::from("LEGO"),
+                             //     String::from("ALIBI"),
+                             //     String::from("BARITONES"),
+                             //     String::from("NACHO"),
+                             //     String::from("ENV"),
+                             //     String::from("OWE"),
+                             //     String::from("ETD"),
+                             //     String::from("HON"),
+                             //     String::from("ELLE"),
+                             //     String::from("BROILERS"),
+                             //     String::from("RATEDR"),
+                             //     String::from("AINTI"),
+                             //     String::from("AMITY"),
+                             //     String::from("BING"),
+                             //     String::from("ACDC"),
+                             //     String::from("MMM"),
+                             //     String::from("AMALGAM"),
+                             //     String::from("RUE"),
+                             //     String::from("POET"),
+                             //     String::from("ALES"),
+                             //     String::from("AMINO"),
+                             //     String::from("ACIDY"),
+                             //     String::from("GRATES"),
+                             //     String::from("ENDZONES"),
+                             //     String::from("AGRI"),
+                             //     String::from("KIA"),
+                             //     String::from("ASA"),
+                             //     String::from("BRO"),
+                             //     String::from("COE"),
+                             //     String::from("EVILS"),
+                             //     String::from("GOODTHING"),
+                             //     String::from("BERET"),
+                             //     String::from("LANE"),
+                             //     String::from("ISTO"),
+                             //     String::from("YAYAS"),
+                             //     String::from("ETON"),
+                             //     String::from("DMVS"),
+                             //     String::from("BABE"),
+                             //     String::from("RAMP"),
+                             //     String::from("EKEBY"),
+                             //     String::from("EVAN"),
+                             //     String::from("AMMO"),
+                             //     String::from("NIVEA"),
+                             //     String::from("SERVETIME"),
+                             //     String::from("DAIRY"),
+                             //     String::from("TRI"),
+                             //     String::from("LET"),
+                             //     String::from("TAZ"),
+                             //     String::from("LEA"),
+                             //     String::from("TOLDYA"),
+                             //     String::from("COASTS"),
+                             //     String::from("FLOWER"),
+                             //     String::from("MAINS"),
+                             //     String::from("RENE"),
+                             //     String::from("BALDEAGLE"),
+                             //     String::from("AGE"),
+                             //     String::from("BAILEYS"),
+                             //     String::from("OAT"),
+                             //     String::from("NOSERINGS"),
+                             //     String::from("BONO"),
+                             //     String::from("TONGA"),
+                             //     String::from("GARDEN"),
+                             //     String::from("BANDIT"),
+                             //     String::from("MARGOT"),
+                             //     String::from("ALA"),
+                             //     String::from("LIA"),
+                             //     String::from("MAR"),
+                             //     String::from("HID"),
+                             //     String::from("NICHE"),
+                             //     String::from("CRITICISM"),
+                             //     String::from("ABHOR"),
+                             //     String::from("DUNE"),
+                             //     String::from("ONTV"),
+                             //     String::from("LIONS"),
+                             //     String::from("CEOS"),
+                             //     String::from("EGOS"),
+                             // ]
+        );
 
         let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
@@ -1291,7 +1312,6 @@ RATEDR*     ***
 
         println!("{:?}", b);
 
-
         assert_eq!(a.cmp(&b), Ordering::Greater)
     }
 
@@ -1342,15 +1362,71 @@ GHI
 
     #[test]
     fn score_word_works() {
-        let bigrams = bigrams(&vec![
-            String::from("ASDF"),
-            String::from("DF"),
-        ]);
+        let bigrams = bigrams(&vec![String::from("ASDF"), String::from("DF")]);
 
         let input = String::from("ASDF");
-        assert_eq!(1, score_word(&input, &bigrams));
+        assert_eq!(
+            WordScore {
+                length: 4,
+                space_count: 0,
+                fillability_score: 1
+            },
+            score_word(&input, &bigrams)
+        );
 
         let input = String::from("DF");
-        assert_eq!(2, score_word(&input, &bigrams));
+        assert_eq!(
+            WordScore {
+                length: 2,
+                fillability_score: 2,
+                space_count: 0,
+            },
+            score_word(&input, &bigrams)
+        );
+    }
+
+    #[test]
+    fn word_score_ord_works() {
+        assert_eq!(
+            WordScore {
+                length: 4,
+                space_count: 5,
+                fillability_score: 1
+            }
+            .cmp(&WordScore {
+                length: 3,
+                space_count: 10,
+                fillability_score: 2
+            }),
+            Ordering::Less
+        );
+
+        assert_eq!(
+            WordScore {
+                length: 3,
+                space_count: 5,
+                fillability_score: 1
+            }
+            .cmp(&WordScore {
+                length: 3,
+                space_count: 10,
+                fillability_score: 2
+            }),
+            Ordering::Less
+        );
+
+        assert_eq!(
+            WordScore {
+                length: 9,
+                space_count: 5,
+                fillability_score: 3
+            }
+            .cmp(&WordScore {
+                length: 9,
+                space_count: 5,
+                fillability_score: 2
+            }),
+            Ordering::Greater
+        );
     }
 }
