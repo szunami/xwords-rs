@@ -40,7 +40,7 @@ impl Crossword {
     }
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 struct FrequencyOrderableCrossword {
     crossword: Crossword,
     space_count: usize,
@@ -68,6 +68,7 @@ impl PartialOrd for FrequencyOrderableCrossword {
 
 impl Ord for FrequencyOrderableCrossword {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+
         // fewer spaces wins
         if self.space_count != other.space_count {
             return other.space_count.cmp(&self.space_count);
@@ -631,8 +632,17 @@ fn score_crossword(bigrams: &HashMap<(char, char), usize>, crossword: &Crossword
         for col in 1..(crossword.width - 1) {
             let current_char = byte_array[row * crossword.width + col] as char;
             let prev_char = byte_array[row * crossword.width + col - 1] as char;
-            let key = (prev_char, current_char);
-            let score = *bigrams.get(&key).unwrap_or(&std::usize::MIN);
+            let score = {
+                // TODO: bigrams as a type
+                let tmp;
+                if current_char == ' ' || prev_char == ' ' {
+                    tmp = std::usize::MAX;
+                } else {
+                    let key = (prev_char, current_char);
+                    tmp = *bigrams.get(&key).unwrap_or(&std::usize::MIN)
+                }
+                tmp
+            };
             if result > score {
                 result = score;
             }
@@ -642,10 +652,19 @@ fn score_crossword(bigrams: &HashMap<(char, char), usize>, crossword: &Crossword
         for col in 0..crossword.width {
             let current_char = byte_array[row * crossword.width + col] as char;
             let prev_char = byte_array[(row - 1) * crossword.width + col] as char;
-            let key = (prev_char, current_char);
-            let score = *bigrams.get(&key).unwrap_or(&std::usize::MIN);
+            let score = {
+                // TODO: bigrams as a type
+                let tmp;
+                if current_char == ' ' || prev_char == ' ' {
+                    tmp = std::usize::MAX;
+                } else {
+                    let key = (prev_char, current_char);
+                    tmp = *bigrams.get(&key).unwrap_or(&std::usize::MIN)
+                }
+                tmp
+            };
             if result > score {
-                result = score
+                result = score;
             }
         }
     }
@@ -1244,10 +1263,15 @@ thi
             Crossword::new(String::from("   TNERTN")).unwrap(),
             &bigrams,
         );
+        println!("{:?}", a);
+
         let b = FrequencyOrderableCrossword::new(
             Crossword::new(String::from("   XYQQWZ")).unwrap(),
             &bigrams,
         );
+
+        println!("{:?}", b);
+
 
         assert_eq!(a.cmp(&b), Ordering::Greater)
     }
@@ -1285,5 +1309,15 @@ GHI
         ))
         .unwrap();
         assert_eq!(0, score_crossword(&bigrams, &crossword));
+
+        let crossword = Crossword::new(String::from(
+            "
+   
+DEF
+GHI
+",
+        ))
+        .unwrap();
+        assert_eq!(1, score_crossword(&bigrams, &crossword));
     }
 }
