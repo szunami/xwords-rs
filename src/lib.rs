@@ -206,7 +206,7 @@ pub fn fill_crossword(
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..16 {
+    for thread_index in 0..4 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
         let word_boundaries = parse_word_boundaries(&crossword);
@@ -1099,91 +1099,57 @@ YAYAS*E  N* M
 
         println!("{}", real_puz);
 
-        let now = Instant::now();
         let (bigrams, trie) = index_words(
-            default_words(), //     vec![
-                             //     String::from("BEST"),
-                             //     String::from("FRAN"),
-                             //     String::from("BANAL"),
-                             //     String::from("AVER"),
-                             //     String::from("LEGO"),
-                             //     String::from("ALIBI"),
-                             //     String::from("BARITONES"),
-                             //     String::from("NACHO"),
-                             //     String::from("ENV"),
-                             //     String::from("OWE"),
-                             //     String::from("ETD"),
-                             //     String::from("HON"),
-                             //     String::from("ELLE"),
-                             //     String::from("BROILERS"),
-                             //     String::from("RATEDR"),
-                             //     String::from("AINTI"),
-                             //     String::from("AMITY"),
-                             //     String::from("BING"),
-                             //     String::from("ACDC"),
-                             //     String::from("MMM"),
-                             //     String::from("AMALGAM"),
-                             //     String::from("RUE"),
-                             //     String::from("POET"),
-                             //     String::from("ALES"),
-                             //     String::from("AMINO"),
-                             //     String::from("ACIDY"),
-                             //     String::from("GRATES"),
-                             //     String::from("ENDZONES"),
-                             //     String::from("AGRI"),
-                             //     String::from("KIA"),
-                             //     String::from("ASA"),
-                             //     String::from("BRO"),
-                             //     String::from("COE"),
-                             //     String::from("EVILS"),
-                             //     String::from("GOODTHING"),
-                             //     String::from("BERET"),
-                             //     String::from("LANE"),
-                             //     String::from("ISTO"),
-                             //     String::from("YAYAS"),
-                             //     String::from("ETON"),
-                             //     String::from("DMVS"),
-                             //     String::from("BABE"),
-                             //     String::from("RAMP"),
-                             //     String::from("EKEBY"),
-                             //     String::from("EVAN"),
-                             //     String::from("AMMO"),
-                             //     String::from("NIVEA"),
-                             //     String::from("SERVETIME"),
-                             //     String::from("DAIRY"),
-                             //     String::from("TRI"),
-                             //     String::from("LET"),
-                             //     String::from("TAZ"),
-                             //     String::from("LEA"),
-                             //     String::from("TOLDYA"),
-                             //     String::from("COASTS"),
-                             //     String::from("FLOWER"),
-                             //     String::from("MAINS"),
-                             //     String::from("RENE"),
-                             //     String::from("BALDEAGLE"),
-                             //     String::from("AGE"),
-                             //     String::from("BAILEYS"),
-                             //     String::from("OAT"),
-                             //     String::from("NOSERINGS"),
-                             //     String::from("BONO"),
-                             //     String::from("TONGA"),
-                             //     String::from("GARDEN"),
-                             //     String::from("BANDIT"),
-                             //     String::from("MARGOT"),
-                             //     String::from("ALA"),
-                             //     String::from("LIA"),
-                             //     String::from("MAR"),
-                             //     String::from("HID"),
-                             //     String::from("NICHE"),
-                             //     String::from("CRITICISM"),
-                             //     String::from("ABHOR"),
-                             //     String::from("DUNE"),
-                             //     String::from("ONTV"),
-                             //     String::from("LIONS"),
-                             //     String::from("CEOS"),
-                             //     String::from("EGOS"),
-                             // ]
+            default_words(), 
         );
+        let now = Instant::now();
+
+        let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
+    }
+
+    #[test]
+    fn           _2020_10_12_empty_works() {
+        let guard = pprof::ProfilerGuard::new(100).unwrap();
+        std::thread::spawn(move || loop {
+            match guard.report().build() {
+                Ok(report) => {
+                    let file = File::create("flamegraph.svg").unwrap();
+                    report.flamegraph(file).unwrap();
+                }
+                Err(_) => {}
+            };
+            std::thread::sleep(std::time::Duration::from_secs(5))
+        });
+
+        let real_puz = Crossword::new(String::from(
+            "
+  S *F  N*B    
+  E *L  O*A    
+BARITONES*N    
+  V* W *E D*   
+**E  E*BROILERS
+RATEDR*     ***
+  I  *B N * C  
+  M*AMALGAM*R  
+  E * L S*     
+***ACIDY*GRATES
+ENDZONES*A  I**
+KIA*  A* R *C  
+EVILS*GOODTHING
+B    *L  E* S  
+YAYAS*E  N* M  
+",
+        ))
+        .unwrap();
+
+        println!("{}", real_puz);
+
+        let (bigrams, trie) = index_words(
+            default_words(), 
+        );
+        let now = Instant::now();
 
         let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
