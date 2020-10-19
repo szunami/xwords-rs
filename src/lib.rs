@@ -1078,7 +1078,7 @@ thi
 
         let real_puz = Crossword::new(String::from(
             "
-  S *F  N*BANAL
+  S *F  N*B    
   E *L  O*ALIBI
 BARITONES*N    
   V* W *E D*   
