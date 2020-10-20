@@ -1,3 +1,4 @@
+use xwords::fill::fill_crossword;
 use xwords::default_words;
 use std::sync::Arc;
 
