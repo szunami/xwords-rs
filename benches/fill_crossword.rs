@@ -1,9 +1,11 @@
+use xwords::crossword::Crossword;
+use xwords::fill::fill_crossword;
 use xwords::default_words;
 use std::sync::Arc;
 
 use criterion::{Benchmark};
 use criterion::{criterion_group, criterion_main, Criterion};
-use xwords::{Crossword, fill_crossword, index_words};
+use xwords::index_words;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
 

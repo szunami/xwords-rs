@@ -1,8 +1,9 @@
+use xwords::{crossword::Direction, Word};
+use xwords::fill::find_fills;
 use xwords::index_words;
 use xwords::default_words;
 use criterion::BenchmarkId;
 use criterion::{criterion_group, criterion_main, Criterion};
-use xwords::{find_fills, Direction, Word};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let input = Word::new(String::from("R  "), 0, 0, 3, Direction::Across);
