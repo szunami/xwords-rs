@@ -1,11 +1,40 @@
-use crate::is_viable;
+use crate::{order::FrequencyOrderableCrossword, is_viable};
 use crate::Word;
 use crate::{Direction, find_fills, score_word};
 use crate::parse_words;
 use crate::parse_word_boundaries;
 use std::{collections::BinaryHeap, collections::{HashMap, HashSet}, sync::{Arc, Mutex, mpsc}};
 
-use crate::{Crossword, CrosswordFillState, trie::Trie};
+use crate::{Crossword, trie::Trie};
+
+struct CrosswordFillState {
+    // Used to ensure we only enqueue each crossword once.
+    // Contains crosswords that are queued or have already been visited
+    processed_candidates: HashSet<Crossword>,
+    candidate_queue: BinaryHeap<FrequencyOrderableCrossword>,
+    done: bool,
+}
+
+impl CrosswordFillState {
+    fn take_candidate(&mut self) -> Option<Crossword> {
+        self.candidate_queue.pop().map(|x| x.crossword)
+    }
+
+    fn add_candidate(&mut self, candidate: Crossword, bigrams: &HashMap<(char, char), usize>) {
+        if !self.processed_candidates.contains(&candidate) {
+            let orderable = FrequencyOrderableCrossword::new(candidate.clone(), bigrams);
+
+            self.candidate_queue.push(orderable);
+            self.processed_candidates.insert(candidate);
+        } else {
+            println!("Revisiting crossword: {}", candidate);
+        }
+    }
+
+    fn mark_done(&mut self) {
+        self.done = true;
+    }
+}
 
 fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
     let mut result_contents = candidate.contents.clone();
@@ -94,7 +123,6 @@ pub fn fill_crossword(
                     if candidate_count % 100 == 0 {
                         println!("{}", candidate);
                     }
-                    // println!("Thread {} just got a candidate", thread_index);
 
                     let words = parse_words(&candidate);
                     let to_fill = words
@@ -150,11 +178,11 @@ pub fn fill_crossword(
 
 #[cfg(test)]
 mod tests {
-    use std::time::Instant;
+    use std::{sync::Arc, time::Instant};
 use std::fs::File;
-use crate::{Crossword, index_words};
+use crate::{Crossword, Direction, Word, index_words};
 
-    use super::fill_crossword;
+    use super::{fill_crossword, fill_one_word};
 
 
     
@@ -259,6 +287,85 @@ YAYAS*E  N* M
         let now = Instant::now();
 
         let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
+    }
+
+    #[test]
+    fn fill_one_word_works() {
+        let c = Crossword::new(String::from(
+            "
+abc
+def
+ghi
+",
+        ))
+        .unwrap();
+
+        assert_eq!(
+            fill_one_word(
+                &c,
+                Word {
+                    contents: String::from("cat"),
+                    start_col: 0,
+                    start_row: 0,
+                    length: 3,
+                    direction: Direction::Across,
+                }
+            ),
+            Crossword::new(String::from(
+                "
+cat
+def
+ghi
+",
+            ))
+            .unwrap()
+        );
+
+        assert_eq!(
+            fill_one_word(
+                &c,
+                Word {
+                    contents: String::from("cat"),
+                    start_col: 0,
+                    start_row: 0,
+                    length: 3,
+                    direction: Direction::Down,
+                }
+            ),
+            Crossword::new(String::from(
+                "
+cbc
+aef
+thi
+",
+            ))
+            .unwrap()
+        );
+    }
+
+    #[test]
+    fn medium_grid() {
+        let grid = Crossword::new(String::from(
+            "
+    ***
+    ***
+    ***
+       
+***    
+***    
+***    
+",
+        ))
+        .unwrap();
+
+        let (bigrams, trie) = index_words(default_words());
+
+        let now = Instant::now();
+
+        let filled_puz = fill_crossword(&grid, A
+            rc::new(trie), Arc::new(bigrams)).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
     }
