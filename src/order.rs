@@ -256,4 +256,25 @@ GHI
             Ordering::Greater
         );
     }
+
+    #[test]
+    fn crossword_ord_works() {
+        let words = default_words();
+        let (bigrams, _) = index_words(words);
+
+        let a = FrequencyOrderableCrossword::new(
+            Crossword::new(String::from("   TNERTN")).unwrap(),
+            &bigrams,
+        );
+        println!("{:?}", a);
+
+        let b = FrequencyOrderableCrossword::new(
+            Crossword::new(String::from("   XYQQWZ")).unwrap(),
+            &bigrams,
+        );
+
+        println!("{:?}", b);
+
+        assert_eq!(a.cmp(&b), Ordering::Greater)
+    }
 }

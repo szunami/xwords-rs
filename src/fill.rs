@@ -176,6 +176,42 @@ pub fn fill_crossword(
     }
 }
 
+// TODO: use RO behavior here
+pub fn find_fills(word: Word, trie: &Trie) -> Vec<Word> {
+    trie.words(word.contents.clone())
+        .drain(0..)
+        .map(|new_word| Word {
+            contents: new_word,
+            ..word.clone()
+        })
+        .collect()
+}
+
+fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &Trie) -> bool {
+    let mut already_used = HashSet::new();
+
+    for word_boundary in word_boundaries {
+        let iter = CrosswordWordIterator {
+            crossword: candidate,
+            word_boundary,
+            index: 0,
+        };
+        if iter.clone().any(|c| c == ' ') {
+            continue;
+        }
+
+        if already_used.contains(&iter) {
+            return false;
+        }
+        already_used.insert(iter.clone());
+
+        if !trie.is_word_iter(iter) {
+            return false;
+        }
+    }
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use crate::default_words;
@@ -369,4 +405,89 @@ thi
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
     }
+
+    #[test]
+    fn find_fill_works() {
+        let (_, trie) = index_words(default_words());
+
+        let input = Word {
+            contents: String::from("   "),
+            length: 3,
+            start_row: 0,
+            start_col: 0,
+            direction: Direction::Across,
+        };
+        assert!(find_fills(input.clone(), &trie).contains(&Word {
+            contents: String::from("CAT"),
+            ..input.clone()
+        }));
+
+        let input = Word {
+            contents: String::from("C T"),
+            length: 3,
+            start_row: 0,
+            start_col: 0,
+            direction: Direction::Across,
+        };
+        assert!(find_fills(input.clone(), &trie).contains(&Word {
+            contents: String::from("CAT"),
+            ..input.clone()
+        }));
+
+        let input = Word {
+            contents: String::from("  T"),
+            length: 3,
+            start_row: 0,
+            start_col: 0,
+            direction: Direction::Across,
+        };
+        assert!(find_fills(input.clone(), &trie).contains(&Word {
+            contents: String::from("CAT"),
+            ..input.clone()
+        }));
+
+        let input = Word {
+            contents: String::from("CAT"),
+            length: 3,
+            start_row: 0,
+            start_col: 0,
+            direction: Direction::Across,
+        };
+        assert!(find_fills(input.clone(), &trie).contains(&Word {
+            contents: String::from("CAT"),
+            ..input.clone()
+        }));
+    }
+
+    #[test]
+    fn is_viable_works() {
+        let (_, trie) = index_words(default_words());
+
+        let crossword = Crossword::new(String::from(
+            "
+   
+   
+   
+",
+        ))
+        .unwrap();
+
+        let word_boundaries = parse_word_boundaries(&crossword);
+
+        assert!(is_viable(&crossword, &word_boundaries, &trie));
+
+        assert!(!is_viable(
+            &Crossword::new(String::from("ABCDEFGH ")).unwrap(),
+            &word_boundaries,
+            &trie
+        ));
+
+        assert!(!is_viable(
+            &Crossword::new(String::from("ABCB  C  ")).unwrap(),
+            &word_boundaries,
+            &trie
+        ));
+    }
+
+    
 }

@@ -203,6 +203,14 @@ pub(crate) fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> 
     result
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct WordBoundary {
+    start_row: usize,
+    start_col: usize,
+    length: usize,
+    direction: Direction,
+}
+
 #[cfg(test)]
 mod tests {
 
