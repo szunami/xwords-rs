@@ -134,13 +134,17 @@ pub(crate) fn score_word(word: &str, bigrams: &HashMap<(char, char), usize>) -> 
 
 #[cfg(test)]
 mod tests {
-        use std::cmp::Ordering;
+        use crate::index_words;
+use crate::default_words;
+use std::cmp::Ordering;
 
 use crate::order::WordScore;
 use crate::order::score_word;
 use crate::bigrams;
     use crate::order::score_crossword;
     use crate::Crossword;
+
+    use super::FrequencyOrderableCrossword;
 
     #[test]
     fn score_crossword_words() {

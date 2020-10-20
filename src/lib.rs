@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use std::{fmt, fs::File};
 
-mod crossword;
+pub mod crossword;
 pub mod fill;
 mod ngram;
 mod order;

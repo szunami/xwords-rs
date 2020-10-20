@@ -1,5 +1,4 @@
 use crate::Word;
-use crate::WordBoundary;
 use crate::{Crossword, Direction};
 
 pub(crate) fn parse_words(crossword: &Crossword) -> Vec<Word> {
@@ -205,21 +204,20 @@ pub(crate) fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> 
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct WordBoundary {
-    start_row: usize,
-    start_col: usize,
-    length: usize,
-    direction: Direction,
+    pub(crate) start_row: usize,
+    pub(crate) start_col: usize,
+    pub(crate) length: usize,
+    pub(crate) direction: Direction,
 }
 
 #[cfg(test)]
 mod tests {
 
     use crate::parse::parse_word_boundaries;
-use crate::Word;
-    use crate::WordBoundary;
+    use crate::Word;
     use crate::{Crossword, Direction};
 
-    use super::parse_words;
+    use super::{WordBoundary, parse_words};
 
     #[test]
     fn bigger_parse_works() {

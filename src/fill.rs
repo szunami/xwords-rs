@@ -1,11 +1,16 @@
-use crate::parse::parse_words;
+use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
-use crate::{order::FrequencyOrderableCrossword, is_viable};
+use crate::parse::parse_words;
 use crate::Word;
-use crate::{Direction, find_fills, score_word};
-use std::{collections::BinaryHeap, collections::{HashMap, HashSet}, sync::{Arc, Mutex, mpsc}};
+use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
+use crate::{score_word, Direction};
+use std::{
+    collections::BinaryHeap,
+    collections::{HashMap, HashSet},
+    sync::{mpsc, Arc, Mutex},
+};
 
-use crate::{Crossword, trie::Trie};
+use crate::{trie::Trie, Crossword};
 
 struct CrosswordFillState {
     // Used to ensure we only enqueue each crossword once.
@@ -191,11 +196,10 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &
     let mut already_used = HashSet::new();
 
     for word_boundary in word_boundaries {
-        let iter = CrosswordWordIterator {
-            crossword: candidate,
+        let iter = CrosswordWordIterator::new(
+            candidate,
             word_boundary,
-            index: 0,
-        };
+        );
         if iter.clone().any(|c| c == ' ') {
             continue;
         }
@@ -214,15 +218,13 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &
 
 #[cfg(test)]
 mod tests {
-    use crate::default_words;
-use std::{sync::Arc, time::Instant};
-use std::fs::File;
-use crate::{Crossword, Direction, Word, index_words};
+    use crate::{default_words, parse::parse_word_boundaries};
+    use crate::{index_words, Crossword, Direction, Word};
+    use std::fs::File;
+    use std::{sync::Arc, time::Instant};
 
-    use super::{fill_crossword, fill_one_word};
+    use super::{fill_crossword, fill_one_word, find_fills, is_viable};
 
-
-    
     #[test]
     fn fill_crossword_works() {
         let (bigrams, trie) = index_words(default_words());
@@ -488,6 +490,4 @@ thi
             &trie
         ));
     }
-
-    
 }
