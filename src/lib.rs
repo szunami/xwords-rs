@@ -73,7 +73,7 @@ impl Ord for FrequencyOrderableCrossword {
             return other.space_count.cmp(&self.space_count);
         }
         // higher fillability wins
-        return self.fillability_score.cmp(&other.fillability_score);
+        self.fillability_score.cmp(&other.fillability_score)
     }
 }
 
@@ -99,14 +99,14 @@ impl<'s> Iterator for CrosswordWordIterator<'s> {
                     + self.index;
                 let result = self.crossword.contents.as_bytes()[char_index] as char;
                 self.index += 1;
-                return Some(result);
+                Some(result)
             }
             Direction::Down => {
                 let char_index = (self.word_boundary.start_row + self.index) * self.crossword.width
                     + self.word_boundary.start_col;
                 let result = self.crossword.contents.as_bytes()[char_index] as char;
                 self.index += 1;
-                return Some(result);
+                Some(result)
             }
         }
     }
@@ -216,7 +216,7 @@ pub fn fill_crossword(
         let mut candidate_count = 0;
 
         std::thread::Builder::new()
-            .name(format!("worker"))
+            .name(String::from("worker"))
             .spawn(move || {
                 println!("Hello from thread {}", thread_index);
 
@@ -437,7 +437,7 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
                     contents: current_word,
                     start_row: start_row.unwrap(),
                     start_col: start_col.unwrap(),
-                    length: length,
+                    length,
                     direction: Direction::Down,
                 };
                 result.push(new_word);
@@ -448,7 +448,7 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
             }
         }
         // have to process end of row
-        if current_word.len() > 0 {
+        if !current_word.is_empty() {
             let new_word = Word {
                 contents: current_word,
                 start_row: start_row.unwrap(),
@@ -508,7 +508,7 @@ fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
             let new_word = WordBoundary {
                 start_row: start_row.unwrap(),
                 start_col: start_col.unwrap(),
-                length: length,
+                length,
                 direction: Direction::Across,
             };
             result.push(new_word);
@@ -535,7 +535,7 @@ fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
                 let new_word = WordBoundary {
                     start_row: start_row.unwrap(),
                     start_col: start_col.unwrap(),
-                    length: length,
+                    length,
                     direction: Direction::Down,
                 };
                 result.push(new_word);
@@ -549,7 +549,7 @@ fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
             let new_word = WordBoundary {
                 start_row: start_row.unwrap(),
                 start_col: start_col.unwrap(),
-                length: length,
+                length,
                 direction: Direction::Down,
             };
             result.push(new_word);
@@ -559,7 +559,7 @@ fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
         }
     }
 
-    return result;
+    result
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -610,13 +610,13 @@ impl Word {
 
 pub fn default_words() -> Vec<String> {
     let file = File::open("wordlist.json").unwrap();
-    return serde_json::from_reader(file).expect("JSON was not well-formatted");
+    serde_json::from_reader(file).expect("JSON was not well-formatted")
 }
 
 pub fn index_words(raw_data: Vec<String>) -> (HashMap<(char, char), usize>, Trie) {
     let bigram = bigrams(&raw_data);
     let trie = Trie::build(raw_data);
-    return (bigram, trie);
+    (bigram, trie)
 }
 
 fn score_crossword(bigrams: &HashMap<(char, char), usize>, crossword: &Crossword) -> usize {
@@ -663,7 +663,7 @@ fn score_crossword(bigrams: &HashMap<(char, char), usize>, crossword: &Crossword
         }
     }
 
-    return result;
+    result
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -691,11 +691,11 @@ impl Ord for WordScore {
             return self.space_count.cmp(&other.space_count);
         }
         // higher fillability wins
-        return self.fillability_score.cmp(&other.fillability_score);
+        self.fillability_score.cmp(&other.fillability_score)
     }
 }
 
-fn score_word(word: &String, bigrams: &HashMap<(char, char), usize>) -> WordScore {
+fn score_word(word: &str, bigrams: &HashMap<(char, char), usize>) -> WordScore {
     // what if word has spaces?
     let mut fillability_score = std::usize::MAX;
     for (prev, curr) in word.chars().zip(word.chars().skip(1)) {

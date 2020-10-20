@@ -13,7 +13,7 @@ pub fn bigrams(words: &Vec<String>) -> HashMap<(char, char), usize> {
         }
     }
 
-    return result;
+    result
 }
 
 #[cfg(test)]
