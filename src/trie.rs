@@ -57,7 +57,7 @@ impl TrieNode {
             write!(f, "'")?;
         }
 
-        if self.children.len() == 0 {
+        if self.children.is_empty() {
             return writeln!(f);
         }
 
@@ -73,12 +73,12 @@ impl TrieNode {
 
     // TODO: pattern could be a ref!
     fn words(&self, pattern: String, partial: String) -> Vec<String> {
-        let mut new_partial = partial.clone();
+        let mut new_partial = partial;
         if self.contents.is_some() {
             new_partial.push(self.contents.unwrap());
         }
 
-        if pattern.len() == 0 {
+        if pattern.is_empty() {
             if self.is_terminal {
                 return vec![new_partial];
             }
@@ -109,7 +109,7 @@ impl TrieNode {
     // }
 
     fn is_word(&self, pattern: &str) -> bool {
-        if pattern.len() == 0 {
+        if pattern.is_empty() {
             return self.is_terminal;
         }
 
@@ -127,12 +127,12 @@ impl TrieNode {
         match chars.next() {
             Some(c) => match self.children.get(&c) {
                 Some(child) => {
-                    return child.is_word_iter(chars);
+                    child.is_word_iter(chars)
                 }
                 None => false,
             },
             None => {
-                return self.is_terminal;
+                self.is_terminal
             }
         }
     }
