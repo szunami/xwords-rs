@@ -1,5 +1,8 @@
+use crate::ngram::bigrams;
 use crate::trie::Trie;
+use std::collections::HashMap;
 
+use std::sync::Arc;
 use std::{
     cmp::Ordering,
     collections::{BinaryHeap, HashSet},
@@ -10,8 +13,8 @@ use std::{
     hash::Hash,
     sync::{mpsc, Mutex},
 };
-use std::{sync::Arc, time::Instant};
 
+mod ngram;
 pub mod trie;
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
@@ -37,19 +40,40 @@ impl Crossword {
     }
 }
 
-impl PartialOrd for Crossword {
+#[derive(Eq, PartialEq, Debug)]
+struct FrequencyOrderableCrossword {
+    crossword: Crossword,
+    space_count: usize,
+    fillability_score: usize,
+}
+
+impl FrequencyOrderableCrossword {
+    fn new(
+        crossword: Crossword,
+        bigrams: &HashMap<(char, char), usize>,
+    ) -> FrequencyOrderableCrossword {
+        FrequencyOrderableCrossword {
+            space_count: crossword.contents.chars().filter(|c| *c == ' ').count(),
+            fillability_score: score_crossword(bigrams, &crossword),
+            crossword,
+        }
+    }
+}
+
+impl PartialOrd for FrequencyOrderableCrossword {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for Crossword {
+impl Ord for FrequencyOrderableCrossword {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-
-        let our_empties = self.contents.chars().filter(|c| *c == ' ').count();
-        let their_empties = other.contents.chars().filter(|c| *c == ' ').count();
-
-        return their_empties.cmp(&our_empties);
+        // fewer spaces wins
+        if self.space_count != other.space_count {
+            return other.space_count.cmp(&self.space_count);
+        }
+        // higher fillability wins
+        return self.fillability_score.cmp(&other.fillability_score);
     }
 }
 
@@ -135,19 +159,23 @@ struct CrosswordFillState {
     // Used to ensure we only enqueue each crossword once.
     // Contains crosswords that are queued or have already been visited
     processed_candidates: HashSet<Crossword>,
-    candidate_queue: BinaryHeap<Crossword>,
+    candidate_queue: BinaryHeap<FrequencyOrderableCrossword>,
     done: bool,
 }
 
 impl CrosswordFillState {
     fn take_candidate(&mut self) -> Option<Crossword> {
-        self.candidate_queue.pop()
+        self.candidate_queue.pop().map(|x| x.crossword)
     }
 
-    fn add_candidate(&mut self, candidate: Crossword) {
+    fn add_candidate(&mut self, candidate: Crossword, bigrams: &HashMap<(char, char), usize>) {
         if !self.processed_candidates.contains(&candidate) {
-            self.candidate_queue.push(candidate.clone());
+            let orderable = FrequencyOrderableCrossword::new(candidate.clone(), bigrams);
+
+            self.candidate_queue.push(orderable);
             self.processed_candidates.insert(candidate);
+        } else {
+            println!("Revisiting crossword: {}", candidate);
         }
     }
 
@@ -156,7 +184,11 @@ impl CrosswordFillState {
     }
 }
 
-pub fn fill_crossword(crossword: &Crossword, trie: Arc<Trie>) -> Result<Crossword, String> {
+pub fn fill_crossword(
+    crossword: &Crossword,
+    trie: Arc<Trie>,
+    bigrams: Arc<HashMap<(char, char), usize>>,
+) -> Result<Crossword, String> {
     // parse crossword into partially filled words
     // fill a word
 
@@ -166,7 +198,7 @@ pub fn fill_crossword(crossword: &Crossword, trie: Arc<Trie>) -> Result<Crosswor
             candidate_queue: BinaryHeap::new(),
             done: false,
         };
-        temp_state.add_candidate(crossword.clone());
+        temp_state.add_candidate(crossword.clone(), bigrams.as_ref());
         temp_state
     };
 
@@ -174,15 +206,17 @@ pub fn fill_crossword(crossword: &Crossword, trie: Arc<Trie>) -> Result<Crosswor
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..32 {
+    for thread_index in 0..4 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
         let word_boundaries = parse_word_boundaries(&crossword);
 
         let trie = trie.clone();
+        let bigrams = bigrams.clone();
+        let mut candidate_count = 0;
 
         std::thread::Builder::new()
-            .name(format!("{}", thread_index))
+            .name(format!("worker"))
             .spawn(move || {
                 println!("Hello from thread {}", thread_index);
 
@@ -198,20 +232,18 @@ pub fn fill_crossword(crossword: &Crossword, trie: Arc<Trie>) -> Result<Crosswor
                         }
                     };
 
+                    candidate_count += 1;
+
+                    if candidate_count % 100 == 0 {
+                        println!("{}", candidate);
+                    }
                     // println!("Thread {} just got a candidate", thread_index);
 
                     let words = parse_words(&candidate);
                     let to_fill = words
                         .iter()
-                        .max_by_key(|word| {
-                            let empty_squares: i32 = word.contents.matches(" ").count() as i32;
-                            // we want to identify highly constrained words
-                            // very unscientifically: we want longer words, with fewer spaces.
-                            if empty_squares == 0 {
-                                return -1;
-                            }
-                            return 2 * word.contents.len() as i32 - empty_squares;
-                        })
+                        .filter(|word| word.contents.chars().any(|c| c == ' '))
+                        .min_by_key(|word| score_word(&word.contents, bigrams.as_ref()))
                         .unwrap();
                     // find valid fills for word;
                     // for each fill:
@@ -240,7 +272,7 @@ pub fn fill_crossword(crossword: &Crossword, trie: Arc<Trie>) -> Result<Crosswor
                             }
 
                             let mut queue = new_arc.lock().unwrap();
-                            queue.add_candidate(new_candidate);
+                            queue.add_candidate(new_candidate, bigrams.as_ref());
                         }
                     }
                 }
@@ -250,12 +282,11 @@ pub fn fill_crossword(crossword: &Crossword, trie: Arc<Trie>) -> Result<Crosswor
 
     match rx.recv() {
         Ok(result) => {
-
             let queue = candidates.lock().unwrap();
 
             println!("Processed {} candidates", queue.processed_candidates.len());
             Ok(result)
-        },
+        }
         Err(_) => Err(String::from("Failed to receive")),
     }
 }
@@ -577,25 +608,118 @@ impl Word {
     }
 }
 
-pub fn default_word_list() -> Trie {
-    println!("Building Trie");
-    let now = Instant::now();
-
+pub fn default_words() -> Vec<String> {
     let file = File::open("wordlist.json").unwrap();
+    return serde_json::from_reader(file).expect("JSON was not well-formatted");
+}
 
-    let words: Vec<String> = serde_json::from_reader(file).expect("JSON was not well-formatted");
-    println!("Done parsing file");
-    let result = Trie::build(words);
-    println!("Done building Trie in {} seconds", now.elapsed().as_secs());
+pub fn index_words(raw_data: Vec<String>) -> (HashMap<(char, char), usize>, Trie) {
+    let bigram = bigrams(&raw_data);
+    let trie = Trie::build(raw_data);
+    return (bigram, trie);
+}
+
+fn score_crossword(bigrams: &HashMap<(char, char), usize>, crossword: &Crossword) -> usize {
+    let mut result = std::usize::MAX;
+    let byte_array = crossword.contents.as_bytes();
+    for row in 0..crossword.height {
+        for col in 1..(crossword.width - 1) {
+            let current_char = byte_array[row * crossword.width + col] as char;
+            let prev_char = byte_array[row * crossword.width + col - 1] as char;
+            let score = {
+                // TODO: bigrams as a type
+                let tmp;
+                if current_char == ' ' || prev_char == ' ' {
+                    tmp = std::usize::MAX;
+                } else {
+                    let key = (prev_char, current_char);
+                    tmp = *bigrams.get(&key).unwrap_or(&std::usize::MIN)
+                }
+                tmp
+            };
+            if result > score {
+                result = score;
+            }
+        }
+    }
+    for row in 1..(crossword.height - 1) {
+        for col in 0..crossword.width {
+            let current_char = byte_array[row * crossword.width + col] as char;
+            let prev_char = byte_array[(row - 1) * crossword.width + col] as char;
+            let score = {
+                // TODO: bigrams as a type
+                let tmp;
+                if current_char == ' ' || prev_char == ' ' {
+                    tmp = std::usize::MAX;
+                } else {
+                    let key = (prev_char, current_char);
+                    tmp = *bigrams.get(&key).unwrap_or(&std::usize::MIN)
+                }
+                tmp
+            };
+            if result > score {
+                result = score;
+            }
+        }
+    }
+
     return result;
+}
+
+#[derive(Eq, PartialEq, Debug)]
+struct WordScore {
+    length: usize,
+    space_count: usize,
+    fillability_score: usize,
+}
+
+impl PartialOrd for WordScore {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for WordScore {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // shorter words are more fillable
+        if self.length != other.length {
+            return other.length.cmp(&self.length);
+        }
+
+        // more spaces wins
+        if self.space_count != other.space_count {
+            return self.space_count.cmp(&other.space_count);
+        }
+        // higher fillability wins
+        return self.fillability_score.cmp(&other.fillability_score);
+    }
+}
+
+fn score_word(word: &String, bigrams: &HashMap<(char, char), usize>) -> WordScore {
+    // what if word has spaces?
+    let mut fillability_score = std::usize::MAX;
+    for (prev, curr) in word.chars().zip(word.chars().skip(1)) {
+        let score = *bigrams.get(&(prev, curr)).unwrap_or(&std::usize::MIN);
+        if fillability_score > score {
+            fillability_score = score;
+        }
+    }
+    WordScore {
+        length: word.len(),
+        space_count: word.matches(' ').count(),
+        fillability_score,
+    }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use crate::default_word_list;
-    use crate::trie::Trie;
-    use std::{cmp::Ordering, collections::HashSet, fs::File, sync::Arc, time::Instant};
+    use crate::File;
+use crate::score_word;
+    use crate::WordScore;
+    use crate::{default_words, index_words, score_crossword};
+    use crate::{ngram::bigrams, FrequencyOrderableCrossword};
+    use std::{cmp::Ordering, collections::HashSet, sync::Arc, time::Instant};
 
     use crate::{
         fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword,
@@ -845,7 +969,7 @@ thi
 
     #[test]
     fn find_fill_works() {
-        let trie = default_word_list();
+        let (_, trie) = index_words(default_words());
 
         let input = Word {
             contents: String::from("   "),
@@ -898,7 +1022,7 @@ thi
 
     #[test]
     fn is_viable_works() {
-        let trie = default_word_list();
+        let (_, trie) = index_words(default_words());
 
         let crossword = Crossword::new(String::from(
             "
@@ -928,11 +1052,11 @@ thi
 
     #[test]
     fn fill_crossword_works() {
-        let trie = default_word_list();
+        let (bigrams, trie) = index_words(default_words());
 
         let input = Crossword::new(String::from("                ")).unwrap();
 
-        let result = fill_crossword(&input, Arc::new(trie));
+        let result = fill_crossword(&input, Arc::new(trie), Arc::new(bigrams));
 
         assert!(result.is_ok());
 
@@ -940,6 +1064,7 @@ thi
     }
 
     #[test]
+    #[ignore]
     fn puz_2020_10_12_works() {
         let guard = pprof::ProfilerGuard::new(100).unwrap();
         std::thread::spawn(move || loop {
@@ -955,112 +1080,103 @@ thi
 
         let real_puz = Crossword::new(String::from(
             "
-    *    *     
-    *    *     
-         *     
-   *   *   *   
-**    *        
-      *     ***
-     *    *    
-   *       *   
-    *    *     
-***     *      
-        *    **
-   *   *   *   
-     *         
-     *    *    
-     *    *    
+  S *F  N*B    
+  E *L  O*ALIBI
+BARITONES*N    
+  V* W *E D*   
+**E  E*BROILERS
+RATEDR*AINTI***
+  I  *B N * C  
+  M*AMALGAM*R  
+  E * L S*AMINO
+***ACIDY*GRATES
+ENDZONES*A  I**
+KIA*  A* R *C  
+EVILS*GOODTHING
+B    *L  E* S  
+YAYAS*E  N* M  
 ",
         ))
         .unwrap();
 
         println!("{}", real_puz);
 
+        let (bigrams, trie) = index_words(default_words());
         let now = Instant::now();
-        let trie = Trie::build(vec![
-            String::from("BEST"),
-            String::from("FRAN"),
-            String::from("BANAL"),
-            String::from("AVER"),
-            String::from("LEGO"),
-            String::from("ALIBI"),
-            String::from("BARITONES"),
-            String::from("NACHO"),
-            String::from("ENV"),
-            String::from("OWE"),
-            String::from("ETD"),
-            String::from("HON"),
-            String::from("ELLE"),
-            String::from("BROILERS"),
-            String::from("RATEDR"),
-            String::from("AINTI"),
-            String::from("AMITY"),
-            String::from("BING"),
-            String::from("ACDC"),
-            String::from("MMM"),
-            String::from("AMALGAM"),
-            String::from("RUE"),
-            String::from("POET"),
-            String::from("ALES"),
-            String::from("AMINO"),
-            String::from("ACIDY"),
-            String::from("GRATES"),
-            String::from("ENDZONES"),
-            String::from("AGRI"),
-            String::from("KIA"),
-            String::from("ASA"),
-            String::from("BRO"),
-            String::from("COE"),
-            String::from("EVILS"),
-            String::from("GOODTHING"),
-            String::from("BERET"),
-            String::from("LANE"),
-            String::from("ISTO"),
-            String::from("YAYAS"),
-            String::from("ETON"),
-            String::from("DMVS"),
-            String::from("BABE"),
-            String::from("RAMP"),
-            String::from("EKEBY"),
-            String::from("EVAN"),
-            String::from("AMMO"),
-            String::from("NIVEA"),
-            String::from("SERVETIME"),
-            String::from("DAIRY"),
-            String::from("TRI"),
-            String::from("LET"),
-            String::from("TAZ"),
-            String::from("LEA"),
-            String::from("TOLDYA"),
-            String::from("COASTS"),
-            String::from("FLOWER"),
-            String::from("MAINS"),
-            String::from("RENE"),
-            String::from("BALDEAGLE"),
-            String::from("AGE"),
-            String::from("BAILEYS"),
-            String::from("OAT"),
-            String::from("NOSERINGS"),
-            String::from("BONO"),
-            String::from("TONGA"),
-            String::from("GARDEN"),
-            String::from("BANDIT"),
-            String::from("MARGOT"),
-            String::from("ALA"),
-            String::from("LIA"),
-            String::from("MAR"),
-            String::from("HID"),
-            String::from("NICHE"),
-            String::from("CRITICISM"),
-            String::from("ABHOR"),
-            String::from("DUNE"),
-            String::from("ONTV"),
-            String::from("LIONS"),
-            String::from("CEOS"),
-            String::from("EGOS"),
-        ]);
 
-        let filled_puz = fill_crossword(&real_puz, Arc::new(trie)).unwrap();
+        let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
+    }
+
+    #[test]
+    #[ignore]
+    fn _2020_10_12_empty_works() {
+        let guard = pprof::ProfilerGuard::new(100).unwrap();
+        std::thread::spawn(move || loop {
+            match guard.report().build() {
+                Ok(report) => {
+                    let file = File::create("flamegraph.svg").unwrap();
+                    report.flamegraph(file).unwrap();
+                }
+                Err(_) => {}
+            };
+            std::thread::sleep(std::time::Duration::from_secs(5))
+        });
+
+        let real_puz = Crossword::new(String::from(
+            "
+  S *F  N*B    
+  E *L  O*A    
+BARITONES*N    
+  V* W *E D*   
+**E  E*BROILERS
+RATEDR*     ***
+  I  *B N * C  
+  M*AMALGAM*R  
+  E * L S*     
+***ACIDY*GRATES
+ENDZONES*A  I**
+KIA*  A* R *C  
+EVILS*GOODTHING
+B    *L  E* S  
+YAYAS*E  N* M  
+",
+        ))
+        .unwrap();
+
+        println!("{}", real_puz);
+
+        let (bigrams, trie) = index_words(default_words());
+        let now = Instant::now();
+
+        let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
+    }
+
+
+    #[test]
+    fn medium_grid() {
+
+        let grid = Crossword::new(String::from(
+            "
+    ***
+    ***
+    ***
+       
+***    
+***    
+***    
+",
+        ))
+        .unwrap();
+
+        let (bigrams, trie) = index_words(default_words());
+
+        let now = Instant::now();
+
+        let filled_puz = fill_crossword(&grid, Arc::new(trie), Arc::new(bigrams)).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
     }
@@ -1171,9 +1287,137 @@ thi
 
     #[test]
     fn crossword_ord_works() {
-        let a = Crossword::new(String::from("ABCDEFGHI")).unwrap();
-        let b = Crossword::new(String::from("         ")).unwrap();
+        let words = default_words();
+        let (bigrams, _) = index_words(words);
+
+        let a = FrequencyOrderableCrossword::new(
+            Crossword::new(String::from("   TNERTN")).unwrap(),
+            &bigrams,
+        );
+        println!("{:?}", a);
+
+        let b = FrequencyOrderableCrossword::new(
+            Crossword::new(String::from("   XYQQWZ")).unwrap(),
+            &bigrams,
+        );
+
+        println!("{:?}", b);
 
         assert_eq!(a.cmp(&b), Ordering::Greater)
+    }
+
+    #[test]
+    fn score_crossword_words() {
+        let words = vec![
+            String::from("ABC"),
+            String::from("DEF"),
+            String::from("GHI"),
+            String::from("ADG"),
+            String::from("BEH"),
+            String::from("CFI"),
+        ];
+
+        let bigrams = bigrams(&words);
+
+        let crossword = Crossword::new(String::from(
+            "
+ABC
+DEF
+GHI
+",
+        ))
+        .unwrap();
+
+        assert_eq!(1, score_crossword(&bigrams, &crossword));
+
+        let crossword = Crossword::new(String::from(
+            "
+AXX
+DEF
+GHI
+",
+        ))
+        .unwrap();
+        assert_eq!(0, score_crossword(&bigrams, &crossword));
+
+        let crossword = Crossword::new(String::from(
+            "
+   
+DEF
+GHI
+",
+        ))
+        .unwrap();
+        assert_eq!(1, score_crossword(&bigrams, &crossword));
+    }
+
+    #[test]
+    fn score_word_works() {
+        let bigrams = bigrams(&vec![String::from("ASDF"), String::from("DF")]);
+
+        let input = String::from("ASDF");
+        assert_eq!(
+            WordScore {
+                length: 4,
+                space_count: 0,
+                fillability_score: 1
+            },
+            score_word(&input, &bigrams)
+        );
+
+        let input = String::from("DF");
+        assert_eq!(
+            WordScore {
+                length: 2,
+                fillability_score: 2,
+                space_count: 0,
+            },
+            score_word(&input, &bigrams)
+        );
+    }
+
+    #[test]
+    fn word_score_ord_works() {
+        assert_eq!(
+            WordScore {
+                length: 4,
+                space_count: 5,
+                fillability_score: 1
+            }
+            .cmp(&WordScore {
+                length: 3,
+                space_count: 10,
+                fillability_score: 2
+            }),
+            Ordering::Less
+        );
+
+        assert_eq!(
+            WordScore {
+                length: 3,
+                space_count: 5,
+                fillability_score: 1
+            }
+            .cmp(&WordScore {
+                length: 3,
+                space_count: 10,
+                fillability_score: 2
+            }),
+            Ordering::Less
+        );
+
+        assert_eq!(
+            WordScore {
+                length: 9,
+                space_count: 5,
+                fillability_score: 3
+            }
+            .cmp(&WordScore {
+                length: 9,
+                space_count: 5,
+                fillability_score: 2
+            }),
+            Ordering::Greater
+        );
     }
 }

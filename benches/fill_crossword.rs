@@ -1,14 +1,19 @@
+use xwords::default_words;
 use std::sync::Arc;
 
 use criterion::{Benchmark};
 use criterion::{criterion_group, criterion_main, Criterion};
-use xwords::{Crossword, default_word_list, fill_crossword};
+use xwords::{Crossword, fill_crossword, index_words};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
 
-    let trie = Arc::new(default_word_list());
+    let (bigrams, trie) = index_words(default_words());
 
-    let tmp = trie.clone();
+    let bigrams = Arc::new(bigrams);
+    let trie = Arc::new(trie);
+
+    let tmp_bigrams = bigrams.clone();
+    let tmp_trie = trie.clone();
 
 
     let input = Crossword::new(String::from("         ")).unwrap();
@@ -16,18 +21,19 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         "fill_crosswords",
         Benchmark::new("fill_3x3_crossword",
         move |b| {
-            b.iter(|| fill_crossword(&input, tmp.clone()));
+            b.iter(|| fill_crossword(&input, tmp_trie.clone(), tmp_bigrams.clone()));
         })
     );
 
     let input = Crossword::new(String::from("                ")).unwrap();
-    let tmp = trie.clone();
+    let tmp_bigrams = bigrams.clone();
+    let tmp_trie = trie.clone();
 
     c.bench(
         "fill_crosswords",
         Benchmark::new("fill_4x4_crossword",
         move |b| {
-            b.iter(|| fill_crossword(&input, tmp.clone()));
+            b.iter(|| fill_crossword(&input, tmp_trie.clone(), tmp_bigrams.clone()));
         })
     );
 }

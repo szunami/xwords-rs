@@ -1,4 +1,5 @@
-use xwords::default_word_list;
+use xwords::index_words;
+use xwords::default_words;
 use criterion::BenchmarkId;
 use criterion::{criterion_group, criterion_main, Criterion};
 use xwords::{find_fills, Direction, Word};
@@ -6,7 +7,7 @@ use xwords::{find_fills, Direction, Word};
 pub fn criterion_benchmark(c: &mut Criterion) {
     let input = Word::new(String::from("R  "), 0, 0, 3, Direction::Across);
 
-    let trie = default_word_list();
+    let (_, trie) = index_words(default_words());
 
     c.bench_with_input(
         BenchmarkId::new("find_fills", &input),
