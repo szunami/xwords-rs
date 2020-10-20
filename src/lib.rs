@@ -714,7 +714,8 @@ fn score_word(word: &String, bigrams: &HashMap<(char, char), usize>) -> WordScor
 #[cfg(test)]
 mod tests {
 
-    use crate::score_word;
+    use crate::File;
+use crate::score_word;
     use crate::WordScore;
     use crate::{default_words, index_words, score_crossword};
     use crate::{ngram::bigrams, FrequencyOrderableCrossword};
@@ -1062,95 +1063,97 @@ thi
         println!("{}", result.unwrap());
     }
 
-//     #[test]
-//     fn puz_2020_10_12_works() {
-//         let guard = pprof::ProfilerGuard::new(100).unwrap();
-//         std::thread::spawn(move || loop {
-//             match guard.report().build() {
-//                 Ok(report) => {
-//                     let file = File::create("flamegraph.svg").unwrap();
-//                     report.flamegraph(file).unwrap();
-//                 }
-//                 Err(_) => {}
-//             };
-//             std::thread::sleep(std::time::Duration::from_secs(5))
-//         });
+    #[test]
+    #[ignore]
+    fn puz_2020_10_12_works() {
+        let guard = pprof::ProfilerGuard::new(100).unwrap();
+        std::thread::spawn(move || loop {
+            match guard.report().build() {
+                Ok(report) => {
+                    let file = File::create("flamegraph.svg").unwrap();
+                    report.flamegraph(file).unwrap();
+                }
+                Err(_) => {}
+            };
+            std::thread::sleep(std::time::Duration::from_secs(5))
+        });
 
-//         let real_puz = Crossword::new(String::from(
-//             "
-//   S *F  N*B    
-//   E *L  O*ALIBI
-// BARITONES*N    
-//   V* W *E D*   
-// **E  E*BROILERS
-// RATEDR*AINTI***
-//   I  *B N * C  
-//   M*AMALGAM*R  
-//   E * L S*AMINO
-// ***ACIDY*GRATES
-// ENDZONES*A  I**
-// KIA*  A* R *C  
-// EVILS*GOODTHING
-// B    *L  E* S  
-// YAYAS*E  N* M  
-// ",
-//         ))
-//         .unwrap();
+        let real_puz = Crossword::new(String::from(
+            "
+  S *F  N*B    
+  E *L  O*ALIBI
+BARITONES*N    
+  V* W *E D*   
+**E  E*BROILERS
+RATEDR*AINTI***
+  I  *B N * C  
+  M*AMALGAM*R  
+  E * L S*AMINO
+***ACIDY*GRATES
+ENDZONES*A  I**
+KIA*  A* R *C  
+EVILS*GOODTHING
+B    *L  E* S  
+YAYAS*E  N* M  
+",
+        ))
+        .unwrap();
 
-//         println!("{}", real_puz);
+        println!("{}", real_puz);
 
-//         let (bigrams, trie) = index_words(default_words());
-//         let now = Instant::now();
+        let (bigrams, trie) = index_words(default_words());
+        let now = Instant::now();
 
-//         let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
-//         println!("Filled in {} seconds.", now.elapsed().as_secs());
-//         println!("{}", filled_puz);
-//     }
+        let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
+    }
 
-//     #[test]
-//     fn _2020_10_12_empty_works() {
-//         let guard = pprof::ProfilerGuard::new(100).unwrap();
-//         std::thread::spawn(move || loop {
-//             match guard.report().build() {
-//                 Ok(report) => {
-//                     let file = File::create("flamegraph.svg").unwrap();
-//                     report.flamegraph(file).unwrap();
-//                 }
-//                 Err(_) => {}
-//             };
-//             std::thread::sleep(std::time::Duration::from_secs(5))
-//         });
+    #[test]
+    #[ignore]
+    fn _2020_10_12_empty_works() {
+        let guard = pprof::ProfilerGuard::new(100).unwrap();
+        std::thread::spawn(move || loop {
+            match guard.report().build() {
+                Ok(report) => {
+                    let file = File::create("flamegraph.svg").unwrap();
+                    report.flamegraph(file).unwrap();
+                }
+                Err(_) => {}
+            };
+            std::thread::sleep(std::time::Duration::from_secs(5))
+        });
 
-//         let real_puz = Crossword::new(String::from(
-//             "
-//   S *F  N*B    
-//   E *L  O*A    
-// BARITONES*N    
-//   V* W *E D*   
-// **E  E*BROILERS
-// RATEDR*     ***
-//   I  *B N * C  
-//   M*AMALGAM*R  
-//   E * L S*     
-// ***ACIDY*GRATES
-// ENDZONES*A  I**
-// KIA*  A* R *C  
-// EVILS*GOODTHING
-// B    *L  E* S  
-// YAYAS*E  N* M  
-// ",
-//         ))
-//         .unwrap();
+        let real_puz = Crossword::new(String::from(
+            "
+  S *F  N*B    
+  E *L  O*A    
+BARITONES*N    
+  V* W *E D*   
+**E  E*BROILERS
+RATEDR*     ***
+  I  *B N * C  
+  M*AMALGAM*R  
+  E * L S*     
+***ACIDY*GRATES
+ENDZONES*A  I**
+KIA*  A* R *C  
+EVILS*GOODTHING
+B    *L  E* S  
+YAYAS*E  N* M  
+",
+        ))
+        .unwrap();
 
-//         println!("{}", real_puz);
+        println!("{}", real_puz);
 
-//         let (bigrams, trie) = index_words(default_words());
-//         let now = Instant::now();
+        let (bigrams, trie) = index_words(default_words());
+        let now = Instant::now();
 
-//         let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
-//         println!("Filled in {} seconds.", now.elapsed().as_secs());
-//         println!("{}", filled_puz);
-//     }
+        let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
+    }
 
 
     #[test]
