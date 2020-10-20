@@ -1,3 +1,4 @@
+use crate::fill::Arc;
 use crate::trie::Trie;
 use crate::{ngram::bigrams, order::score_word};
 use std::collections::HashMap;
@@ -10,6 +11,12 @@ mod ngram;
 mod order;
 mod parse;
 pub mod trie;
+
+pub fn fill_crossword(contents: String, words: Vec<String>) {
+    let crossword = Crossword::new(contents).unwrap();
+    let (bigrams, trie) = index_words(words);
+    fill::fill_crossword(&crossword, Arc::new(trie), Arc::new(bigrams));
+}
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub struct Crossword {
