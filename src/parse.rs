@@ -2,7 +2,7 @@ use crate::WordBoundary;
 use crate::{Crossword, Direction};
 use crate::Word;
 
-fn parse_words(crossword: &Crossword) -> Vec<Word> {
+pub(crate) fn parse_words(crossword: &Crossword) -> Vec<Word> {
     let mut result = vec![];
 
     let byte_array = crossword.contents.as_bytes();
@@ -108,7 +108,7 @@ fn parse_words(crossword: &Crossword) -> Vec<Word> {
     result
 }
 
-fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
+pub(crate) fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
     let mut result = vec![];
 
     let byte_array = crossword.contents.as_bytes();

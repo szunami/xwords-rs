@@ -1,8 +1,8 @@
+use crate::parse::parse_words;
+use crate::parse::parse_word_boundaries;
 use crate::{order::FrequencyOrderableCrossword, is_viable};
 use crate::Word;
 use crate::{Direction, find_fills, score_word};
-use crate::parse_words;
-use crate::parse_word_boundaries;
 use std::{collections::BinaryHeap, collections::{HashMap, HashSet}, sync::{Arc, Mutex, mpsc}};
 
 use crate::{Crossword, trie::Trie};
@@ -178,7 +178,8 @@ pub fn fill_crossword(
 
 #[cfg(test)]
 mod tests {
-    use std::{sync::Arc, time::Instant};
+    use crate::default_words;
+use std::{sync::Arc, time::Instant};
 use std::fs::File;
 use crate::{Crossword, Direction, Word, index_words};
 
@@ -364,8 +365,7 @@ thi
 
         let now = Instant::now();
 
-        let filled_puz = fill_crossword(&grid, A
-            rc::new(trie), Arc::new(bigrams)).unwrap();
+        let filled_puz = fill_crossword(&grid, Arc::new(trie), Arc::new(bigrams)).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
     }
