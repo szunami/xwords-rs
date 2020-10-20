@@ -1063,7 +1063,7 @@ thi
     }
 
     #[test]
-    fn           _2020_10_12_works() {
+    fn puz_2020_10_12_works() {
         let guard = pprof::ProfilerGuard::new(100).unwrap();
         std::thread::spawn(move || loop {
             match guard.report().build() {
@@ -1099,9 +1099,7 @@ YAYAS*E  N* M
 
         println!("{}", real_puz);
 
-        let (bigrams, trie) = index_words(
-            default_words(), 
-        );
+        let (bigrams, trie) = index_words(default_words());
         let now = Instant::now();
 
         let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
@@ -1110,7 +1108,7 @@ YAYAS*E  N* M
     }
 
     #[test]
-    fn           _2020_10_12_empty_works() {
+    fn _2020_10_12_empty_works() {
         let guard = pprof::ProfilerGuard::new(100).unwrap();
         std::thread::spawn(move || loop {
             match guard.report().build() {
@@ -1146,12 +1144,36 @@ YAYAS*E  N* M
 
         println!("{}", real_puz);
 
-        let (bigrams, trie) = index_words(
-            default_words(), 
-        );
+        let (bigrams, trie) = index_words(default_words());
         let now = Instant::now();
 
         let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
+    }
+
+
+    #[test]
+    fn medium_grid() {
+
+        let grid = Crossword::new(String::from(
+            "
+    ***
+    ***
+    ***
+       
+***    
+***    
+***    
+",
+        ))
+        .unwrap();
+
+        let (bigrams, trie) = index_words(default_words());
+
+        let now = Instant::now();
+
+        let filled_puz = fill_crossword(&grid, Arc::new(trie), Arc::new(bigrams)).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
     }
