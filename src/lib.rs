@@ -1,22 +1,15 @@
-use crate::{ngram::bigrams, order::{FrequencyOrderableCrossword, score_word}};
 use crate::trie::Trie;
+use crate::{ngram::bigrams, order::score_word};
 use std::collections::HashMap;
 
+use std::hash::Hash;
+use std::{collections::HashSet, fmt, fs::File};
 
-use std::{
-    collections::{HashSet},
-    fmt,
-    fs::File,
-};
-use std::{
-    hash::Hash,
-};
-
+mod fill;
 mod ngram;
 mod order;
-mod trie;
-mod fill;
 mod parse;
+pub mod trie;
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub struct Crossword {
@@ -119,10 +112,6 @@ impl fmt::Display for Crossword {
     }
 }
 
-
-
-
-
 fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &Trie) -> bool {
     let mut already_used = HashSet::new();
 
@@ -148,8 +137,6 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &
     true
 }
 
-
-
 // TODO: use RO behavior here
 pub fn find_fills(word: Word, trie: &Trie) -> Vec<Word> {
     trie.words(word.contents.clone())
@@ -160,7 +147,6 @@ pub fn find_fills(word: Word, trie: &Trie) -> Vec<Word> {
         })
         .collect()
 }
-
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct WordBoundary {
@@ -222,16 +208,13 @@ pub fn index_words(raw_data: Vec<String>) -> (HashMap<(char, char), usize>, Trie
 #[cfg(test)]
 mod tests {
 
-    
+    use crate::order::FrequencyOrderableCrossword;
+use crate::parse::parse_word_boundaries;
+    use crate::WordBoundary;
     use crate::{default_words, index_words};
-    use crate::{FrequencyOrderableCrossword};
     use std::{cmp::Ordering, collections::HashSet};
 
-    use crate::{
-        find_fills, is_viable, parse_words, Crossword,
-        CrosswordWordIterator, Direction, Word,
-    };
-    use crate::{parse_word_boundaries, WordBoundary};
+    use crate::{find_fills, is_viable, Crossword, CrosswordWordIterator, Direction, Word};
 
     #[test]
     fn it_works() {
@@ -251,9 +234,6 @@ ghi
         assert_eq!(3, c.height);
         println!("{}", c);
     }
-
-
-    
 
     #[test]
     fn find_fill_works() {
@@ -337,10 +317,6 @@ ghi
             &trie
         ));
     }
-
-  
-
-
 
     #[test]
     fn crossword_iterator_works() {

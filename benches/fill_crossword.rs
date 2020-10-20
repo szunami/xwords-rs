@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use criterion::{Benchmark};
 use criterion::{criterion_group, criterion_main, Criterion};
-use xwords::{Crossword, fill_crossword, index_words};
+use xwords::{Crossword, index_words};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
 

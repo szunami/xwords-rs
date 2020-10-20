@@ -1,6 +1,6 @@
+use crate::Word;
 use crate::WordBoundary;
 use crate::{Crossword, Direction};
-use crate::Word;
 
 pub(crate) fn parse_words(crossword: &Crossword) -> Vec<Word> {
     let mut result = vec![];
@@ -206,14 +206,15 @@ pub(crate) fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> 
 #[cfg(test)]
 mod tests {
 
-    #[test]
-    use crate::WordBoundary;
+    use crate::parse::parse_word_boundaries;
 use crate::Word;
-use crate::{Crossword, Direction};
+    use crate::WordBoundary;
+    use crate::{Crossword, Direction};
 
     use super::parse_words;
 
-fn bigger_parse_works() {
+    #[test]
+    fn bigger_parse_works() {
         let c = Crossword::new(String::from(
             "
 **   **
