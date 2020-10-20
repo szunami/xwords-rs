@@ -242,7 +242,7 @@ pub fn fill_crossword(
                     let words = parse_words(&candidate);
                     let to_fill = words
                         .iter()
-                        .filter(|word| word.contents.chars().filter(|c| *c == ' ').count() > 0)
+                        .filter(|word| word.contents.chars().any(|c| c == ' '))
                         .min_by_key(|word| score_word(&word.contents, bigrams.as_ref()))
                         .unwrap();
                     // find valid fills for word;
@@ -1129,13 +1129,13 @@ YAYAS*E  N* M
   E *L  O*A    
 BARITONES*N    
   V* W *E D*   
-**E  E*BROILERS
+**E  E*        
 RATEDR*     ***
   I  *B N * C  
   M*AMALGAM*R  
   E * L S*     
-***ACIDY*GRATES
-ENDZONES*A  I**
+***ACIDY*      
+        *A  I**
 KIA*  A* R *C  
 EVILS*GOODTHING
 B    *L  E* S  
