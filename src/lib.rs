@@ -718,7 +718,7 @@ mod tests {
     use crate::WordScore;
     use crate::{default_words, index_words, score_crossword};
     use crate::{ngram::bigrams, FrequencyOrderableCrossword};
-    use std::{cmp::Ordering, collections::HashSet, fs::File, sync::Arc, time::Instant};
+    use std::{cmp::Ordering, collections::HashSet, sync::Arc, time::Instant};
 
     use crate::{
         fill_crossword, fill_one_word, find_fills, is_viable, parse_words, Crossword,
