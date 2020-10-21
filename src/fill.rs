@@ -219,7 +219,7 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &
         }
         already_used.insert(iter.clone());
 
-        if !trie.is_word_iter(iter) {
+        if !trie.is_word(iter) {
             return false;
         }
     }
