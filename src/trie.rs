@@ -104,36 +104,13 @@ impl TrieNode {
         }
     }
 
-    // fn words(&self, crossword: &Crossword, word_boundary: &WordBoundary, index: usize) -> Vec<String> {
-    //     todo!();
-    // }
-
-    fn is_word(&self, pattern: &str) -> bool {
-        if pattern.is_empty() {
-            return self.is_terminal;
-        }
-
-        let new_pattern = &pattern[1..];
-
-        let new_char = pattern.as_bytes()[0] as char;
-
-        match self.children.get(&new_char) {
-            Some(child) => child.is_word(new_pattern),
-            None => false,
-        }
-    }
-
     fn is_word_iter(&self, mut chars: CrosswordWordIterator) -> bool {
         match chars.next() {
             Some(c) => match self.children.get(&c) {
-                Some(child) => {
-                    child.is_word_iter(chars)
-                }
+                Some(child) => child.is_word_iter(chars),
                 None => false,
             },
-            None => {
-                self.is_terminal
-            }
+            None => self.is_terminal,
         }
     }
 }
@@ -175,10 +152,6 @@ impl Trie {
 
     pub fn words(&self, pattern: String) -> Vec<String> {
         self.root.words(pattern, String::from(""))
-    }
-
-    pub fn is_word(&self, pattern: &str) -> bool {
-        self.root.is_word(pattern)
     }
 
     pub fn is_word_iter(&self, chars: CrosswordWordIterator) -> bool {
@@ -277,22 +250,5 @@ mod tests {
             .collect();
         let actual: HashSet<String> = trie.words(String::from("b ss")).iter().cloned().collect();
         assert_eq!(expected, actual,)
-    }
-
-    #[test]
-    fn is_word_works() {
-        let trie = Trie::build(vec![
-            String::from("bass"),
-            String::from("bats"),
-            String::from("bess"),
-            String::from("be"),
-        ]);
-
-        println!("{}", trie);
-
-        assert!(trie.is_word("bass"));
-        assert!(trie.is_word("bats"));
-        assert!(trie.is_word("be"));
-        assert!(!trie.is_word("bat"));
     }
 }
