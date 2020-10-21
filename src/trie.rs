@@ -79,19 +79,17 @@ impl TrieNode {
 
         match pattern.next() {
             Some(new_char) => {
-                let new_pattern = pattern[1..].to_owned();
-
                 if new_char == ' ' {
                     let mut result = vec![];
                     for child in self.children.values() {
-                        let tmp = child.words(new_pattern.clone(), new_partial.clone());
+                        let tmp = child.words(pattern, new_partial.clone());
                         result.extend(tmp.clone());
                     }
                     return result;
                 }
 
                 match self.children.get(&new_char) {
-                    Some(child) => child.words(new_pattern, new_partial),
+                    Some(child) => child.words(pattern, new_partial),
                     None => vec![],
                 }
             }
