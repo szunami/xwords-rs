@@ -1,7 +1,6 @@
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
 use crate::parse::parse_words;
-use crate::Word;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
 use crate::{score_word, Direction};
 use std::{
@@ -11,6 +10,11 @@ use std::{
 };
 
 use crate::{trie::Trie, Crossword};
+
+struct Fill {
+    contents: String,
+    word_boundary: WordBoundary,
+}
 
 struct CrosswordFillState {
     // Used to ensure we only enqueue each crossword once.
@@ -41,7 +45,7 @@ impl CrosswordFillState {
     }
 }
 
-fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
+fn fill_one_word(candidate: &Crossword, potential_fill: WordBoundary) -> Crossword {
     let mut result_contents = candidate.contents.clone();
 
     match potential_fill.direction {
@@ -140,7 +144,9 @@ pub fn fill_crossword(
                     //   are all complete words legit?
                     //     if so, push
 
-                    let potential_fills = find_fills(to_fill.clone(), trie.as_ref());
+
+                    let iter = CrosswordWordIterator::new(&candidate, to_fill);
+                    let potential_fills = find_fills(iter, trie.as_ref());
                     for potential_fill in potential_fills {
                         let new_candidate = fill_one_word(&candidate, potential_fill);
 
@@ -191,14 +197,16 @@ pub fn fill_crossword(
     }
 }
 
-// TODO: use RO behavior here
-pub fn find_fills(word: Word, trie: &Trie) -> Vec<Word> {
-    trie.words(word.contents.clone())
+pub fn find_fills(iter: CrosswordWordIterator, trie: &Trie) -> Vec<Fill> {
+    trie.words(iter)
         .drain(0..)
-        .map(|new_word| Word {
-            contents: new_word,
-            ..word.clone()
-        })
+        .map(|new_word| {
+            Fill {
+                contents: new_word,
+                word_boundary,
+            }
+        }
+      )
         .collect()
 }
 

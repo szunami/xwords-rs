@@ -31,37 +31,3 @@ pub fn index_words(raw_data: Vec<String>) -> (HashMap<(char, char), usize>, Trie
     let trie = Trie::build(raw_data);
     (bigram, trie)
 }
-
-// TODO: Remove this
-#[derive(Debug, PartialEq, Clone)]
-pub struct Word {
-    contents: String,
-    start_row: usize,
-    start_col: usize,
-    length: usize,
-    direction: Direction,
-}
-
-impl fmt::Display for Word {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "Contents: {}", self.contents)
-    }
-}
-
-impl Word {
-    pub fn new(
-        contents: String,
-        start_row: usize,
-        start_col: usize,
-        length: usize,
-        direction: Direction,
-    ) -> Word {
-        Word {
-            contents,
-            start_row,
-            start_col,
-            length,
-            direction,
-        }
-    }
-}

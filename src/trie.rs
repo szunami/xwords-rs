@@ -71,42 +71,38 @@ impl TrieNode {
         Ok(())
     }
 
-    // TODO: pattern could be a ref!
-    fn words(&self, pattern: String, partial: String) -> Vec<String> {
+    fn words(&self, pattern: CrosswordWordIterator, partial: String) -> Vec<String> {
         let mut new_partial = partial;
         if self.contents.is_some() {
             new_partial.push(self.contents.unwrap());
         }
 
-        if pattern.is_empty() {
-            if self.is_terminal {
-                return vec![new_partial];
+        match pattern.next() {
+            Some(new_char) => {
+                let new_pattern = pattern[1..].to_owned();
+
+                if new_char == ' ' {
+                    let mut result = vec![];
+                    for child in self.children.values() {
+                        let tmp = child.words(new_pattern.clone(), new_partial.clone());
+                        result.extend(tmp.clone());
+                    }
+                    return result;
+                }
+
+                match self.children.get(&new_char) {
+                    Some(child) => child.words(new_pattern, new_partial),
+                    None => vec![],
+                }
             }
-            return vec![];
-        }
-
-        let new_pattern = pattern[1..].to_owned();
-
-        let new_char = pattern.as_bytes()[0] as char;
-
-        if new_char == ' ' {
-            let mut result = vec![];
-            for child in self.children.values() {
-                let tmp = child.words(new_pattern.clone(), new_partial.clone());
-                result.extend(tmp.clone());
+            None => {
+                if self.is_terminal {
+                    return vec![new_partial];
+                }
+                return vec![];
             }
-            return result;
-        }
-
-        match self.children.get(&new_char) {
-            Some(child) => child.words(new_pattern, new_partial),
-            None => vec![],
         }
     }
-
-    // fn words(&self, crossword: &Crossword, word_boundary: &WordBoundary, index: usize) -> Vec<String> {
-    //     todo!();
-    // }
 
     fn is_word(&self, pattern: &str) -> bool {
         if pattern.is_empty() {
@@ -173,8 +169,8 @@ impl Trie {
         Trie { root }
     }
 
-    pub fn words(&self, pattern: String) -> Vec<String> {
-        self.root.words(pattern, String::from(""))
+    pub fn words(&self, iter: CrosswordWordIterator) -> Vec<String> {
+        self.root.words(iter, String::from(""))
     }
 
     pub fn is_word(&self, pattern: &str) -> bool {
