@@ -144,6 +144,8 @@ pub fn fill_crossword(
                     for potential_fill in potential_fills {
                         let new_candidate = fill_one_word(&candidate, potential_fill);
 
+                        let mut viables: Vec<Crossword> = vec![];
+
                         if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
                             if !new_candidate.contents.contains(" ") {
                                 let mut queue = new_arc.lock().unwrap();
@@ -161,8 +163,16 @@ pub fn fill_crossword(
                                 }
                             }
 
+                            viables.push(new_candidate);
+
+                        }
+
+                        if !viables.is_empty() {
                             let mut queue = new_arc.lock().unwrap();
-                            queue.add_candidate(new_candidate, bigrams.as_ref());
+
+                            for viable_crossword in viables {
+                                queue.add_candidate(viable_crossword, bigrams.as_ref());
+                            }
                         }
                     }
                 }
@@ -303,17 +313,17 @@ YAYAS*E  N* M
             "
   S *F  N*B    
   E *L  O*A    
-BARITONES*N    
+         *N    
   V* W *E D*   
 **E  E*BROILERS
 RATEDR*     ***
   I  *B N * C  
-  M*AMALGAM*R  
+  M*       *R  
   E * L S*     
 ***ACIDY*GRATES
 ENDZONES*A  I**
 KIA*  A* R *C  
-EVILS*GOODTHING
+EVILS*         
 B    *L  E* S  
 YAYAS*E  N* M  
 ",
