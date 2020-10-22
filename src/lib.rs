@@ -1,3 +1,7 @@
+
+#[macro_use]
+extern crate cached;
+
 use crate::crossword::Crossword;
 use crate::crossword::CrosswordWordIterator;
 use crate::crossword::Direction;
