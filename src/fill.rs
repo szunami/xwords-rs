@@ -84,6 +84,14 @@ cached_key! {
     }
 }
 
+cached_key! {
+    WORDS: SizedCache<String, Vec<String>> = SizedCache::with_size(10_000);
+    Key = { pattern.clone() };
+    fn words(pattern: String, trie: &Trie) -> Vec<String> = {
+        trie.words(pattern)
+    }
+}
+
 pub fn fill_crossword(
     crossword: &Crossword,
     trie: Arc<Trie>,
@@ -140,7 +148,13 @@ pub fn fill_crossword(
                         use cached::Cached;
                         let cache = IS_WORD.lock().unwrap();
                         println!(
-                            "Hits: {}, Misses: {}",
+                            "IS_WORD: Hits: {}, Misses: {}",
+                            cache.cache_hits().unwrap(),
+                            cache.cache_misses().unwrap()
+                        );
+                        let cache = WORDS.lock().unwrap();
+                        println!(
+                            "WORDS: Hits: {}, Misses: {}",
                             cache.cache_hits().unwrap(),
                             cache.cache_misses().unwrap()
                         );
@@ -209,7 +223,7 @@ pub fn fill_crossword(
 
 // TODO: use RO behavior here
 pub fn find_fills(word: Word, trie: &Trie) -> Vec<Word> {
-    trie.words(word.contents.clone())
+    words(word.contents.clone(), trie)
         .drain(0..)
         .map(|new_word| Word {
             contents: new_word,
