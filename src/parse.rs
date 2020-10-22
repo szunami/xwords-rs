@@ -217,7 +217,7 @@ mod tests {
     use crate::Word;
     use crate::{Crossword, Direction};
 
-    use super::{WordBoundary, parse_words};
+    use super::{parse_words, WordBoundary};
 
     #[test]
     fn bigger_parse_works() {
