@@ -4,6 +4,7 @@ use crate::parse::parse_words;
 use crate::Word;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
 use crate::{score_word, Direction};
+use cached::SizedCache;
 use std::{
     collections::BinaryHeap,
     collections::{HashMap, HashSet},
@@ -75,6 +76,14 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
     }
 }
 
+cached_key! {
+    IS_WORD: SizedCache<String, bool> = SizedCache::with_size(10_000);
+    Key = { iter.clone().to_string() };
+    fn is_word(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
+        trie.is_word(iter)
+    }
+}
+
 pub fn fill_crossword(
     crossword: &Crossword,
     trie: Arc<Trie>,
@@ -127,6 +136,14 @@ pub fn fill_crossword(
 
                     if candidate_count % 100 == 0 {
                         println!("{}", candidate);
+
+                        use cached::Cached;
+                        let cache = IS_WORD.lock().unwrap();
+                        println!(
+                            "Hits: {}, Misses: {}",
+                            cache.cache_hits().unwrap(),
+                            cache.cache_misses().unwrap()
+                        );
                     }
 
                     let words = parse_words(&candidate);
@@ -164,7 +181,6 @@ pub fn fill_crossword(
                             }
 
                             viables.push(new_candidate);
-
                         }
 
                         if !viables.is_empty() {
@@ -206,10 +222,7 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &
     let mut already_used = HashSet::new();
 
     for word_boundary in word_boundaries {
-        let iter = CrosswordWordIterator::new(
-            candidate,
-            word_boundary,
-        );
+        let iter = CrosswordWordIterator::new(candidate, word_boundary);
         if iter.clone().any(|c| c == ' ') {
             continue;
         }
@@ -219,7 +232,7 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &
         }
         already_used.insert(iter.clone());
 
-        if !trie.is_word(iter) {
+        if !is_word(iter, trie) {
             return false;
         }
     }
@@ -228,6 +241,10 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &
 
 #[cfg(test)]
 mod tests {
+    use crate::fill::is_word;
+    use crate::fill::IS_WORD;
+    use crate::Trie;
+    use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
     use crate::{default_words, parse::parse_word_boundaries};
     use crate::{index_words, Crossword, Direction, Word};
     use std::fs::File;
@@ -499,5 +516,44 @@ thi
             &word_boundaries,
             &trie
         ));
+    }
+
+    #[test]
+    fn cache_works() {
+        let trie = Trie::build(vec![
+            String::from("bass"),
+            String::from("bats"),
+            String::from("bess"),
+            String::from("be"),
+        ]);
+
+        let crossword = Crossword::new(String::from(
+            "
+bass
+a   
+s   
+s   
+",
+        ))
+        .unwrap();
+        let word_boundary = WordBoundary {
+            start_row: 0,
+            start_col: 0,
+            direction: Direction::Across,
+            length: 4,
+        };
+        let iter = CrosswordWordIterator::new(&crossword, &word_boundary);
+
+        assert!(is_word(iter, &trie));
+
+        let word_boundary = WordBoundary {
+            start_row: 0,
+            start_col: 0,
+            direction: Direction::Down,
+            length: 4,
+        };
+        let iter = CrosswordWordIterator::new(&crossword, &word_boundary);
+
+        assert!(is_word(iter, &trie));
     }
 }

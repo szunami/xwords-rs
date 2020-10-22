@@ -39,6 +39,14 @@ impl<'s> CrosswordWordIterator<'s> {
             index: 0,
         }
     }
+
+    pub fn to_string(self) -> String {
+        let mut result = String::from("");
+        for c in self.clone() {
+            result.push(c)
+        }
+        result
+    }
 }
 
 impl<'s> Iterator for CrosswordWordIterator<'s> {
