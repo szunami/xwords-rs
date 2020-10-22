@@ -133,8 +133,7 @@ pub enum Direction {
 mod tests {
     use crate::crossword::CrosswordWordIterator;
     use crate::parse::WordBoundary;
-    use crate::Crossword;
-    use crate::CrosswordWordIterator;
+    use super::Crossword;
     use std::collections::HashSet;
 
     use super::Direction;
