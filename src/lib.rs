@@ -1,7 +1,11 @@
+#[macro_use]
+extern crate cached;
+
+use trie::Trie;
+
 use crate::crossword::Crossword;
-use crate::crossword::CrosswordWordIterator;
+
 use crate::crossword::Direction;
-use crate::trie::Trie;
 use crate::{ngram::bigrams, order::score_word};
 use std::collections::HashMap;
 use std::sync::Arc;

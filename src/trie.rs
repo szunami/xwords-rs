@@ -1,6 +1,5 @@
+use crate::crossword::CrosswordWordIterator;
 use std::{collections::HashMap, fmt};
-
-use crate::CrosswordWordIterator;
 
 #[derive(Clone)]
 pub struct TrieNode {
@@ -161,6 +160,7 @@ impl Trie {
 
 #[cfg(test)]
 mod tests {
+
     use std::collections::HashMap;
     use std::collections::HashSet;
 
