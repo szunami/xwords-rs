@@ -5,11 +5,7 @@ use crate::Word;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
 use crate::{score_word, Direction};
 use cached::SizedCache;
-use std::{
-    collections::BinaryHeap,
-    collections::{HashMap, HashSet},
-    sync::{mpsc, Arc, Mutex},
-};
+use std::{collections::BinaryHeap, time::Instant, collections::{HashMap, HashSet}, sync::RwLock, sync::{mpsc, Arc, Mutex}};
 
 use crate::{trie::Trie, Crossword};
 
@@ -110,7 +106,7 @@ pub fn fill_crossword(
         temp_state
     };
 
-    let candidates = Arc::new(Mutex::new(crossword_fill_state));
+    let candidates = Arc::new(RwLock::new(crossword_fill_state));
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
@@ -122,6 +118,8 @@ pub fn fill_crossword(
         let trie = trie.clone();
         let bigrams = bigrams.clone();
         let mut candidate_count = 0;
+        let mut local_queue: BinaryHeap<FrequencyOrderableCrossword> = BinaryHeap::new();
+        let now = Instant::now();
 
         std::thread::Builder::new()
             .name(String::from("worker"))
@@ -130,13 +128,15 @@ pub fn fill_crossword(
 
                 loop {
                     let candidate = {
-                        let mut queue = new_arc.lock().unwrap();
-                        if queue.done {
-                            return;
-                        }
-                        match queue.take_candidate() {
-                            Some(candidate) => candidate,
-                            None => continue,
+                        match local_queue.pop() {
+                            Some(candidate) => candidate.crossword,
+                            None => {
+                                let mut queue = new_arc.write().unwrap();
+                                match queue.take_candidate() {
+                                    Some(candidate) => candidate,
+                                    None => continue,
+                                }
+                            }
                         }
                     };
 
@@ -158,6 +158,7 @@ pub fn fill_crossword(
                             cache.cache_hits().unwrap(),
                             cache.cache_misses().unwrap()
                         );
+                        println!("Throughput: {}", candidate_count as f64 / now.elapsed().as_millis() as f64)
                     }
 
                     let words = parse_words(&candidate);
@@ -178,30 +179,42 @@ pub fn fill_crossword(
                         let mut viables: Vec<Crossword> = vec![];
 
                         if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
-                            if !new_candidate.contents.contains(" ") {
-                                let mut queue = new_arc.lock().unwrap();
-                                queue.mark_done();
+                            // if !new_candidate.contents.contains(" ") {
+                            //     let mut queue = new_arc.lock().unwrap();
+                            //     queue.mark_done();
 
-                                match new_tx.send(new_candidate.clone()) {
-                                    Ok(_) => {
-                                        println!("Just sent a result.");
-                                        return;
-                                    }
-                                    Err(err) => {
-                                        println!("Failed to send a result, error was {}", err);
-                                        return;
-                                    }
-                                }
-                            }
+                            //     match new_tx.send(new_candidate.clone()) {
+                            //         Ok(_) => {
+                            //             println!("Just sent a result.");
+                            //             return;
+                            //         }
+                            //         Err(err) => {
+                            //             println!("Failed to send a result, error was {}", err);
+                            //             return;
+                            //         }
+                            //     }
+                            // }
 
                             viables.push(new_candidate);
                         }
 
                         if !viables.is_empty() {
-                            let mut queue = new_arc.lock().unwrap();
+                            let reader = new_arc.read().unwrap();
 
-                            for viable_crossword in viables {
-                                queue.add_candidate(viable_crossword, bigrams.as_ref());
+                            if reader.candidate_queue.is_empty() {
+                                drop(reader);
+
+                                let mut writer = new_arc.write().unwrap();
+                                for viable_crossword in viables {
+                                    writer.add_candidate(viable_crossword, bigrams.as_ref());
+                                }
+                            } else {
+                                for viable_crossword in viables {
+                                    local_queue.push(FrequencyOrderableCrossword::new(
+                                        viable_crossword,
+                                        bigrams.as_ref(),
+                                    ));
+                                }
                             }
                         }
                     }
@@ -212,9 +225,8 @@ pub fn fill_crossword(
 
     match rx.recv() {
         Ok(result) => {
-            let queue = candidates.lock().unwrap();
-
-            println!("Processed {} candidates", queue.processed_candidates.len());
+            // let queue = candidates.lock().unwrap();
+            // println!("Processed {} candidates", queue.processed_candidates.len());
             Ok(result)
         }
         Err(_) => Err(String::from("Failed to receive")),
