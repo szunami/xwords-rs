@@ -5,7 +5,12 @@ use crate::Word;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
 use crate::{score_word, Direction};
 use cached::SizedCache;
-use std::{collections::BinaryHeap, time::Instant, collections::{HashMap, HashSet}, sync::{mpsc, Arc, Mutex}};
+use std::{
+    collections::BinaryHeap,
+    collections::{HashMap, HashSet},
+    sync::{mpsc, Arc, Mutex},
+    time::Instant,
+};
 
 use crate::{trie::Trie, Crossword};
 
@@ -108,13 +113,23 @@ pub fn fill_crossword(
         Arc::new(Mutex::new(temp_state))
     };
 
-    let fill_states
-    = {
-        let mut tmp : HashMap<usize, Arc<Mutex<CrosswordFillState>>> = HashMap::new();
+    let fill_states = {
+        let mut tmp: HashMap<usize, Arc<Mutex<CrosswordFillState>>> = HashMap::new();
         tmp.insert(0, crossword_fill_state);
+
+        for thread_index in 1..THREAD_COUNT {
+            tmp.insert(
+                thread_index,
+                Arc::new(Mutex::new(CrosswordFillState {
+                    processed_candidates: HashSet::new(),
+                    candidate_queue: BinaryHeap::new(),
+                    done: false,
+                })),
+            );
+        }
+
         Arc::new(tmp)
     };
-
 
     // let candidates = Arc::new(Mutex::new(crossword_fill_state));
     let (tx, rx) = mpsc::channel();
@@ -128,7 +143,7 @@ pub fn fill_crossword(
         let trie = trie.clone();
         let bigrams = bigrams.clone();
         let mut candidate_count = 0;
-        
+
         let now = Instant::now();
 
         let per_thread_fill_states = fill_states.clone();
@@ -140,7 +155,6 @@ pub fn fill_crossword(
 
                 loop {
                     let candidate = {
-
                         let fill_state = per_thread_fill_states.get(&thread_index).unwrap();
 
                         let mut queue = fill_state.lock().unwrap();
@@ -172,7 +186,10 @@ pub fn fill_crossword(
                         //     cache.cache_misses().unwrap()
                         // );
 
-                        println!("{}", (candidate_count as f64) / (now.elapsed().as_millis() as f64) )
+                        println!(
+                            "{}: {}", thread_index,
+                            (candidate_count as f64) / (now.elapsed().as_millis() as f64)
+                        )
                     }
 
                     let words = parse_words(&candidate);
@@ -214,9 +231,10 @@ pub fn fill_crossword(
 
                         if !viables.is_empty() {
                             let random_queue_index = 0;
-                            let fill_state = per_thread_fill_states.get(&random_queue_index).unwrap();
+                            let fill_state =
+                                per_thread_fill_states.get(&random_queue_index).unwrap();
                             let mut queue = fill_state.lock().unwrap();
-                
+
                             for viable_crossword in viables {
                                 queue.add_candidate(viable_crossword, bigrams.as_ref());
                             }
