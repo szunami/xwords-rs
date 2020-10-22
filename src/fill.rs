@@ -5,11 +5,7 @@ use crate::Word;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
 use crate::{score_word, Direction};
 use cached::SizedCache;
-use std::{
-    collections::BinaryHeap,
-    collections::{HashMap, HashSet},
-    sync::{mpsc, Arc, Mutex},
-};
+use std::{collections::BinaryHeap, time::Instant, collections::{HashMap, HashSet}, sync::{mpsc, Arc, Mutex}};
 
 use crate::{trie::Trie, Crossword};
 
@@ -92,6 +88,8 @@ cached_key! {
     }
 }
 
+const THREAD_COUNT: usize = 4;
+
 pub fn fill_crossword(
     crossword: &Crossword,
     trie: Arc<Trie>,
@@ -107,21 +105,33 @@ pub fn fill_crossword(
             done: false,
         };
         temp_state.add_candidate(crossword.clone(), bigrams.as_ref());
-        temp_state
+        Arc::new(Mutex::new(temp_state))
     };
 
-    let candidates = Arc::new(Mutex::new(crossword_fill_state));
+    let fill_states
+    = {
+        let mut tmp : HashMap<usize, Arc<Mutex<CrosswordFillState>>> = HashMap::new();
+        tmp.insert(0, crossword_fill_state);
+        Arc::new(tmp)
+    };
+
+
+    // let candidates = Arc::new(Mutex::new(crossword_fill_state));
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..4 {
-        let new_arc = Arc::clone(&candidates);
+    for thread_index in 0..THREAD_COUNT {
+        // let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
         let word_boundaries = parse_word_boundaries(&crossword);
 
         let trie = trie.clone();
         let bigrams = bigrams.clone();
         let mut candidate_count = 0;
+        
+        let now = Instant::now();
+
+        let per_thread_fill_states = fill_states.clone();
 
         std::thread::Builder::new()
             .name(String::from("worker"))
@@ -130,7 +140,10 @@ pub fn fill_crossword(
 
                 loop {
                     let candidate = {
-                        let mut queue = new_arc.lock().unwrap();
+
+                        let fill_state = per_thread_fill_states.get(&thread_index).unwrap();
+
+                        let mut queue = fill_state.lock().unwrap();
                         if queue.done {
                             return;
                         }
@@ -143,21 +156,23 @@ pub fn fill_crossword(
                     candidate_count += 1;
 
                     if candidate_count % 100 == 0 {
-                        println!("{}", candidate);
+                        // println!("{}", candidate);
 
-                        use cached::Cached;
-                        let cache = IS_WORD.lock().unwrap();
-                        println!(
-                            "IS_WORD: Hits: {}, Misses: {}",
-                            cache.cache_hits().unwrap(),
-                            cache.cache_misses().unwrap()
-                        );
-                        let cache = WORDS.lock().unwrap();
-                        println!(
-                            "WORDS: Hits: {}, Misses: {}",
-                            cache.cache_hits().unwrap(),
-                            cache.cache_misses().unwrap()
-                        );
+                        // use cached::Cached;
+                        // let cache = IS_WORD.lock().unwrap();
+                        // println!(
+                        //     "IS_WORD: Hits: {}, Misses: {}",
+                        //     cache.cache_hits().unwrap(),
+                        //     cache.cache_misses().unwrap()
+                        // );
+                        // let cache = WORDS.lock().unwrap();
+                        // println!(
+                        //     "WORDS: Hits: {}, Misses: {}",
+                        //     cache.cache_hits().unwrap(),
+                        //     cache.cache_misses().unwrap()
+                        // );
+
+                        println!("{}", (candidate_count as f64) / (now.elapsed().as_millis() as f64) )
                     }
 
                     let words = parse_words(&candidate);
@@ -178,28 +193,30 @@ pub fn fill_crossword(
                         let mut viables: Vec<Crossword> = vec![];
 
                         if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
-                            if !new_candidate.contents.contains(" ") {
-                                let mut queue = new_arc.lock().unwrap();
-                                queue.mark_done();
+                            // if !new_candidate.contents.contains(" ") {
+                            //     let mut queue = new_arc.lock().unwrap();
+                            //     queue.mark_done();
 
-                                match new_tx.send(new_candidate.clone()) {
-                                    Ok(_) => {
-                                        println!("Just sent a result.");
-                                        return;
-                                    }
-                                    Err(err) => {
-                                        println!("Failed to send a result, error was {}", err);
-                                        return;
-                                    }
-                                }
-                            }
+                            //     match new_tx.send(new_candidate.clone()) {
+                            //         Ok(_) => {
+                            //             println!("Just sent a result.");
+                            //             return;
+                            //         }
+                            //         Err(err) => {
+                            //             println!("Failed to send a result, error was {}", err);
+                            //             return;
+                            //         }
+                            //     }
+                            // }
 
                             viables.push(new_candidate);
                         }
 
                         if !viables.is_empty() {
-                            let mut queue = new_arc.lock().unwrap();
-
+                            let random_queue_index = 0;
+                            let fill_state = per_thread_fill_states.get(&random_queue_index).unwrap();
+                            let mut queue = fill_state.lock().unwrap();
+                
                             for viable_crossword in viables {
                                 queue.add_candidate(viable_crossword, bigrams.as_ref());
                             }
@@ -212,9 +229,11 @@ pub fn fill_crossword(
 
     match rx.recv() {
         Ok(result) => {
-            let queue = candidates.lock().unwrap();
+            // let random_queue_index = 0;
+            // let fill_state = fill_states.get(&random_queue_index).unwrap();
+            // let queue = fill_state.lock().unwrap();
+            // println!("Processed {} candidates", queue.processed_candidates.len());
 
-            println!("Processed {} candidates", queue.processed_candidates.len());
             Ok(result)
         }
         Err(_) => Err(String::from("Failed to receive")),
