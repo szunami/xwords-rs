@@ -1,3 +1,4 @@
+use rand::{prelude::Distribution, distributions::Uniform};
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
 use crate::parse::parse_words;
@@ -149,7 +150,7 @@ pub fn fill_crossword(
         let per_thread_fill_states = fill_states.clone();
 
         std::thread::Builder::new()
-            .name(String::from("worker"))
+            .name(String::from(format!("{}", thread_index)))
             .spawn(move || {
                 println!("Hello from thread {}", thread_index);
 
@@ -230,7 +231,10 @@ pub fn fill_crossword(
                         }
 
                         if !viables.is_empty() {
-                            let random_queue_index = 0;
+                            let random_queue = Uniform::new(0, THREAD_COUNT);
+                            let mut rng = rand::thread_rng();
+                            let random_queue_index = random_queue.sample(&mut rng);
+
                             let fill_state =
                                 per_thread_fill_states.get(&random_queue_index).unwrap();
                             let mut queue = fill_state.lock().unwrap();
@@ -383,7 +387,7 @@ YAYAS*E  N* M
   E *L  O*A    
          *N    
   V* W *E D*   
-**E  E*BROILERS
+**E  E*        
 RATEDR*     ***
   I  *B N * C  
   M*       *R  
