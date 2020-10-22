@@ -1,8 +1,5 @@
-
-use cached::SizedCache;
+use crate::crossword::CrosswordWordIterator;
 use std::{collections::HashMap, fmt};
-
-use crate::CrosswordWordIterator;
 
 #[derive(Clone)]
 pub struct TrieNode {
@@ -161,27 +158,10 @@ impl Trie {
     }
 }
 
-// cached_key!{
-//     LENGTH: SizedCache<String, usize> = SizedCache::with_size(50);
-//     Key = { format!("{}{}", a, b) };
-//     fn length(a: &str, b: &str) -> usize = {
-//         let size = a.len() + b.len();
-//         sleep(Duration::new(size as u64, 0));
-//         size
-//     }
-// }
-
-
-
-
-
 #[cfg(test)]
 mod tests {
-use crate::Crossword;
-use crate::{crossword::{CrosswordWordIterator, Direction}, parse::WordBoundary};
-use cached::{Cached, SizedCache};
 
-use std::collections::HashMap;
+    use std::collections::HashMap;
     use std::collections::HashSet;
 
     use super::{Trie, TrieNode};
@@ -271,6 +251,4 @@ use std::collections::HashMap;
         let actual: HashSet<String> = trie.words(String::from("b ss")).iter().cloned().collect();
         assert_eq!(expected, actual,)
     }
-
-    
 }

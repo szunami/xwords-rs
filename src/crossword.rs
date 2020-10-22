@@ -1,5 +1,5 @@
 use crate::parse::WordBoundary;
-use std::{hash::Hash, fmt};
+use std::{fmt, hash::Hash};
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub struct Crossword {
@@ -32,7 +32,10 @@ pub struct CrosswordWordIterator<'s> {
 }
 
 impl<'s> CrosswordWordIterator<'s> {
-    pub fn new(crossword: &'s Crossword, word_boundary: &'s WordBoundary) -> CrosswordWordIterator<'s> {
+    pub fn new(
+        crossword: &'s Crossword,
+        word_boundary: &'s WordBoundary,
+    ) -> CrosswordWordIterator<'s> {
         CrosswordWordIterator {
             crossword,
             word_boundary,
@@ -128,9 +131,9 @@ pub enum Direction {
 
 #[cfg(test)]
 mod tests {
+    use crate::crossword::CrosswordWordIterator;
     use crate::parse::WordBoundary;
-    use crate::Crossword;
-    use crate::CrosswordWordIterator;
+    use super::Crossword;
     use std::collections::HashSet;
 
     use super::Direction;

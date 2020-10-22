@@ -293,7 +293,7 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &
 #[cfg(test)]
 mod tests {
     use crate::fill::is_word;
-    use crate::fill::IS_WORD;
+
     use crate::Trie;
     use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
     use crate::{default_words, parse::parse_word_boundaries};
