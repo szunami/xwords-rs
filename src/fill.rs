@@ -5,6 +5,7 @@ use crate::Word;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
 use crate::{score_word, Direction};
 use cached::SizedCache;
+use std::time::Instant;
 use std::{
     collections::BinaryHeap,
     collections::{HashMap, HashSet},
@@ -17,13 +18,25 @@ struct CrosswordFillState {
     // Used to ensure we only enqueue each crossword once.
     // Contains crosswords that are queued or have already been visited
     processed_candidates: HashSet<Crossword>,
+    start_time: Instant,
+    taken_count: usize,
     candidate_queue: BinaryHeap<FrequencyOrderableCrossword>,
     done: bool,
 }
 
 impl CrosswordFillState {
     fn take_candidate(&mut self) -> Option<Crossword> {
-        self.candidate_queue.pop().map(|x| x.crossword)
+        self.candidate_queue.pop().map(|x| {
+            self.taken_count += 1;
+            if self.taken_count % 10_000 == 0 {
+                println!(
+                    "Total throughput: {}",
+                    self.taken_count as f64 / self.start_time.elapsed().as_millis() as f64
+                );
+                println!("{}", x.crossword);
+            }
+            x.crossword
+        })
     }
 
     fn add_candidate(&mut self, candidate: Crossword, bigrams: &HashMap<(char, char), usize>) {
@@ -100,125 +113,99 @@ pub fn fill_crossword(
     // parse crossword into partially filled words
     // fill a word
 
-    let crossword_fill_state = {
+    let mut crossword_fill_state = {
         let mut temp_state = CrosswordFillState {
             processed_candidates: HashSet::new(),
             candidate_queue: BinaryHeap::new(),
             done: false,
+            taken_count: 0,
+            start_time: Instant::now(),
         };
         temp_state.add_candidate(crossword.clone(), bigrams.as_ref());
         temp_state
     };
 
-    let candidates = Arc::new(Mutex::new(crossword_fill_state));
-    let (tx, rx) = mpsc::channel();
+    // let candidates = Arc::new(Mutex::new(crossword_fill_state));
+    // let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..4 {
-        let new_arc = Arc::clone(&candidates);
-        let new_tx = tx.clone();
-        let word_boundaries = parse_word_boundaries(&crossword);
+    // for thread_index in 0..1 {
+    let word_boundaries = parse_word_boundaries(&crossword);
 
-        let trie = trie.clone();
-        let bigrams = bigrams.clone();
-        let mut candidate_count = 0;
+    let mut candidate_count = 0;
+    while !crossword_fill_state.candidate_queue.is_empty() {
+        // let new_arc = Arc::clone(&candidates);
+        // let new_tx = tx.clone();
 
-        std::thread::Builder::new()
-            .name(String::from("worker"))
-            .spawn(move || {
-                println!("Hello from thread {}", thread_index);
+        // let trie = trie.clone();
+        // let bigrams = bigrams.clone();
+        // let mut candidate_count = 0;
+        // let now = Instant::now();
 
-                loop {
-                    let candidate = {
-                        let mut queue = new_arc.lock().unwrap();
-                        if queue.done {
-                            return;
-                        }
-                        match queue.take_candidate() {
-                            Some(candidate) => candidate,
-                            None => continue,
-                        }
-                    };
+        let candidate = {
+            match crossword_fill_state.take_candidate() {
+                Some(candidate) => candidate,
+                None => return Err(String::from("Queue is empty, and nothing was found.")),
+            }
+        };
 
-                    candidate_count += 1;
+        candidate_count += 1;
 
-                    if candidate_count % 100 == 0 {
-                        println!("{}", candidate);
-
-                        use cached::Cached;
-                        let cache = IS_WORD.lock().unwrap();
-                        println!(
-                            "IS_WORD: Hits: {}, Misses: {}",
-                            cache.cache_hits().unwrap(),
-                            cache.cache_misses().unwrap()
-                        );
-                        let cache = WORDS.lock().unwrap();
-                        println!(
-                            "WORDS: Hits: {}, Misses: {}",
-                            cache.cache_hits().unwrap(),
-                            cache.cache_misses().unwrap()
-                        );
-                    }
-
-                    let words = parse_words(&candidate);
-                    let to_fill = words
-                        .iter()
-                        .filter(|word| word.contents.chars().any(|c| c == ' '))
-                        .min_by_key(|word| score_word(&word.contents, bigrams.as_ref()))
-                        .unwrap();
-                    // find valid fills for word;
-                    // for each fill:
-                    //   are all complete words legit?
-                    //     if so, push
-
-                    let potential_fills = find_fills(to_fill.clone(), trie.as_ref());
-                    for potential_fill in potential_fills {
-                        let new_candidate = fill_one_word(&candidate, potential_fill);
-
-                        let mut viables: Vec<Crossword> = vec![];
-
-                        if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
-                            if !new_candidate.contents.contains(" ") {
-                                let mut queue = new_arc.lock().unwrap();
-                                queue.mark_done();
-
-                                match new_tx.send(new_candidate.clone()) {
-                                    Ok(_) => {
-                                        println!("Just sent a result.");
-                                        return;
-                                    }
-                                    Err(err) => {
-                                        println!("Failed to send a result, error was {}", err);
-                                        return;
-                                    }
-                                }
-                            }
-
-                            viables.push(new_candidate);
-                        }
-
-                        if !viables.is_empty() {
-                            let mut queue = new_arc.lock().unwrap();
-
-                            for viable_crossword in viables {
-                                queue.add_candidate(viable_crossword, bigrams.as_ref());
-                            }
-                        }
-                    }
-                }
-            })
-            .unwrap();
-    }
-
-    match rx.recv() {
-        Ok(result) => {
-            let queue = candidates.lock().unwrap();
-
-            println!("Processed {} candidates", queue.processed_candidates.len());
-            Ok(result)
+        if candidate_count % 1_000 == 0 {
+            // println!("{}", candidate);
+            // use cached::Cached;
+            // let cache = IS_WORD.lock().unwrap();
+            // println!(
+            //     "IS_WORD: Hits: {}, Misses: {}",
+            //     cache.cache_hits().unwrap(),
+            //     cache.cache_misses().unwrap()
+            // );
+            // let cache = WORDS.lock().unwrap();
+            // println!(
+            //     "WORDS: Hits: {}, Misses: {}",
+            //     cache.cache_hits().unwrap(),
+            //     cache.cache_misses().unwrap()
+            // );
+            // println!(
+            //     "Throughput: {}",
+            //     candidate_count as f64 / now.elapsed().as_millis() as f64
+            // );
         }
-        Err(_) => Err(String::from("Failed to receive")),
+
+        let words = parse_words(&candidate);
+        let to_fill = words
+            .iter()
+            .filter(|word| word.contents.chars().any(|c| c == ' '))
+            .min_by_key(|word| score_word(&word.contents, bigrams.as_ref()))
+            .unwrap();
+        // find valid fills for word;
+        // for each fill:
+        //   are all complete words legit?
+        //     if so, push
+
+        let potential_fills = find_fills(to_fill.clone(), trie.as_ref());
+        for potential_fill in potential_fills {
+            let new_candidate = fill_one_word(&candidate, potential_fill);
+
+            let mut viables: Vec<Crossword> = vec![];
+
+            if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
+                if !new_candidate.contents.contains(" ") {
+                    return Ok(new_candidate.clone());
+                }
+
+                viables.push(new_candidate);
+            }
+
+            if !viables.is_empty() {
+                for viable_crossword in viables {
+                    crossword_fill_state.add_candidate(viable_crossword, bigrams.as_ref());
+                }
+            }
+        }
     }
+
+    Err(String::from("huh"))
 }
 
 // TODO: use RO behavior here
@@ -328,7 +315,7 @@ YAYAS*E  N* M
     #[test]
     #[ignore]
     fn _2020_10_12_empty_works() {
-        let guard = pprof::ProfilerGuard::new(100).unwrap();
+        let guard = pprof::ProfilerGuard::new(10).unwrap();
         std::thread::spawn(move || loop {
             match guard.report().build() {
                 Ok(report) => {
@@ -337,7 +324,7 @@ YAYAS*E  N* M
                 }
                 Err(_) => {}
             };
-            std::thread::sleep(std::time::Duration::from_secs(5))
+            std::thread::sleep(std::time::Duration::from_secs(10))
         });
 
         let real_puz = Crossword::new(String::from(
@@ -357,6 +344,52 @@ KIA*  A* R *C
 EVILS*         
 B    *L  E* S  
 YAYAS*E  N* M  
+",
+        ))
+        .unwrap();
+
+        println!("{}", real_puz);
+
+        let (bigrams, trie) = index_words(default_words());
+        let now = Instant::now();
+
+        let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
+    }
+
+    #[test]
+    #[ignore]
+    fn _2020_10_22_empty_works() {
+        let guard = pprof::ProfilerGuard::new(100).unwrap();
+        std::thread::spawn(move || loop {
+            match guard.report().build() {
+                Ok(report) => {
+                    let file = File::create("flamegraph.svg").unwrap();
+                    report.flamegraph(file).unwrap();
+                }
+                Err(_) => {}
+            };
+            std::thread::sleep(std::time::Duration::from_secs(5))
+        });
+
+        let real_puz = Crossword::new(String::from(
+            "
+     **    *   
+      *    *   
+           *   
+   *   **      
+***      *   **
+*    *         
+      *   *    
+    *     *    
+    *   *      
+         *    *
+**   *      ***
+      **   *   
+   *           
+   *           
+   *    **     
 ",
         ))
         .unwrap();
