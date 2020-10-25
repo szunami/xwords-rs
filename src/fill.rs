@@ -367,9 +367,9 @@ YAYAS*E  N* M
         let (bigrams, trie) = default_indexes();
         let now = Instant::now();
 
-        // let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
-        // println!("Filled in {} seconds.", now.elapsed().as_secs());
-        // println!("{}", filled_puz);
+        let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
     }
 
     #[test]
