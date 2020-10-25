@@ -69,3 +69,32 @@ impl Word {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{trie::Trie, default_words};
+    use crate::index_words;
+    use crate::File;
+
+    #[test]
+    #[ignore]
+    fn rebuild_serialized_indexes() {
+        let (bigrams, trie) = index_words(default_words());
+
+        let mut trie_file = File::create("trie.json").unwrap();
+        let trie_result = serde_json::to_writer(trie_file, &trie);
+        assert!(trie_result.is_ok());
+
+        // let mut bigrams_file = File::create("bigrams.json").unwrap();
+        // let bigrams_result = serde_json::to_writer(bigrams_file, &bigrams);
+        // println!("{:?}", bigrams_result.err());
+        
+        // assert!(bigrams_result.is_ok());
+    }
+
+    #[test]
+    fn test_load() {
+        let mut trie_file = File::create("trie.json").unwrap();
+        assert!(fserde_json::from_reader::<File, Trie>(trie_file).is_ok());
+    }
+}

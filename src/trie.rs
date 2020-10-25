@@ -1,7 +1,7 @@
 use crate::crossword::CrosswordWordIterator;
 use std::{collections::HashMap, fmt};
-
-#[derive(Clone)]
+use serde::{Deserialize, Serialize};
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TrieNode {
     contents: Option<char>,
     children: HashMap<char, TrieNode>,
@@ -120,6 +120,7 @@ impl fmt::Display for TrieNode {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Trie {
     pub root: TrieNode,
 }
@@ -163,6 +164,7 @@ mod tests {
 
     use std::collections::HashMap;
     use std::collections::HashSet;
+    use serde_json::Result;
 
     use super::{Trie, TrieNode};
 
@@ -251,4 +253,6 @@ mod tests {
         let actual: HashSet<String> = trie.words(String::from("b ss")).iter().cloned().collect();
         assert_eq!(expected, actual,)
     }
+
+
 }
