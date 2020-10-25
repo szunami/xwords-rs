@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate cached;
 
+use crate::ngram::from_ser;
 use trie::Trie;
 
 use crate::crossword::Crossword;
@@ -23,6 +24,16 @@ pub fn fill_crossword(contents: String, words: Vec<String>) -> Result<Crossword,
     let crossword = Crossword::new(contents).unwrap();
     let (bigrams, trie) = index_words(words);
     fill::fill_crossword(&crossword, Arc::new(trie), Arc::new(bigrams))
+}
+
+pub fn default_indexes() -> (HashMap<(char, char), usize>, Trie) {
+    let file = File::open("./trie.json").unwrap();
+    let load = serde_json::from_reader::<File, Trie>(file);
+    let trie = load.unwrap();
+    let file = File::open("./bigrams.json").unwrap();
+    let load = serde_json::from_reader::<File, HashMap<String, usize>>(file);
+    let bigrams = from_ser(load.unwrap());
+    (bigrams, trie)
 }
 
 pub fn default_words() -> Vec<String> {
