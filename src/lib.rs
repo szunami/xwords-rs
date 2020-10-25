@@ -94,7 +94,9 @@ mod tests {
 
     #[test]
     fn test_load() {
-        let mut trie_file = File::create("trie.json").unwrap();
-        assert!(fserde_json::from_reader::<File, Trie>(trie_file).is_ok());
+        let mut trie_file = File::open("./trie.json").unwrap();
+        let trie_load = serde_json::from_reader::<File, Trie>(trie_file);
+        println!("{:?}", trie_load.err());
+        // assert!(trie_load.is_ok());
     }
 }
