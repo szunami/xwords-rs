@@ -122,8 +122,8 @@ mod tests {
 
     #[test]
     fn test_bigrams_load() {
-        let file = File::open("./bigrams.bincode").unwrap();
-        let load = serde_json::from_reader::<File, HashMap<String, usize>>(file);
+        let file = File::open("bigrams.bincode").unwrap();
+        let load = bincode::deserialize_from::<File, HashMap<String, usize>>(file);
         assert!(load.is_ok());
         from_ser(load.unwrap());
     }
