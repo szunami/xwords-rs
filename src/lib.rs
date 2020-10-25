@@ -8,8 +8,8 @@ use crate::crossword::Crossword;
 
 use crate::crossword::Direction;
 use crate::{ngram::bigrams, order::score_word};
-use std::{collections::HashMap, time::Instant};
 use std::sync::Arc;
+use std::{collections::HashMap, time::Instant};
 
 use std::{fmt, fs::File};
 
