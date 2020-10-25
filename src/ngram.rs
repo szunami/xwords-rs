@@ -17,6 +17,31 @@ pub fn bigrams(words: &Vec<String>) -> HashMap<(char, char), usize> {
     result
 }
 
+pub(crate) fn to_ser(bigrams: HashMap<(char, char), usize>) -> HashMap<String, usize> {
+    let mut result = HashMap::new();
+
+    for ((a, b), freq) in bigrams.iter() {
+        use std::iter::FromIterator;
+        let key = String::from_iter(vec![*a, *b].iter());
+        result.insert(key, *freq);
+    }
+
+    result
+}
+
+pub(crate) fn from_ser(bigrams: HashMap<String, usize>) -> HashMap<(char, char), usize> {
+    let mut result = HashMap::new();
+
+    for (key, freq) in bigrams.iter() {
+        let a = key.chars().next().unwrap();
+        let b = key.chars().next().unwrap();
+
+        result.insert((a, b), *freq);
+    }
+
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use std::{fs::File, time::Instant};

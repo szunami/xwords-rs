@@ -1,7 +1,7 @@
 use crate::crossword::CrosswordWordIterator;
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt};
-
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TrieNode {
     contents: Option<char>,
     children: HashMap<char, TrieNode>,
@@ -120,6 +120,7 @@ impl fmt::Display for TrieNode {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Trie {
     pub root: TrieNode,
 }
