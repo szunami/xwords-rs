@@ -255,7 +255,8 @@ fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &
 
 #[cfg(test)]
 mod tests {
-    use crate::fill::is_word;
+    use crate::default_indexes;
+use crate::fill::is_word;
 
     use crate::Trie;
     use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
@@ -363,12 +364,12 @@ YAYAS*E  N* M
 
         println!("{}", real_puz);
 
-        let (bigrams, trie) = index_words(default_words());
+        let (bigrams, trie) = default_indexes();
         let now = Instant::now();
 
-        let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
-        println!("Filled in {} seconds.", now.elapsed().as_secs());
-        println!("{}", filled_puz);
+        // let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
+        // println!("Filled in {} seconds.", now.elapsed().as_secs());
+        // println!("{}", filled_puz);
     }
 
     #[test]
