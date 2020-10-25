@@ -28,14 +28,14 @@ pub fn fill_crossword(contents: String, words: Vec<String>) -> Result<Crossword,
 
 pub fn default_indexes() -> (HashMap<(char, char), usize>, Trie) {
     let now = Instant::now();
-    let file = File::open("./trie.json").unwrap();
-    let load = serde_json::from_reader::<File, Trie>(file);
+    let file = File::open("./trie.bincode").unwrap();
+    let load = bincode::deserialize_from::<File, Trie>(file);
     let trie = load.unwrap();
     println!("Loaded trie in {}ms", now.elapsed().as_millis());
     let now = Instant::now();
 
-    let file = File::open("./bigrams.json").unwrap();
-    let load = serde_json::from_reader::<File, HashMap<String, usize>>(file);
+    let file = File::open("./bigrams.bincode").unwrap();
+    let load = bincode::deserialize_from::<File, HashMap<String, usize>>(file);
     let bigrams = from_ser(load.unwrap());
     println!("Loaded bigrams in {}ms", now.elapsed().as_millis());
 

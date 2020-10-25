@@ -329,6 +329,8 @@ YAYAS*E  N* M
     #[test]
     #[ignore]
     fn _2020_10_12_empty_works() {
+        let now = Instant::now();
+
         let guard = pprof::ProfilerGuard::new(100).unwrap();
         std::thread::spawn(move || loop {
             match guard.report().build() {
@@ -365,7 +367,7 @@ YAYAS*E  N* M
         println!("{}", real_puz);
 
         let (bigrams, trie) = default_indexes();
-        let now = Instant::now();
+        println!("Loaded indices in {}ms", now.elapsed().as_millis());
 
         let filled_puz = fill_crossword(&real_puz, Arc::new(trie), Arc::new(bigrams)).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
