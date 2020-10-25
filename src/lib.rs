@@ -72,31 +72,40 @@ impl Word {
 
 #[cfg(test)]
 mod tests {
-    use crate::{trie::Trie, default_words};
+    use crate::ngram::from_ser;
+    use std::collections::HashMap;
+
     use crate::index_words;
+    use crate::ngram::to_ser;
     use crate::File;
+    use crate::{default_words, trie::Trie};
 
     #[test]
     #[ignore]
     fn rebuild_serialized_indexes() {
         let (bigrams, trie) = index_words(default_words());
 
-        let mut trie_file = File::create("trie.json").unwrap();
+        let trie_file = File::create("trie.json").unwrap();
         let trie_result = serde_json::to_writer(trie_file, &trie);
         assert!(trie_result.is_ok());
 
-        // let mut bigrams_file = File::create("bigrams.json").unwrap();
-        // let bigrams_result = serde_json::to_writer(bigrams_file, &bigrams);
-        // println!("{:?}", bigrams_result.err());
-        
-        // assert!(bigrams_result.is_ok());
+        let bigrams_file = File::create("bigrams.json").unwrap();
+        let bigrams_result = serde_json::to_writer(bigrams_file, &to_ser(bigrams));
+        assert!(bigrams_result.is_ok());
     }
 
     #[test]
-    fn test_load() {
-        let mut trie_file = File::open("./trie.json").unwrap();
-        let trie_load = serde_json::from_reader::<File, Trie>(trie_file);
-        println!("{:?}", trie_load.err());
-        // assert!(trie_load.is_ok());
+    fn test_trie_load() {
+        let file = File::open("./trie.json").unwrap();
+        let load = serde_json::from_reader::<File, Trie>(file);
+        assert!(load.is_ok());
+    }
+
+    #[test]
+    fn test_bigrams_load() {
+        let file = File::open("./bigrams.json").unwrap();
+        let load = serde_json::from_reader::<File, HashMap<String, usize>>(file);
+        assert!(load.is_ok());
+        from_ser(load.unwrap());
     }
 }
