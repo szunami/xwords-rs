@@ -142,23 +142,23 @@ pub fn fill_crossword(
 
                     candidate_count += 1;
 
-                    if candidate_count % 100 == 0 {
-                        println!("{}", candidate);
+                    // if candidate_count % 100 == 0 {
+                    //     // println!("{}", candidate);
 
-                        use cached::Cached;
-                        let cache = IS_WORD.lock().unwrap();
-                        println!(
-                            "IS_WORD: Hits: {}, Misses: {}",
-                            cache.cache_hits().unwrap(),
-                            cache.cache_misses().unwrap()
-                        );
-                        let cache = WORDS.lock().unwrap();
-                        println!(
-                            "WORDS: Hits: {}, Misses: {}",
-                            cache.cache_hits().unwrap(),
-                            cache.cache_misses().unwrap()
-                        );
-                    }
+                    //     use cached::Cached;
+                    //     let cache = IS_WORD.lock().unwrap();
+                    //     println!(
+                    //         "IS_WORD: Hits: {}, Misses: {}",
+                    //         cache.cache_hits().unwrap(),
+                    //         cache.cache_misses().unwrap()
+                    //     );
+                    //     let cache = WORDS.lock().unwrap();
+                    //     println!(
+                    //         "WORDS: Hits: {}, Misses: {}",
+                    //         cache.cache_hits().unwrap(),
+                    //         cache.cache_misses().unwrap()
+                    //     );
+                    // }
 
                     let words = parse_words(&candidate);
                     let to_fill = words

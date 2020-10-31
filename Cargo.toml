@@ -18,5 +18,5 @@ criterion = "0.3"
 pprof = { version = "0.3", features = ["flamegraph"] } 
 
 [[bench]]
-name = "fill"
+name = "fill_crossword"
 harness = false
