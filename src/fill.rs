@@ -142,22 +142,8 @@ pub fn fill_crossword(
 
                     candidate_count += 1;
 
-                    if candidate_count % 100 == 0 {
+                    if candidate_count % 1_000 == 0 {
                         println!("{}", candidate);
-
-                        use cached::Cached;
-                        let cache = IS_WORD.lock().unwrap();
-                        println!(
-                            "IS_WORD: Hits: {}, Misses: {}",
-                            cache.cache_hits().unwrap(),
-                            cache.cache_misses().unwrap()
-                        );
-                        let cache = WORDS.lock().unwrap();
-                        println!(
-                            "WORDS: Hits: {}, Misses: {}",
-                            cache.cache_hits().unwrap(),
-                            cache.cache_misses().unwrap()
-                        );
                     }
 
                     let words = parse_words(&candidate);
@@ -233,7 +219,7 @@ pub fn find_fills(word: Word, trie: &Trie) -> Vec<Word> {
 }
 
 fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &Trie) -> bool {
-    let mut already_used = HashSet::new();
+    let mut already_used = HashSet::with_capacity(word_boundaries.len());
 
     for word_boundary in word_boundaries {
         let iter = CrosswordWordIterator::new(candidate, word_boundary);
