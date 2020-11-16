@@ -44,7 +44,7 @@ impl<'s> CrosswordWordIterator<'s> {
     }
 
     pub fn to_string(self) -> String {
-        let mut result = String::from("");
+        let mut result = String::with_capacity(self.word_boundary.length);
         for c in self.clone() {
             result.push(c)
         }
