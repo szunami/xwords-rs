@@ -15,9 +15,6 @@ use std::{
 use crate::{trie::Trie, Crossword};
 
 struct CrosswordFillState {
-    // Used to ensure we only enqueue each crossword once.
-    // Contains crosswords that are queued or have already been visited
-    processed_candidates: HashSet<Crossword>,
     candidate_queue: BinaryHeap<FrequencyOrderableCrossword>,
     done: bool,
 }
@@ -28,14 +25,8 @@ impl CrosswordFillState {
     }
 
     fn add_candidate(&mut self, candidate: Crossword, bigrams: &HashMap<(char, char), usize>) {
-        if !self.processed_candidates.contains(&candidate) {
             let orderable = FrequencyOrderableCrossword::new(candidate.clone(), bigrams);
-
             self.candidate_queue.push(orderable);
-            self.processed_candidates.insert(candidate);
-        } else {
-            println!("Revisiting crossword: {}", candidate);
-        }
     }
 
     fn mark_done(&mut self) {
@@ -103,7 +94,6 @@ pub fn fill_crossword(
 
     let crossword_fill_state = {
         let mut temp_state = CrosswordFillState {
-            processed_candidates: HashSet::new(),
             candidate_queue: BinaryHeap::new(),
             done: false,
         };
@@ -204,7 +194,6 @@ pub fn fill_crossword(
         Ok(result) => {
             let queue = candidates.lock().unwrap();
 
-            println!("Processed {} candidates", queue.processed_candidates.len());
             Ok(result)
         }
         Err(_) => Err(String::from("Failed to receive")),
