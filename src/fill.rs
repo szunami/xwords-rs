@@ -1,3 +1,4 @@
+use crate::Instant;
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
 use crate::parse::parse_words;
@@ -114,7 +115,7 @@ pub fn fill_crossword(
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..4 {
+    for thread_index in 0..2 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
         let word_boundaries = parse_word_boundaries(&crossword);
@@ -124,9 +125,11 @@ pub fn fill_crossword(
         let mut candidate_count = 0;
 
         std::thread::Builder::new()
-            .name(String::from("worker"))
+            .name(String::from(format!("worker{}", thread_index)))
             .spawn(move || {
                 println!("Hello from thread {}", thread_index);
+
+                let thread_start = Instant::now();
 
                 loop {
                     let candidate = {
@@ -143,7 +146,8 @@ pub fn fill_crossword(
                     candidate_count += 1;
 
                     if candidate_count % 1_000 == 0 {
-                        println!("{}", candidate);
+                        println!("Thread {} throughput: {}", thread_index, candidate_count as f32 / thread_start.elapsed().as_millis() as f32);
+                        // println!("{}", candidate);
                     }
 
                     let words = parse_words(&candidate);
@@ -340,7 +344,7 @@ RATEDR*     ***
   I  *B N * C  
   M*       *R  
   E * L S*     
-***ACIDY*GRATES
+***ACIDY*      
 ENDZONES*A  I**
 KIA*  A* R *C  
 EVILS*         
