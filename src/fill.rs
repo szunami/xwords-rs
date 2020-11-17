@@ -318,7 +318,7 @@ YAYAS*E  N* M
 
     #[test]
     #[ignore]
-    fn _2020_10_12_s_works() {
+    fn _2020_10_12_empty_works() { () {
         let now = Instant::now();
 
         let guard = pprof::ProfilerGuard::new(100).unwrap();

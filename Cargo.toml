@@ -20,3 +20,10 @@ pprof = { version = "0.3", features = ["flamegraph"] }
 [[example]]
 name = "sample"
 path = "examples/sample.rs"
+
+[[example]]
+name = "empty"
+path = "examples/empty.rs"
+
+[profile.release]
+debug = 1
