@@ -1,3 +1,4 @@
+use crate::order::score_iter;
 use crate::Instant;
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
@@ -6,11 +7,7 @@ use crate::Word;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
 use crate::{score_word, Direction};
 use cached::SizedCache;
-use std::{
-    collections::BinaryHeap,
-    collections::{HashMap, HashSet},
-    sync::{mpsc, Arc, Mutex},
-};
+use std::{collections::BinaryHeap, collections::{hash_map::DefaultHasher, HashMap, HashSet}, hash::Hash, hash::Hasher, sync::{mpsc, Arc, Mutex}};
 
 use crate::{trie::Trie, Crossword};
 
@@ -31,6 +28,35 @@ impl CrosswordFillState {
 
     fn mark_done(&mut self) {
         self.done = true;
+    }
+}
+
+fn fill_one_word_tmp(candidate: &Crossword, iter: &CrosswordWordIterator, word: String) -> Crossword {
+    let mut result_contents = candidate.contents.clone();
+    let mut bytes = result_contents.into_bytes();
+
+    let word_boundary = iter.word_boundary;
+    
+    match word_boundary.direction {
+        Direction::Across => {
+            for (char_index, c) in word.chars().enumerate() {
+                let col = word_boundary.start_col + char_index;
+                bytes[word_boundary.start_row * candidate.width + col] = c as u8;
+            }
+        }
+        Direction::Down => {
+            for (char_index, c) in word.chars().enumerate() {
+                let row = word_boundary.start_row + char_index;
+                bytes[row * candidate.width + word_boundary.start_col] = c as u8;
+            }
+        }
+    }
+    unsafe { result_contents = String::from_utf8_unchecked(bytes) }
+    
+    
+    Crossword {
+        contents: result_contents,
+        ..*candidate
     }
 }
 
@@ -69,16 +95,22 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
 }
 
 cached_key! {
-    IS_WORD: SizedCache<String, bool> = SizedCache::with_size(10_000);
-    Key = { iter.clone().to_string() };
+    IS_WORD: SizedCache<u64, bool> = SizedCache::with_size(10_000);
+    Key = { iter.clone().hash() };
     fn is_word(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
         trie.is_word(iter)
     }
 }
 
 cached_key! {
-    WORDS: SizedCache<String, Vec<String>> = SizedCache::with_size(10_000);
-    Key = { pattern.clone() };
+    WORDS: SizedCache<u64, Vec<String>> = SizedCache::with_size(10_000);
+    Key = { 
+        let mut hasher = DefaultHasher::new();
+        for c in pattern.chars() {
+            c.hash(&mut hasher)
+        }
+        hasher.finish()
+    };
     fn words(pattern: String, trie: &Trie) -> Vec<String> = {
         trie.words(pattern)
     }
@@ -105,7 +137,7 @@ pub fn fill_crossword(
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..2 {
+    for thread_index in 0..1 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
         let word_boundaries = parse_word_boundaries(&crossword);
@@ -135,25 +167,39 @@ pub fn fill_crossword(
 
                     candidate_count += 1;
 
-                    if candidate_count % 1_000 == 0 {
+                    if candidate_count % 10_000 == 0 {
                         println!("Thread {} throughput: {}", thread_index, candidate_count as f32 / thread_start.elapsed().as_millis() as f32);
-                        // println!("{}", candidate);
+                        println!("{}", candidate);
                     }
 
-                    let words = parse_words(&candidate);
-                    let to_fill = words
-                        .iter()
-                        .filter(|word| word.contents.chars().any(|c| c == ' '))
-                        .min_by_key(|word| score_word(&word.contents, bigrams.as_ref()))
-                        .unwrap();
+                    let to_fill = word_boundaries.iter().map(|word_boundary| { 
+                        CrosswordWordIterator::new(&candidate, word_boundary)
+                    }).filter(|iter| iter.clone().any(|c| c == ' '))
+                    .min_by_key(|iter| score_iter(iter, bigrams.as_ref()))
+                    .unwrap();
+                    
+                    println!("FIlling {}", to_fill.clone().to_string());
+                    
+                    // let words = parse_words(&candidate);
+                    // let to_fill = words
+                    //     .iter()
+                    //     .filter(|word| word.contents.chars().any(|c| c == ' '))
+                    //     .min_by_key(|word| score_word(&word.contents, bigrams.as_ref()))
+                    //     .unwrap();
+                        
+                    // choose the right word boundary
+                    // find all 
+                        
+                        
+                        
                     // find valid fills for word;
                     // for each fill:
                     //   are all complete words legit?
                     //     if so, push
-
-                    let potential_fills = find_fills(to_fill.clone(), trie.as_ref());
+                    
+                    let potential_fills = words(to_fill.clone().to_string(), trie.as_ref());
                     for potential_fill in potential_fills {
-                        let new_candidate = fill_one_word(&candidate, potential_fill);
+                        let new_candidate = fill_one_word_tmp(&candidate, &to_fill.clone(), potential_fill);
 
                         let mut viables: Vec<Crossword> = vec![];
 
@@ -200,17 +246,6 @@ pub fn fill_crossword(
     }
 }
 
-// TODO: use RO behavior here
-pub fn find_fills(word: Word, trie: &Trie) -> Vec<Word> {
-    words(word.contents.clone(), trie)
-        .drain(0..)
-        .map(|new_word| Word {
-            contents: new_word,
-            ..word.clone()
-        })
-        .collect()
-}
-
 fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &Trie) -> bool {
     let mut already_used = HashSet::with_capacity(word_boundaries.len());
 
@@ -244,7 +279,7 @@ mod tests {
     use std::fs::File;
     use std::{sync::Arc, time::Instant};
 
-    use super::{fill_crossword, fill_one_word, find_fills, is_viable};
+    use super::{fill_crossword, fill_one_word, is_viable};
 
     #[test]
     fn fill_crossword_works() {
@@ -431,58 +466,58 @@ thi
         println!("{}", filled_puz);
     }
 
-    #[test]
-    fn find_fill_works() {
-        let (_, trie) = index_words(default_words());
+    // #[test]
+    // fn find_fill_works() {
+    //     let (_, trie) = index_words(default_words());
 
-        let input = Word {
-            contents: String::from("   "),
-            length: 3,
-            start_row: 0,
-            start_col: 0,
-            direction: Direction::Across,
-        };
-        assert!(find_fills(input.clone(), &trie).contains(&Word {
-            contents: String::from("CAT"),
-            ..input.clone()
-        }));
+    //     let input = Word {
+    //         contents: String::from("   "),
+    //         length: 3,
+    //         start_row: 0,
+    //         start_col: 0,
+    //         direction: Direction::Across,
+    //     };
+    //     assert!(find_fills(input.clone(), &trie).contains(&Word {
+    //         contents: String::from("CAT"),
+    //         ..input.clone()
+    //     }));
 
-        let input = Word {
-            contents: String::from("C T"),
-            length: 3,
-            start_row: 0,
-            start_col: 0,
-            direction: Direction::Across,
-        };
-        assert!(find_fills(input.clone(), &trie).contains(&Word {
-            contents: String::from("CAT"),
-            ..input.clone()
-        }));
+    //     let input = Word {
+    //         contents: String::from("C T"),
+    //         length: 3,
+    //         start_row: 0,
+    //         start_col: 0,
+    //         direction: Direction::Across,
+    //     };
+    //     assert!(find_fills(input.clone(), &trie).contains(&Word {
+    //         contents: String::from("CAT"),
+    //         ..input.clone()
+    //     }));
 
-        let input = Word {
-            contents: String::from("  T"),
-            length: 3,
-            start_row: 0,
-            start_col: 0,
-            direction: Direction::Across,
-        };
-        assert!(find_fills(input.clone(), &trie).contains(&Word {
-            contents: String::from("CAT"),
-            ..input.clone()
-        }));
+    //     let input = Word {
+    //         contents: String::from("  T"),
+    //         length: 3,
+    //         start_row: 0,
+    //         start_col: 0,
+    //         direction: Direction::Across,
+    //     };
+    //     assert!(find_fills(input.clone(), &trie).contains(&Word {
+    //         contents: String::from("CAT"),
+    //         ..input.clone()
+    //     }));
 
-        let input = Word {
-            contents: String::from("CAT"),
-            length: 3,
-            start_row: 0,
-            start_col: 0,
-            direction: Direction::Across,
-        };
-        assert!(find_fills(input.clone(), &trie).contains(&Word {
-            contents: String::from("CAT"),
-            ..input.clone()
-        }));
-    }
+    //     let input = Word {
+    //         contents: String::from("CAT"),
+    //         length: 3,
+    //         start_row: 0,
+    //         start_col: 0,
+    //         direction: Direction::Across,
+    //     };
+    //     assert!(find_fills(input.clone(), &trie).contains(&Word {
+    //         contents: String::from("CAT"),
+    //         ..input.clone()
+    //     }));
+    // }
 
     #[test]
     fn is_viable_works() {

@@ -1,5 +1,5 @@
 use crate::parse::WordBoundary;
-use std::{fmt, hash::Hash};
+use std::{collections::hash_map::DefaultHasher, fmt, hash::Hash, hash::Hasher};
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub struct Crossword {
@@ -27,7 +27,7 @@ impl Crossword {
 #[derive(Clone, Debug)]
 pub struct CrosswordWordIterator<'s> {
     crossword: &'s Crossword,
-    word_boundary: &'s WordBoundary,
+    pub word_boundary: &'s WordBoundary,
     index: usize,
 }
 
@@ -41,6 +41,14 @@ impl<'s> CrosswordWordIterator<'s> {
             word_boundary,
             index: 0,
         }
+    }
+    
+    pub fn hash(self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        for c in self.clone() {
+            c.hash(&mut hasher)
+        }
+        hasher.finish()
     }
 
     pub fn to_string(self) -> String {
