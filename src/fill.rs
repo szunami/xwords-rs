@@ -1,11 +1,11 @@
 use crate::order::score_iter;
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
-use crate::parse::parse_words;
+
 use crate::Instant;
 use crate::Word;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
-use crate::{score_word, Direction};
+use crate::Direction;
 use cached::SizedCache;
 use std::{
     collections::BinaryHeap,
