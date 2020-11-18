@@ -27,3 +27,7 @@ path = "examples/empty.rs"
 
 [profile.release]
 debug = 1
+
+[[bench]]
+name = "fill_crossword"
+harness = false
