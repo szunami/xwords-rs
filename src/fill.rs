@@ -44,7 +44,7 @@ impl CrosswordFillState {
     }
 }
 
-fn fill_one_word_tmp(
+fn fill_one_word(
     candidate: &Crossword,
     iter: &CrosswordWordIterator,
     word: String,
@@ -167,7 +167,7 @@ pub fn fill_crossword(
                     let potential_fills = words(to_fill.clone().to_string(), trie.as_ref());
                     for potential_fill in potential_fills {
                         let new_candidate =
-                            fill_one_word_tmp(&candidate, &to_fill.clone(), potential_fill);
+                            fill_one_word(&candidate, &to_fill.clone(), potential_fill);
                         let mut viables: Vec<Crossword> = vec![];
 
                         if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
@@ -258,7 +258,7 @@ mod tests {
     use std::fs::File;
     use std::{sync::Arc, time::Instant};
 
-    use super::{fill_crossword, fill_one_word_tmp, find_fills, is_viable};
+    use super::{fill_crossword, fill_one_word, find_fills, is_viable};
 
     #[test]
     fn fill_crossword_works() {
@@ -379,7 +379,7 @@ ghi
         .unwrap();
 
         assert_eq!(
-            fill_one_word_tmp(
+            fill_one_word(
                 &c,
                 &CrosswordWordIterator::new(
                     &c,
@@ -403,7 +403,7 @@ ghi
         );
 
         assert_eq!(
-            fill_one_word_tmp(
+            fill_one_word(
                 &c,
                 &CrosswordWordIterator::new(
                     &c,
