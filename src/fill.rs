@@ -1,10 +1,11 @@
-use crate::Instant;
+use crate::order::score_iter;
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
-use crate::parse::parse_words;
+
+use crate::Direction;
+use crate::Instant;
 use crate::Word;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
-use crate::{score_word, Direction};
 use cached::SizedCache;
 use std::{
     collections::BinaryHeap,
@@ -43,33 +44,27 @@ impl CrosswordFillState {
     }
 }
 
-fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
+fn fill_one_word(candidate: &Crossword, iter: &CrosswordWordIterator, word: String) -> Crossword {
     let mut result_contents = candidate.contents.clone();
+    let mut bytes = result_contents.into_bytes();
 
-    match potential_fill.direction {
+    let word_boundary = iter.word_boundary;
+
+    match word_boundary.direction {
         Direction::Across => {
-            let mut bytes = result_contents.into_bytes();
-
-            for index in 0..potential_fill.contents.len() {
-                let col = potential_fill.start_col + index;
-
-                bytes[potential_fill.start_row * candidate.width + col] =
-                    potential_fill.contents.as_bytes()[index];
+            for (char_index, c) in word.chars().enumerate() {
+                let col = word_boundary.start_col + char_index;
+                bytes[word_boundary.start_row * candidate.width + col] = c as u8;
             }
-            unsafe { result_contents = String::from_utf8_unchecked(bytes) }
         }
         Direction::Down => {
-            let mut bytes = result_contents.into_bytes();
-
-            for index in 0..potential_fill.contents.len() {
-                let row = potential_fill.start_row + index;
-
-                bytes[row * candidate.width + potential_fill.start_col] =
-                    potential_fill.contents.as_bytes()[index];
+            for (char_index, c) in word.chars().enumerate() {
+                let row = word_boundary.start_row + char_index;
+                bytes[row * candidate.width + word_boundary.start_col] = c as u8;
             }
-            unsafe { result_contents = String::from_utf8_unchecked(bytes) }
         }
     }
+    unsafe { result_contents = String::from_utf8_unchecked(bytes) }
 
     Crossword {
         contents: result_contents,
@@ -146,25 +141,29 @@ pub fn fill_crossword(
                     candidate_count += 1;
 
                     if candidate_count % 1_000 == 0 {
-                        println!("Thread {} throughput: {}", thread_index, candidate_count as f32 / thread_start.elapsed().as_millis() as f32);
+                        println!(
+                            "Thread {} throughput: {}",
+                            thread_index,
+                            candidate_count as f32 / thread_start.elapsed().as_millis() as f32
+                        );
                         // println!("{}", candidate);
                     }
 
-                    let words = parse_words(&candidate);
-                    let to_fill = words
+                    let to_fill = word_boundaries
                         .iter()
-                        .filter(|word| word.contents.chars().any(|c| c == ' '))
-                        .min_by_key(|word| score_word(&word.contents, bigrams.as_ref()))
+                        .map(|word_boundary| CrosswordWordIterator::new(&candidate, word_boundary))
+                        .filter(|iter| iter.clone().any(|c| c == ' '))
+                        .min_by_key(|iter| score_iter(iter, bigrams.as_ref()))
                         .unwrap();
                     // find valid fills for word;
                     // for each fill:
                     //   are all complete words legit?
                     //     if so, push
 
-                    let potential_fills = find_fills(to_fill.clone(), trie.as_ref());
+                    let potential_fills = words(to_fill.clone().to_string(), trie.as_ref());
                     for potential_fill in potential_fills {
-                        let new_candidate = fill_one_word(&candidate, potential_fill);
-
+                        let new_candidate =
+                            fill_one_word(&candidate, &to_fill.clone(), potential_fill);
                         let mut viables: Vec<Crossword> = vec![];
 
                         if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
@@ -378,13 +377,16 @@ ghi
         assert_eq!(
             fill_one_word(
                 &c,
-                Word {
-                    contents: String::from("cat"),
-                    start_col: 0,
-                    start_row: 0,
-                    length: 3,
-                    direction: Direction::Across,
-                }
+                &CrosswordWordIterator::new(
+                    &c,
+                    &WordBoundary {
+                        start_col: 0,
+                        start_row: 0,
+                        length: 3,
+                        direction: Direction::Across,
+                    },
+                ),
+                String::from("cat")
             ),
             Crossword::new(String::from(
                 "
@@ -399,13 +401,16 @@ ghi
         assert_eq!(
             fill_one_word(
                 &c,
-                Word {
-                    contents: String::from("cat"),
-                    start_col: 0,
-                    start_row: 0,
-                    length: 3,
-                    direction: Direction::Down,
-                }
+                &CrosswordWordIterator::new(
+                    &c,
+                    &WordBoundary {
+                        start_col: 0,
+                        start_row: 0,
+                        length: 3,
+                        direction: Direction::Down,
+                    }
+                ),
+                String::from("cat"),
             ),
             Crossword::new(String::from(
                 "

@@ -1,3 +1,4 @@
+use crate::crossword::CrosswordWordIterator;
 use core::cmp::Ordering;
 use std::collections::HashMap;
 
@@ -116,18 +117,21 @@ impl Ord for WordScore {
     }
 }
 
-pub(crate) fn score_word(word: &str, bigrams: &HashMap<(char, char), usize>) -> WordScore {
-    // what if word has spaces?
+pub(crate) fn score_iter(
+    iter: &CrosswordWordIterator,
+    bigrams: &HashMap<(char, char), usize>,
+) -> WordScore {
     let mut fillability_score = std::usize::MAX;
-    for (prev, curr) in word.chars().zip(word.chars().skip(1)) {
+    for (prev, curr) in iter.clone().zip(iter.clone().skip(1)) {
         let score = *bigrams.get(&(prev, curr)).unwrap_or(&std::usize::MIN);
         if fillability_score > score {
             fillability_score = score;
         }
     }
+
     WordScore {
-        length: word.len(),
-        space_count: word.matches(' ').count(),
+        length: iter.word_boundary.length,
+        space_count: iter.clone().filter(|c| *c == ' ').count(),
         fillability_score,
     }
 }
@@ -136,11 +140,14 @@ pub(crate) fn score_word(word: &str, bigrams: &HashMap<(char, char), usize>) -> 
 mod tests {
     use crate::default_words;
     use crate::index_words;
+    use crate::order::score_iter;
+    use crate::order::CrosswordWordIterator;
+    use crate::parse::WordBoundary;
+    use crate::Direction::Across;
     use std::cmp::Ordering;
 
     use crate::bigrams;
     use crate::order::score_crossword;
-    use crate::order::score_word;
     use crate::order::WordScore;
     use crate::Crossword;
 
@@ -192,27 +199,40 @@ GHI
     }
 
     #[test]
-    fn score_word_works() {
+    fn score_iter_works() {
         let bigrams = bigrams(&vec![String::from("ASDF"), String::from("DF")]);
 
-        let input = String::from("ASDF");
+        let c = Crossword::new(String::from("ASDF            ")).unwrap();
+        let w = WordBoundary {
+            direction: Across,
+            length: 4,
+            start_col: 0,
+            start_row: 0,
+        };
+        let input = CrosswordWordIterator::new(&c, &w);
         assert_eq!(
             WordScore {
                 length: 4,
                 space_count: 0,
                 fillability_score: 1
             },
-            score_word(&input, &bigrams)
+            score_iter(&input, &bigrams)
         );
 
-        let input = String::from("DF");
+        let w = WordBoundary {
+            direction: Across,
+            length: 2,
+            start_col: 2,
+            start_row: 0,
+        };
+        let input = CrosswordWordIterator::new(&c, &w);
         assert_eq!(
             WordScore {
                 length: 2,
                 fillability_score: 2,
                 space_count: 0,
             },
-            score_word(&input, &bigrams)
+            score_iter(&input, &bigrams)
         );
     }
 

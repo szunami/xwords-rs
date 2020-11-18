@@ -7,7 +7,7 @@ use trie::Trie;
 use crate::crossword::Crossword;
 
 use crate::crossword::Direction;
-use crate::{ngram::bigrams, order::score_word};
+use crate::ngram::bigrams;
 use std::sync::Arc;
 use std::{collections::HashMap, time::Instant};
 
