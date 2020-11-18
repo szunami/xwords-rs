@@ -156,6 +156,10 @@ pub(crate) fn score_iter(
 mod tests {
     use crate::default_words;
     use crate::index_words;
+    use crate::order::score_iter;
+    use crate::order::CrosswordWordIterator;
+    use crate::parse::WordBoundary;
+    use crate::Direction::Across;
     use std::cmp::Ordering;
 
     use crate::bigrams;
@@ -212,27 +216,42 @@ GHI
     }
 
     #[test]
-    fn score_word_works() {
+    fn score_iter_works() {
         let bigrams = bigrams(&vec![String::from("ASDF"), String::from("DF")]);
 
         let input = String::from("ASDF");
+
+        let c = Crossword::new(String::from("ASDF            ")).unwrap();
+        let w = WordBoundary {
+            direction: Across,
+            length: 4,
+            start_col: 0,
+            start_row: 0,
+        };
+        let input = CrosswordWordIterator::new(&c, &w);
         assert_eq!(
             WordScore {
                 length: 4,
                 space_count: 0,
                 fillability_score: 1
             },
-            score_word(&input, &bigrams)
+            score_iter(&input, &bigrams)
         );
 
-        let input = String::from("DF");
+        let w = WordBoundary {
+            direction: Across,
+            length: 2,
+            start_col: 2,
+            start_row: 0,
+        };
+        let input = CrosswordWordIterator::new(&c, &w);
         assert_eq!(
             WordScore {
                 length: 2,
                 fillability_score: 2,
                 space_count: 0,
             },
-            score_word(&input, &bigrams)
+            score_iter(&input, &bigrams)
         );
     }
 

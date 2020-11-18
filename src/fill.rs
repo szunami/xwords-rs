@@ -44,11 +44,7 @@ impl CrosswordFillState {
     }
 }
 
-fn fill_one_word(
-    candidate: &Crossword,
-    iter: &CrosswordWordIterator,
-    word: String,
-) -> Crossword {
+fn fill_one_word(candidate: &Crossword, iter: &CrosswordWordIterator, word: String) -> Crossword {
     let mut result_contents = candidate.contents.clone();
     let mut bytes = result_contents.into_bytes();
 
