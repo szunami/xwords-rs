@@ -133,7 +133,10 @@ pub(crate) fn score_word(word: &str, bigrams: &HashMap<(char, char), usize>) -> 
     }
 }
 
-pub(crate) fn score_iter(iter: &CrosswordWordIterator, bigrams: &HashMap<(char, char), usize>) -> WordScore {
+pub(crate) fn score_iter(
+    iter: &CrosswordWordIterator,
+    bigrams: &HashMap<(char, char), usize>,
+) -> WordScore {
     let mut fillability_score = std::usize::MAX;
     for (prev, curr) in iter.clone().zip(iter.clone().skip(1)) {
         let score = *bigrams.get(&(prev, curr)).unwrap_or(&std::usize::MIN);
@@ -141,7 +144,6 @@ pub(crate) fn score_iter(iter: &CrosswordWordIterator, bigrams: &HashMap<(char, 
             fillability_score = score;
         }
     }
-
 
     WordScore {
         length: iter.word_boundary.length,
