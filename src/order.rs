@@ -1,3 +1,4 @@
+use crate::crossword::CrosswordWordIterator;
 use core::cmp::Ordering;
 use std::collections::HashMap;
 
@@ -128,6 +129,23 @@ pub(crate) fn score_word(word: &str, bigrams: &HashMap<(char, char), usize>) -> 
     WordScore {
         length: word.len(),
         space_count: word.matches(' ').count(),
+        fillability_score,
+    }
+}
+
+pub(crate) fn score_iter(iter: &CrosswordWordIterator, bigrams: &HashMap<(char, char), usize>) -> WordScore {
+    let mut fillability_score = std::usize::MAX;
+    for (prev, curr) in iter.clone().zip(iter.clone().skip(1)) {
+        let score = *bigrams.get(&(prev, curr)).unwrap_or(&std::usize::MIN);
+        if fillability_score > score {
+            fillability_score = score;
+        }
+    }
+
+
+    WordScore {
+        length: iter.word_boundary.length,
+        space_count: iter.clone().filter(|c| *c == ' ').count(),
         fillability_score,
     }
 }

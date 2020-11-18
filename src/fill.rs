@@ -1,3 +1,4 @@
+use crate::order::score_iter;
 use crate::Instant;
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
@@ -70,6 +71,35 @@ fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
             unsafe { result_contents = String::from_utf8_unchecked(bytes) }
         }
     }
+
+    Crossword {
+        contents: result_contents,
+        ..*candidate
+    }
+}
+
+fn fill_one_word_tmp(candidate: &Crossword, iter: &CrosswordWordIterator, word: String) -> Crossword {
+    let mut result_contents = candidate.contents.clone();
+    let mut bytes = result_contents.into_bytes();
+    
+    let word_boundary = iter.word_boundary;
+
+    match word_boundary.direction {
+        Direction::Across => {
+            for (char_index, c) in word.chars().enumerate() {
+                let col = word_boundary.start_col + char_index;
+                bytes[word_boundary.start_row * candidate.width + col] = c as u8;
+            }
+        }
+        Direction::Down => {
+            for (char_index, c) in word.chars().enumerate() {
+                let row = word_boundary.start_row + char_index;
+                bytes[row * candidate.width + word_boundary.start_col] = c as u8;
+            }
+        }
+    }
+    unsafe { result_contents = String::from_utf8_unchecked(bytes) }
+
 
     Crossword {
         contents: result_contents,
@@ -150,21 +180,20 @@ pub fn fill_crossword(
                         // println!("{}", candidate);
                     }
 
-                    let words = parse_words(&candidate);
-                    let to_fill = words
-                        .iter()
-                        .filter(|word| word.contents.chars().any(|c| c == ' '))
-                        .min_by_key(|word| score_word(&word.contents, bigrams.as_ref()))
-                        .unwrap();
+  
+                        
+                    let to_fill = word_boundaries.iter().map(|word_boundary| { 
+                        CrosswordWordIterator::new(&candidate, word_boundary)
+                    }).filter(|iter| iter.clone().any(|c| c == ' '))
+                    .min_by_key(|iter| score_iter(iter, bigrams.as_ref()))
+                    .unwrap();
                     // find valid fills for word;
                     // for each fill:
                     //   are all complete words legit?
                     //     if so, push
 
-                    let potential_fills = find_fills(to_fill.clone(), trie.as_ref());
-                    for potential_fill in potential_fills {
-                        let new_candidate = fill_one_word(&candidate, potential_fill);
-
+                    let potential_fills = words(to_fill.clone().to_string(), trie.as_ref());                     for potential_fill in potential_fills {
+                        let new_candidate = fill_one_word_tmp(&candidate, &to_fill.clone(), potential_fill); 
                         let mut viables: Vec<Crossword> = vec![];
 
                         if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {

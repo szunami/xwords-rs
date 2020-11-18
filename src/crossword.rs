@@ -27,7 +27,7 @@ impl Crossword {
 #[derive(Clone, Debug)]
 pub struct CrosswordWordIterator<'s> {
     crossword: &'s Crossword,
-    word_boundary: &'s WordBoundary,
+    pub word_boundary: &'s WordBoundary,
     index: usize,
 }
 
