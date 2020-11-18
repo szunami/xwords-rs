@@ -35,21 +35,21 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
     let input = Crossword::new(String::from(
         "
-  S *F  N*B    
+  S *FRAN*BANAL
   E *L  O*ALIBI
-BARITONES*N    
-ENV* W *E D*   
+BARITONES*N   O
+ENV* W *E D*  N
 **E  E*BROILERS
 RATEDR*AINTI***
-AMITY*B N * C  
+AMITY*B N *ACDC
 M M*AMALGAM*R  
 P E * L S*AMINO
 ***ACIDY*GRATES
 ENDZONES*A  I**
-KIA*  A* R *C  
+KIA*A A* R *C  
 EVILS*GOODTHING
-B    *L  E* S  
-YAYAS*E  N* M  
+B  ET*L  E* S  
+YAYAS*ETON* M  
 ",
     ))
     .unwrap();
