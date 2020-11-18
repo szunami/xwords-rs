@@ -107,7 +107,7 @@ pub struct WordBoundary {
 mod tests {
 
     use crate::parse::parse_word_boundaries;
-    use crate::Word;
+
     use crate::{Crossword, Direction};
 
     use super::WordBoundary;
