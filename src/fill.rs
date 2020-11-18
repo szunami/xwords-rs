@@ -2,10 +2,10 @@ use crate::order::score_iter;
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
 
+use crate::Direction;
 use crate::Instant;
 use crate::Word;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
-use crate::Direction;
 use cached::SizedCache;
 use std::{
     collections::BinaryHeap,
@@ -41,40 +41,6 @@ impl CrosswordFillState {
 
     fn mark_done(&mut self) {
         self.done = true;
-    }
-}
-
-fn fill_one_word(candidate: &Crossword, potential_fill: Word) -> Crossword {
-    let mut result_contents = candidate.contents.clone();
-
-    match potential_fill.direction {
-        Direction::Across => {
-            let mut bytes = result_contents.into_bytes();
-
-            for index in 0..potential_fill.contents.len() {
-                let col = potential_fill.start_col + index;
-
-                bytes[potential_fill.start_row * candidate.width + col] =
-                    potential_fill.contents.as_bytes()[index];
-            }
-            unsafe { result_contents = String::from_utf8_unchecked(bytes) }
-        }
-        Direction::Down => {
-            let mut bytes = result_contents.into_bytes();
-
-            for index in 0..potential_fill.contents.len() {
-                let row = potential_fill.start_row + index;
-
-                bytes[row * candidate.width + potential_fill.start_col] =
-                    potential_fill.contents.as_bytes()[index];
-            }
-            unsafe { result_contents = String::from_utf8_unchecked(bytes) }
-        }
-    }
-
-    Crossword {
-        contents: result_contents,
-        ..*candidate
     }
 }
 
@@ -292,7 +258,7 @@ mod tests {
     use std::fs::File;
     use std::{sync::Arc, time::Instant};
 
-    use super::{fill_crossword, fill_one_word, find_fills, is_viable};
+    use super::{fill_crossword, fill_one_word_tmp, find_fills, is_viable};
 
     #[test]
     fn fill_crossword_works() {
@@ -413,15 +379,18 @@ ghi
         .unwrap();
 
         assert_eq!(
-            fill_one_word(
+            fill_one_word_tmp(
                 &c,
-                Word {
-                    contents: String::from("cat"),
-                    start_col: 0,
-                    start_row: 0,
-                    length: 3,
-                    direction: Direction::Across,
-                }
+                &CrosswordWordIterator::new(
+                    &c,
+                    &WordBoundary {
+                        start_col: 0,
+                        start_row: 0,
+                        length: 3,
+                        direction: Direction::Across,
+                    },
+                ),
+                String::from("cat")
             ),
             Crossword::new(String::from(
                 "
@@ -434,15 +403,18 @@ ghi
         );
 
         assert_eq!(
-            fill_one_word(
+            fill_one_word_tmp(
                 &c,
-                Word {
-                    contents: String::from("cat"),
-                    start_col: 0,
-                    start_row: 0,
-                    length: 3,
-                    direction: Direction::Down,
-                }
+                &CrosswordWordIterator::new(
+                    &c,
+                    &WordBoundary {
+                        start_col: 0,
+                        start_row: 0,
+                        length: 3,
+                        direction: Direction::Down,
+                    }
+                ),
+                String::from("cat"),
             ),
             Crossword::new(String::from(
                 "
