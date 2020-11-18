@@ -117,22 +117,6 @@ impl Ord for WordScore {
     }
 }
 
-pub(crate) fn score_word(word: &str, bigrams: &HashMap<(char, char), usize>) -> WordScore {
-    // what if word has spaces?
-    let mut fillability_score = std::usize::MAX;
-    for (prev, curr) in word.chars().zip(word.chars().skip(1)) {
-        let score = *bigrams.get(&(prev, curr)).unwrap_or(&std::usize::MIN);
-        if fillability_score > score {
-            fillability_score = score;
-        }
-    }
-    WordScore {
-        length: word.len(),
-        space_count: word.matches(' ').count(),
-        fillability_score,
-    }
-}
-
 pub(crate) fn score_iter(
     iter: &CrosswordWordIterator,
     bigrams: &HashMap<(char, char), usize>,
@@ -164,7 +148,6 @@ mod tests {
 
     use crate::bigrams;
     use crate::order::score_crossword;
-    use crate::order::score_word;
     use crate::order::WordScore;
     use crate::Crossword;
 
