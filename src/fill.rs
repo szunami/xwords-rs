@@ -4,7 +4,6 @@ use crate::parse::parse_word_boundaries;
 
 use crate::Direction;
 use crate::Instant;
-use crate::Word;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
 use cached::SizedCache;
 use std::{
@@ -210,17 +209,6 @@ pub fn fill_crossword(
     }
 }
 
-// TODO: use RO behavior here
-pub fn find_fills(word: Word, trie: &Trie) -> Vec<Word> {
-    words(word.contents.clone(), trie)
-        .drain(0..)
-        .map(|new_word| Word {
-            contents: new_word,
-            ..word.clone()
-        })
-        .collect()
-}
-
 fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &Trie) -> bool {
     let mut already_used = HashSet::with_capacity(word_boundaries.len());
 
@@ -250,11 +238,11 @@ mod tests {
     use crate::Trie;
     use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
     use crate::{default_words, parse::parse_word_boundaries};
-    use crate::{index_words, Crossword, Direction, Word};
+    use crate::{index_words, Crossword, Direction};
     use std::fs::File;
     use std::{sync::Arc, time::Instant};
 
-    use super::{fill_crossword, fill_one_word, find_fills, is_viable};
+    use super::{fill_crossword, fill_one_word, is_viable};
 
     #[test]
     fn fill_crossword_works() {
@@ -445,59 +433,6 @@ thi
         let filled_puz = fill_crossword(&grid, Arc::new(trie), Arc::new(bigrams)).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
-    }
-
-    #[test]
-    fn find_fill_works() {
-        let (_, trie) = index_words(default_words());
-
-        let input = Word {
-            contents: String::from("   "),
-            length: 3,
-            start_row: 0,
-            start_col: 0,
-            direction: Direction::Across,
-        };
-        assert!(find_fills(input.clone(), &trie).contains(&Word {
-            contents: String::from("CAT"),
-            ..input.clone()
-        }));
-
-        let input = Word {
-            contents: String::from("C T"),
-            length: 3,
-            start_row: 0,
-            start_col: 0,
-            direction: Direction::Across,
-        };
-        assert!(find_fills(input.clone(), &trie).contains(&Word {
-            contents: String::from("CAT"),
-            ..input.clone()
-        }));
-
-        let input = Word {
-            contents: String::from("  T"),
-            length: 3,
-            start_row: 0,
-            start_col: 0,
-            direction: Direction::Across,
-        };
-        assert!(find_fills(input.clone(), &trie).contains(&Word {
-            contents: String::from("CAT"),
-            ..input.clone()
-        }));
-
-        let input = Word {
-            contents: String::from("CAT"),
-            length: 3,
-            start_row: 0,
-            start_col: 0,
-            direction: Direction::Across,
-        };
-        assert!(find_fills(input.clone(), &trie).contains(&Word {
-            contents: String::from("CAT"),
-            ..input.clone()
-        }));
     }
 
     #[test]
