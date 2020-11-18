@@ -202,8 +202,6 @@ GHI
     fn score_iter_works() {
         let bigrams = bigrams(&vec![String::from("ASDF"), String::from("DF")]);
 
-        let input = String::from("ASDF");
-
         let c = Crossword::new(String::from("ASDF            ")).unwrap();
         let w = WordBoundary {
             direction: Across,
