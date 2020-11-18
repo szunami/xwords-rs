@@ -42,13 +42,14 @@ impl<'s> CrosswordWordIterator<'s> {
             index: 0,
         }
     }
+}
 
-    pub fn to_string(self) -> String {
-        let mut result = String::with_capacity(self.word_boundary.length);
+impl<'s> fmt::Display for CrosswordWordIterator<'s> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for c in self.clone() {
-            result.push(c)
+            write!(f, "{}", c)?;
         }
-        result
+        Ok(())
     }
 }
 
