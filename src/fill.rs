@@ -160,10 +160,11 @@ pub fn fill_crossword(
                     //     if so, push
 
                     let potential_fills = words(to_fill.clone().to_string(), trie.as_ref());
+                    let mut viables: Vec<Crossword> = vec![];
+
                     for potential_fill in potential_fills {
                         let new_candidate =
                             fill_one_word(&candidate, &to_fill.clone(), potential_fill);
-                        let mut viables: Vec<Crossword> = vec![];
 
                         if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
                             if !new_candidate.contents.contains(" ") {
@@ -184,13 +185,12 @@ pub fn fill_crossword(
 
                             viables.push(new_candidate);
                         }
+                    }
 
-                        if !viables.is_empty() {
-                            let mut queue = new_arc.lock().unwrap();
-
-                            for viable_crossword in viables {
-                                queue.add_candidate(viable_crossword, bigrams.as_ref());
-                            }
+                    if !viables.is_empty() {
+                        let mut queue = new_arc.lock().unwrap();
+                        for viable_crossword in viables {
+                            queue.add_candidate(viable_crossword, bigrams.as_ref());
                         }
                     }
                 }

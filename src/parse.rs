@@ -222,5 +222,15 @@ ghi
                 direction: Direction::Down
             }
         );
+
+        assert_eq!(
+            result[79],
+            WordBoundary {
+                start_col: 14,
+                start_row: 11,
+                length: 4,
+                direction: Direction::Down
+            }
+        );
     }
 }
