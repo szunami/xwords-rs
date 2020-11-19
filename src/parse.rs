@@ -50,7 +50,7 @@ pub(crate) fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> 
             start_col = None;
         }
     }
-    
+
     let mut start_row = None;
     let mut start_col = None;
     let mut length = 0;
@@ -166,10 +166,11 @@ ghi
             }
         )
     }
-    
+
     #[test]
     fn parse_word_boundaries_big_grid() {
-        let c  = Crossword::new(String::from("
+        let c = Crossword::new(String::from(
+            "
     *    *     
     *    *     
          *     
@@ -185,9 +186,11 @@ ghi
      *         
      *    *    
      *    *    
-")).unwrap();
+",
+        ))
+        .unwrap();
 
-let result = parse_word_boundaries(&c);
+        let result = parse_word_boundaries(&c);
 
         assert_eq!(result.len(), 80);
         assert_eq!(
@@ -199,7 +202,7 @@ let result = parse_word_boundaries(&c);
                 direction: Direction::Across
             }
         );
-        
+
         assert_eq!(
             result[1],
             WordBoundary {
@@ -209,7 +212,7 @@ let result = parse_word_boundaries(&c);
                 direction: Direction::Across
             }
         );
-        
+
         assert_eq!(
             result[41],
             WordBoundary {
