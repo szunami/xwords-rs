@@ -163,10 +163,8 @@ pub fn fill_crossword(
                     let mut viables: Vec<Crossword> = vec![];
 
                     for potential_fill in potential_fills {
-
                         let new_candidate =
                             fill_one_word(&candidate, &to_fill.clone(), potential_fill);
-
 
                         if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
                             if !new_candidate.contents.contains(" ") {
