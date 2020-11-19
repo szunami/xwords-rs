@@ -254,21 +254,4 @@ mod tests {
         let actual: HashSet<String> = trie.words(String::from("b ss")).iter().cloned().collect();
         assert_eq!(expected, actual,)
     }
-
-    #[test]
-    fn duplicates() {
-        let (_, trie) = default_indexes();
-
-        let words = trie.words(String::from("       "));
-
-        println!("Words: {}", words.len());
-
-        let mut set = HashSet::new();
-
-        for word in words {
-            set.insert(word);
-        }
-
-        println!("Set: {}", set.len());
-    }
 }

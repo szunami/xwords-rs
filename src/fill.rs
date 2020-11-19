@@ -109,7 +109,7 @@ pub fn fill_crossword(
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..1 {
+    for thread_index in 0..2 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
         let word_boundaries = parse_word_boundaries(&crossword);
@@ -159,19 +159,14 @@ pub fn fill_crossword(
                     //   are all complete words legit?
                     //     if so, push
 
-                    // println!("{}", candidate);
-                    // println!("Filling: {}", to_fill.clone().to_string());
-
                     let potential_fills = words(to_fill.clone().to_string(), trie.as_ref());
                     let mut viables: Vec<Crossword> = vec![];
 
                     for potential_fill in potential_fills {
-                        // println!("{}", potential_fill);
 
                         let new_candidate =
                             fill_one_word(&candidate, &to_fill.clone(), potential_fill);
 
-                        // println!("{}", new_candidate);
 
                         if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
                             if !new_candidate.contents.contains(" ") {
