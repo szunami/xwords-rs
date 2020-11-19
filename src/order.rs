@@ -93,6 +93,8 @@ pub(crate) struct WordScore {
     length: usize,
     space_count: usize,
     fillability_score: usize,
+    start_col: usize,
+    start_row: usize,
 }
 
 impl PartialOrd for WordScore {
@@ -113,7 +115,16 @@ impl Ord for WordScore {
             return self.space_count.cmp(&other.space_count);
         }
         // higher fillability wins
-        self.fillability_score.cmp(&other.fillability_score)
+        if self.fillability_score != other.fillability_score {
+            return self.fillability_score.cmp(&other.fillability_score);
+        }
+
+        // tiebreaker
+        if self.start_col != other.start_col {
+            return self.start_col.cmp(&other.start_col);
+        }
+
+        return self.start_row.cmp(&other.start_row);
     }
 }
 
@@ -133,6 +144,8 @@ pub(crate) fn score_iter(
         length: iter.word_boundary.length,
         space_count: iter.clone().filter(|c| *c == ' ').count(),
         fillability_score,
+        start_col: iter.word_boundary.start_col,
+        start_row: iter.word_boundary.start_row,
     }
 }
 
@@ -214,7 +227,9 @@ GHI
             WordScore {
                 length: 4,
                 space_count: 0,
-                fillability_score: 1
+                fillability_score: 1,
+                start_col: input.word_boundary.start_col,
+                start_row: input.word_boundary.start_row,
             },
             score_iter(&input, &bigrams)
         );
@@ -231,6 +246,8 @@ GHI
                 length: 2,
                 fillability_score: 2,
                 space_count: 0,
+                start_col: input.word_boundary.start_col,
+                start_row: input.word_boundary.start_row,
             },
             score_iter(&input, &bigrams)
         );
@@ -242,12 +259,16 @@ GHI
             WordScore {
                 length: 4,
                 space_count: 5,
-                fillability_score: 1
+                fillability_score: 1,
+                start_col: 0,
+                start_row: 0,
             }
             .cmp(&WordScore {
                 length: 3,
                 space_count: 10,
-                fillability_score: 2
+                fillability_score: 2,
+                start_col: 0,
+                start_row: 0,
             }),
             Ordering::Less
         );
@@ -256,12 +277,16 @@ GHI
             WordScore {
                 length: 3,
                 space_count: 5,
-                fillability_score: 1
+                fillability_score: 1,
+                start_col: 0,
+                start_row: 0,
             }
             .cmp(&WordScore {
                 length: 3,
                 space_count: 10,
-                fillability_score: 2
+                fillability_score: 2,
+                start_col: 0,
+                start_row: 0,
             }),
             Ordering::Less
         );
@@ -270,12 +295,16 @@ GHI
             WordScore {
                 length: 9,
                 space_count: 5,
-                fillability_score: 3
+                fillability_score: 3,
+                start_col: 0,
+                start_row: 0,
             }
             .cmp(&WordScore {
                 length: 9,
                 space_count: 5,
-                fillability_score: 2
+                fillability_score: 2,
+                start_col: 0,
+                start_row: 0,
             }),
             Ordering::Greater
         );
