@@ -109,7 +109,7 @@ pub fn fill_crossword(
     let (tx, rx) = mpsc::channel();
     // want to spawn multiple threads, have each of them perform the below
 
-    for thread_index in 0..2 {
+    for thread_index in 0..1 {
         let new_arc = Arc::clone(&candidates);
         let new_tx = tx.clone();
         let word_boundaries = parse_word_boundaries(&crossword);
