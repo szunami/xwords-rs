@@ -18,6 +18,7 @@ pub mod fill;
 mod ngram;
 mod order;
 mod parse;
+pub mod single_threaded_fill;
 pub mod trie;
 
 pub fn fill_crossword(contents: String, words: Vec<String>) -> Result<Crossword, String> {
