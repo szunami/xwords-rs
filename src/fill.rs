@@ -19,7 +19,6 @@ use crate::{trie::Trie, Crossword};
 pub struct CrosswordFillState {
     // Used to ensure we only enqueue each crossword once.
     // Contains crosswords that are queued or have already been visited
-    processed_candidates: HashSet<Crossword>,
     candidate_queue: BinaryHeap<FrequencyOrderableCrossword>,
     done: bool,
 }
@@ -27,7 +26,6 @@ pub struct CrosswordFillState {
 impl CrosswordFillState {
     pub fn new() -> CrosswordFillState {
         CrosswordFillState {
-            processed_candidates: HashSet::new(),
             candidate_queue: BinaryHeap::new(),
             done: false,
         }
@@ -38,14 +36,9 @@ impl CrosswordFillState {
     }
 
     pub fn add_candidate(&mut self, candidate: Crossword, bigrams: &HashMap<(char, char), usize>) {
-        if !self.processed_candidates.contains(&candidate) {
-            let orderable = FrequencyOrderableCrossword::new(candidate.clone(), bigrams);
+        let orderable = FrequencyOrderableCrossword::new(candidate.clone(), bigrams);
 
-            self.candidate_queue.push(orderable);
-            self.processed_candidates.insert(candidate);
-        } else {
-            println!("Revisiting crossword: {}", candidate);
-        }
+        self.candidate_queue.push(orderable);
     }
 
     pub fn mark_done(&mut self) {
@@ -87,13 +80,13 @@ pub fn fill_one_word(
 
 cached_key! {
     IS_WORD: SizedCache<u64, bool> = SizedCache::with_size(10_000);
-    Key = { 
+    Key = {
         use std::hash::Hash;
         let mut hasher = DefaultHasher::new();
         for c in iter.clone() {
             c.hash(&mut hasher)
         }
-        
+
         hasher.finish()
     };
     fn is_word(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
@@ -118,11 +111,7 @@ pub fn fill_crossword(
     // fill a word
 
     let crossword_fill_state = {
-        let mut temp_state = CrosswordFillState {
-            processed_candidates: HashSet::new(),
-            candidate_queue: BinaryHeap::new(),
-            done: false,
-        };
+        let mut temp_state = CrosswordFillState::new();
         temp_state.add_candidate(crossword.clone(), bigrams.as_ref());
         temp_state
     };
@@ -222,9 +211,6 @@ pub fn fill_crossword(
 
     match rx.recv() {
         Ok(result) => {
-            let queue = candidates.lock().unwrap();
-
-            println!("Processed {} candidates", queue.processed_candidates.len());
             Ok(result)
         }
         Err(_) => Err(String::from("Failed to receive")),
