@@ -111,6 +111,7 @@ pub fn fill_crossword(
     let crossword_fill_state = {
         let mut temp_state = CrosswordFillState::new();
         let orderable = FrequencyOrderableCrossword::new(crossword.clone(), bigrams.as_ref());
+        temp_state.add_candidate(orderable);
         temp_state
     };
 
