@@ -1,6 +1,8 @@
 use crate::order::score_iter;
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 use crate::Direction;
 use crate::Instant;
@@ -84,8 +86,16 @@ pub fn fill_one_word(
 }
 
 cached_key! {
-    IS_WORD: SizedCache<String, bool> = SizedCache::with_size(10_000);
-    Key = { iter.clone().to_string() };
+    IS_WORD: SizedCache<u64, bool> = SizedCache::with_size(10_000);
+    Key = { 
+        use std::hash::Hash;
+        let mut hasher = DefaultHasher::new();
+        for c in iter.clone() {
+            c.hash(&mut hasher)
+        }
+        
+        hasher.finish()
+    };
     fn is_word(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
         trie.is_word(iter)
     }
