@@ -2,7 +2,7 @@ use crate::order::score_iter;
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
 use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
+use std::hash::Hasher;
 
 use crate::Direction;
 use crate::Instant;
@@ -192,7 +192,8 @@ pub fn fill_crossword(
                                     }
                                 }
                             }
-                            let orderable = FrequencyOrderableCrossword::new(new_candidate, bigrams.as_ref());
+                            let orderable =
+                                FrequencyOrderableCrossword::new(new_candidate, bigrams.as_ref());
                             viables.push(orderable);
                         }
                     }
@@ -209,9 +210,7 @@ pub fn fill_crossword(
     }
 
     match rx.recv() {
-        Ok(result) => {
-            Ok(result)
-        }
+        Ok(result) => Ok(result),
         Err(_) => Err(String::from("Failed to receive")),
     }
 }
@@ -240,7 +239,7 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, tri
 #[cfg(test)]
 mod tests {
     use crate::default_indexes;
-    use crate::fill::is_word;
+    use crate::fill::parallel::is_word;
 
     use crate::Trie;
     use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};

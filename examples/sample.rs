@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::time::Instant;
 use xwords::crossword::Crossword;
 use xwords::default_indexes;
-use xwords::fill::fill_crossword;
+use xwords::fill::parallel::fill_crossword;
 
 fn main() {
     let now = Instant::now();

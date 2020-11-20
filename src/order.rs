@@ -40,7 +40,7 @@ impl Ord for FrequencyOrderableCrossword {
         if self.fillability_score != other.fillability_score {
             return self.fillability_score.cmp(&other.fillability_score);
         }
-        
+
         // tie breaker
         self.crossword.contents.cmp(&other.crossword.contents)
     }

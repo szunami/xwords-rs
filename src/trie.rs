@@ -165,8 +165,6 @@ mod tests {
     use std::collections::HashMap;
     use std::collections::HashSet;
 
-    use crate::default_indexes;
-
     use super::{Trie, TrieNode};
 
     #[test]

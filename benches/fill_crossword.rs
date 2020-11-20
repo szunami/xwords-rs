@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use xwords::fill::fill_crossword;
+use xwords::fill::parallel::fill_crossword;
 use xwords::{crossword::Crossword, default_indexes};
 
 use criterion::Benchmark;

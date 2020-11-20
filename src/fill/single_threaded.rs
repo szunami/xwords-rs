@@ -1,9 +1,10 @@
+use crate::fill::parallel::fill_one_word;
+use crate::fill::parallel::is_viable;
+use crate::fill::parallel::CrosswordFillState;
 use crate::order::FrequencyOrderableCrossword;
-use crate::fill::fill_one_word;
 use cached::SizedCache;
 
 use crate::crossword::CrosswordWordIterator;
-use crate::fill::{is_viable, CrosswordFillState};
 use crate::order::score_iter;
 use crate::parse::parse_word_boundaries;
 use crate::Arc;
