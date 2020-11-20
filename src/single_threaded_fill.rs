@@ -1,3 +1,4 @@
+use crate::order::FrequencyOrderableCrossword;
 use crate::fill::fill_one_word;
 use cached::SizedCache;
 
@@ -30,7 +31,7 @@ pub fn fill_crossword_single_threaded(
 
     let mut crossword_fill_state = {
         let mut temp_state = CrosswordFillState::new();
-        temp_state.add_candidate(crossword.clone(), bigrams.as_ref());
+        let orderable = FrequencyOrderableCrossword::new(crossword.clone(), bigrams.as_ref());
         temp_state
     };
 
@@ -72,8 +73,8 @@ pub fn fill_crossword_single_threaded(
                 if !new_candidate.contents.contains(" ") {
                     return Ok(new_candidate);
                 }
-
-                crossword_fill_state.add_candidate(new_candidate, bigrams.as_ref())
+                let orderable = FrequencyOrderableCrossword::new(new_candidate, bigrams.as_ref());
+                crossword_fill_state.add_candidate(orderable);
             }
         }
     }
