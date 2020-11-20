@@ -37,7 +37,12 @@ impl Ord for FrequencyOrderableCrossword {
             return other.space_count.cmp(&self.space_count);
         }
         // higher fillability wins
-        self.fillability_score.cmp(&other.fillability_score)
+        if self.fillability_score != other.fillability_score {
+            return self.fillability_score.cmp(&other.fillability_score);
+        }
+        
+        // tie breaker
+        self.crossword.contents.cmp(&other.crossword.contents)
     }
 }
 
