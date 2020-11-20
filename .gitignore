@@ -1,5 +1,6 @@
 /target/*
-!/target/criterion/
+!/target/criterion
+!/target/criterion/*
 Cargo.lock
 .DS_Store
 .vscode
