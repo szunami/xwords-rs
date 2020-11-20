@@ -14,6 +14,11 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: bench
+      - uses: actions/checkout@v2
+      - name: bench
+        uses: actions-rs/cargo@v1
+        with:
+          command: bench
       - name: Upload benchmark report
         uses: actions/upload-artifact@v1
         with:
