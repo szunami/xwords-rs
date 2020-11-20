@@ -33,8 +33,9 @@ pub(crate) fn from_ser(bigrams: HashMap<String, usize>) -> HashMap<(char, char),
     let mut result = HashMap::new();
 
     for (key, freq) in bigrams.iter() {
-        let a = key.chars().next().unwrap();
-        let b = key.chars().next().unwrap();
+        let mut chars = key.chars();
+        let a = chars.next().unwrap();
+        let b = chars.next().unwrap();
 
         result.insert((a, b), *freq);
     }
