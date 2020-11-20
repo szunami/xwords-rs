@@ -15,11 +15,12 @@ jobs:
         with:
           command: bench
       - uses: actions/checkout@v2
+        with:
+          clean: false
       - name: bench
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          clean: false
       - name: Upload benchmark report
         uses: actions/upload-artifact@v1
         with:
