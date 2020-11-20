@@ -35,10 +35,8 @@ impl CrosswordFillState {
         self.candidate_queue.pop().map(|x| x.crossword)
     }
 
-    pub fn add_candidate(&mut self, candidate: Crossword, bigrams: &HashMap<(char, char), usize>) {
-        let orderable = FrequencyOrderableCrossword::new(candidate.clone(), bigrams);
-
-        self.candidate_queue.push(orderable);
+    pub fn add_candidate(&mut self, candidate: FrequencyOrderableCrossword) {
+        self.candidate_queue.push(candidate);
     }
 
     pub fn mark_done(&mut self) {
@@ -112,7 +110,7 @@ pub fn fill_crossword(
 
     let crossword_fill_state = {
         let mut temp_state = CrosswordFillState::new();
-        temp_state.add_candidate(crossword.clone(), bigrams.as_ref());
+        let orderable = FrequencyOrderableCrossword::new(crossword.clone(), bigrams.as_ref());
         temp_state
     };
 
@@ -171,7 +169,7 @@ pub fn fill_crossword(
                     //     if so, push
 
                     let potential_fills = words(to_fill.clone().to_string(), trie.as_ref());
-                    let mut viables: Vec<Crossword> = vec![];
+                    let mut viables: Vec<FrequencyOrderableCrossword> = vec![];
 
                     for potential_fill in potential_fills {
                         let new_candidate =
@@ -193,15 +191,15 @@ pub fn fill_crossword(
                                     }
                                 }
                             }
-
-                            viables.push(new_candidate);
+                            let orderable = FrequencyOrderableCrossword::new(new_candidate, bigrams.as_ref());
+                            viables.push(orderable);
                         }
                     }
 
                     if !viables.is_empty() {
                         let mut queue = new_arc.lock().unwrap();
                         for viable_crossword in viables {
-                            queue.add_candidate(viable_crossword, bigrams.as_ref());
+                            queue.add_candidate(viable_crossword);
                         }
                     }
                 }
