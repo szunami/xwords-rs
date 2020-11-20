@@ -16,7 +16,7 @@ use std::{
 
 use crate::{trie::Trie, Crossword};
 
-struct CrosswordFillState {
+pub struct CrosswordFillState {
     // Used to ensure we only enqueue each crossword once.
     // Contains crosswords that are queued or have already been visited
     processed_candidates: HashSet<Crossword>,
@@ -25,11 +25,19 @@ struct CrosswordFillState {
 }
 
 impl CrosswordFillState {
-    fn take_candidate(&mut self) -> Option<Crossword> {
+    pub fn new() -> CrosswordFillState {
+        CrosswordFillState {
+            processed_candidates: HashSet::new(),
+            candidate_queue: BinaryHeap::new(),
+            done: false,
+        }
+    }
+
+    pub fn take_candidate(&mut self) -> Option<Crossword> {
         self.candidate_queue.pop().map(|x| x.crossword)
     }
 
-    fn add_candidate(&mut self, candidate: Crossword, bigrams: &HashMap<(char, char), usize>) {
+    pub fn add_candidate(&mut self, candidate: Crossword, bigrams: &HashMap<(char, char), usize>) {
         if !self.processed_candidates.contains(&candidate) {
             let orderable = FrequencyOrderableCrossword::new(candidate.clone(), bigrams);
 
@@ -40,12 +48,16 @@ impl CrosswordFillState {
         }
     }
 
-    fn mark_done(&mut self) {
+    pub fn mark_done(&mut self) {
         self.done = true;
     }
 }
 
-fn fill_one_word(candidate: &Crossword, iter: &CrosswordWordIterator, word: String) -> Crossword {
+pub fn fill_one_word(
+    candidate: &Crossword,
+    iter: &CrosswordWordIterator,
+    word: String,
+) -> Crossword {
     let mut result_contents = candidate.contents.clone();
     let mut bytes = result_contents.into_bytes();
 
@@ -219,7 +231,7 @@ pub fn fill_crossword(
     }
 }
 
-fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &Trie) -> bool {
+pub fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &Trie) -> bool {
     let mut already_used = HashSet::with_capacity(word_boundaries.len());
 
     for word_boundary in word_boundaries {
