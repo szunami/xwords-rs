@@ -1,0 +1,28 @@
+on: [push]
+
+name: CI
+
+jobs:
+  build_and_test:
+    name: Rust project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: main
+      - name: bench
+        uses: actions-rs/cargo@v1
+        with:
+          command: bench
+      - uses: actions/checkout@v2
+        with:
+          clean: false
+      - name: bench
+        uses: actions-rs/cargo@v1
+        with:
+          command: bench
+      - name: Upload benchmark report
+        uses: actions/upload-artifact@v1
+        with:
+          name: Benchmark report
+          path: target/criterion/
