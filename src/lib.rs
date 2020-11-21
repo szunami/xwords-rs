@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate cached;
 
+use crate::fill::parallel::ParallelFiller;
+use crate::fill::Filler;
 use crate::ngram::from_ser;
 use trie::Trie;
 
@@ -8,23 +10,22 @@ use crate::crossword::Crossword;
 
 use crate::crossword::Direction;
 use crate::ngram::bigrams;
+use std::fs::File;
 use std::sync::Arc;
 use std::{collections::HashMap, time::Instant};
-
-use std::fs::File;
 
 pub mod crossword;
 pub mod fill;
 mod ngram;
 mod order;
 mod parse;
-pub mod single_threaded_fill;
 pub mod trie;
 
 pub fn fill_crossword(contents: String, words: Vec<String>) -> Result<Crossword, String> {
     let crossword = Crossword::new(contents).unwrap();
     let (bigrams, trie) = index_words(words);
-    fill::fill_crossword(&crossword, Arc::new(trie), Arc::new(bigrams))
+    let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
+    filler.fill(&crossword)
 }
 
 pub fn default_indexes() -> (HashMap<(char, char), usize>, Trie) {
