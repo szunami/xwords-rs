@@ -1,10 +1,10 @@
-use xwords::fill::Filler;
-use xwords::fill::parallel::ParallelFiller;
 use std::fs::File;
 use std::sync::Arc;
 use std::time::Instant;
 use xwords::crossword::Crossword;
 use xwords::default_indexes;
+use xwords::fill::parallel::ParallelFiller;
+use xwords::fill::Filler;
 
 fn main() {
     let now = Instant::now();
@@ -46,7 +46,7 @@ fn main() {
 
     let (bigrams, trie) = default_indexes();
     println!("Loaded indices in {}ms", now.elapsed().as_millis());
-    
+
     let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
 
     let filled_puz = filler.fill(&real_puz).unwrap();

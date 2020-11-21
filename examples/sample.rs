@@ -1,9 +1,9 @@
-use xwords::fill::Filler;
-use xwords::fill::parallel::ParallelFiller;
 use std::sync::Arc;
 use std::time::Instant;
 use xwords::crossword::Crossword;
 use xwords::default_indexes;
+use xwords::fill::parallel::ParallelFiller;
+use xwords::fill::Filler;
 
 fn main() {
     let now = Instant::now();
