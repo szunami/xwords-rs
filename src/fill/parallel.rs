@@ -1,17 +1,16 @@
+use crate::fill::fill_one_word;
+use crate::fill::is_viable;
+use crate::fill::words;
 use crate::fill::Filler;
 use crate::order::score_iter;
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
-use std::collections::hash_map::DefaultHasher;
-use std::hash::Hasher;
+use std::time::Instant;
 
-use crate::Direction;
-use crate::Instant;
-use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
-use cached::SizedCache;
+use crate::crossword::CrosswordWordIterator;
 use std::{
     collections::BinaryHeap,
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     sync::{mpsc, Arc, Mutex},
 };
 
@@ -178,110 +177,30 @@ impl Filler for ParallelFiller {
     }
 }
 
-pub fn fill_one_word(
-    candidate: &Crossword,
-    iter: &CrosswordWordIterator,
-    word: String,
-) -> Crossword {
-    let mut result_contents = candidate.contents.clone();
-    let mut bytes = result_contents.into_bytes();
-
-    let word_boundary = iter.word_boundary;
-
-    match word_boundary.direction {
-        Direction::Across => {
-            for (char_index, c) in word.chars().enumerate() {
-                let col = word_boundary.start_col + char_index;
-                bytes[word_boundary.start_row * candidate.width + col] = c as u8;
-            }
-        }
-        Direction::Down => {
-            for (char_index, c) in word.chars().enumerate() {
-                let row = word_boundary.start_row + char_index;
-                bytes[row * candidate.width + word_boundary.start_col] = c as u8;
-            }
-        }
-    }
-    unsafe { result_contents = String::from_utf8_unchecked(bytes) }
-
-    Crossword {
-        contents: result_contents,
-        ..*candidate
-    }
-}
-
-cached_key! {
-    IS_WORD: SizedCache<u64, bool> = SizedCache::with_size(10_000);
-    Key = {
-        use std::hash::Hash;
-        let mut hasher = DefaultHasher::new();
-        for c in iter.clone() {
-            c.hash(&mut hasher)
-        }
-
-        hasher.finish()
-    };
-    fn is_word(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
-        trie.is_word(iter)
-    }
-}
-
-cached_key! {
-    WORDS: SizedCache<String, Vec<String>> = SizedCache::with_size(10_000);
-    Key = { pattern.clone() };
-    fn words(pattern: String, trie: &Trie) -> Vec<String> = {
-        trie.words(pattern)
-    }
-}
-
-pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: &Trie) -> bool {
-    let mut already_used = HashSet::with_capacity(word_boundaries.len());
-
-    for word_boundary in word_boundaries {
-        let iter = CrosswordWordIterator::new(candidate, word_boundary);
-        if iter.clone().any(|c| c == ' ') {
-            continue;
-        }
-
-        if already_used.contains(&iter) {
-            return false;
-        }
-        already_used.insert(iter.clone());
-
-        if !is_word(iter, trie) {
-            return false;
-        }
-    }
-    true
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::fill::parallel::is_word;
+    use crate::default_indexes;
     use crate::fill::Filler;
-
-    use crate::Trie;
-    use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
-    use crate::{default_words, parse::parse_word_boundaries};
-    use crate::{index_words, Crossword, Direction};
+    use crate::Arc;
+    use crate::Crossword;
     use std::fs::File;
-    use std::{sync::Arc, time::Instant};
+    use std::time::Instant;
 
     use super::{fill_one_word, is_viable, ParallelFiller};
 
-    // #[test]
-    // fn fill_crossword_works() {
-    //     let (bigrams, trie) = index_words(default_words());
-    //     let filler = ParallelFiller::new(&trie, &bigrams);
+    #[test]
+    fn fill_crossword_works() {
+        let (bigrams, trie) = default_indexes();
+        let filler = ParallelFiller::new(&trie, &bigrams);
 
-    //     let input = Crossword::new(String::from("                ")).unwrap();
+        let input = Crossword::new(String::from("                ")).unwrap();
 
-    //     let result = filler.fill(&input);
+        let result = filler.fill(&input);
 
-    //     assert!(result.is_ok());
+        assert!(result.is_ok());
 
-    //     println!("{}", result.unwrap());
-    // }
+        println!("{}", result.unwrap());
+    }
 
     #[test]
     #[ignore]
@@ -321,7 +240,7 @@ YAYAS*E  N* M
 
         println!("{}", real_puz);
 
-        let (bigrams, trie) = index_words(default_words());
+        let (bigrams, trie) = default_indexes();
         let now = Instant::now();
 
         let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
@@ -371,71 +290,11 @@ YAYAS*E  N* M
         println!("{}", real_puz);
 
         println!("Loaded indices in {}ms", now.elapsed().as_millis());
-        let (bigrams, trie) = index_words(default_words());
+        let (bigrams, trie) = default_indexes();
         let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
         let filled_puz = filler.fill(&real_puz).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
-    }
-
-    #[test]
-    fn fill_one_word_works() {
-        let c = Crossword::new(String::from(
-            "
-abc
-def
-ghi
-",
-        ))
-        .unwrap();
-
-        assert_eq!(
-            fill_one_word(
-                &c,
-                &CrosswordWordIterator::new(
-                    &c,
-                    &WordBoundary {
-                        start_col: 0,
-                        start_row: 0,
-                        length: 3,
-                        direction: Direction::Across,
-                    },
-                ),
-                String::from("cat")
-            ),
-            Crossword::new(String::from(
-                "
-cat
-def
-ghi
-",
-            ))
-            .unwrap()
-        );
-
-        assert_eq!(
-            fill_one_word(
-                &c,
-                &CrosswordWordIterator::new(
-                    &c,
-                    &WordBoundary {
-                        start_col: 0,
-                        start_row: 0,
-                        length: 3,
-                        direction: Direction::Down,
-                    }
-                ),
-                String::from("cat"),
-            ),
-            Crossword::new(String::from(
-                "
-cbc
-aef
-thi
-",
-            ))
-            .unwrap()
-        );
     }
 
     #[test]
@@ -454,79 +313,10 @@ thi
         .unwrap();
 
         let now = Instant::now();
-        let (bigrams, trie) = index_words(default_words());
+        let (bigrams, trie) = default_indexes();
         let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
         let filled_puz = filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
-    }
-
-    #[test]
-    fn is_viable_works() {
-        let (_, trie) = index_words(default_words());
-
-        let crossword = Crossword::new(String::from(
-            "
-   
-   
-   
-",
-        ))
-        .unwrap();
-
-        let word_boundaries = parse_word_boundaries(&crossword);
-
-        assert!(is_viable(&crossword, &word_boundaries, &trie));
-
-        assert!(!is_viable(
-            &Crossword::new(String::from("ABCDEFGH ")).unwrap(),
-            &word_boundaries,
-            &trie
-        ));
-
-        assert!(!is_viable(
-            &Crossword::new(String::from("ABCB  C  ")).unwrap(),
-            &word_boundaries,
-            &trie
-        ));
-    }
-
-    #[test]
-    fn cache_works() {
-        let trie = Trie::build(vec![
-            String::from("bass"),
-            String::from("bats"),
-            String::from("bess"),
-            String::from("be"),
-        ]);
-
-        let crossword = Crossword::new(String::from(
-            "
-bass
-a   
-s   
-s   
-",
-        ))
-        .unwrap();
-        let word_boundary = WordBoundary {
-            start_row: 0,
-            start_col: 0,
-            direction: Direction::Across,
-            length: 4,
-        };
-        let iter = CrosswordWordIterator::new(&crossword, &word_boundary);
-
-        assert!(is_word(iter, &trie));
-
-        let word_boundary = WordBoundary {
-            start_row: 0,
-            start_col: 0,
-            direction: Direction::Down,
-            length: 4,
-        };
-        let iter = CrosswordWordIterator::new(&crossword, &word_boundary);
-
-        assert!(is_word(iter, &trie));
     }
 }
