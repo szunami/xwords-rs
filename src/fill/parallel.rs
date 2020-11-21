@@ -1,7 +1,7 @@
+use crate::fill::Filler;
 use crate::order::score_iter;
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
-use crate::{crossword, fill::Filler};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hasher;
 
@@ -25,7 +25,7 @@ pub struct CrosswordFillState {
 }
 
 impl CrosswordFillState {
-    pub fn new() -> CrosswordFillState {
+    pub fn default() -> CrosswordFillState {
         CrosswordFillState {
             candidate_queue: BinaryHeap::new(),
             done: false,
@@ -60,7 +60,7 @@ impl ParallelFiller {
 impl Filler for ParallelFiller {
     fn fill(self, crossword: &Crossword) -> Result<Crossword, String> {
         let crossword_fill_state = {
-            let mut temp_state = CrosswordFillState::new();
+            let mut temp_state = CrosswordFillState::default();
             let orderable = FrequencyOrderableCrossword::new(crossword.clone(), &self.bigrams);
             temp_state.add_candidate(orderable);
             temp_state
@@ -85,7 +85,7 @@ impl Filler for ParallelFiller {
             let bigrams = bigrams.clone();
 
             std::thread::Builder::new()
-                .name(String::from(format!("worker{}", thread_index)))
+                .name(format!("worker{}", thread_index))
                 .spawn(move || {
                     println!("Hello from thread {}", thread_index);
 
@@ -135,11 +135,11 @@ impl Filler for ParallelFiller {
                                 fill_one_word(&candidate, &to_fill.clone(), potential_fill);
 
                             if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
-                                if !new_candidate.contents.contains(" ") {
+                                if !new_candidate.contents.contains(' ') {
                                     let mut queue = new_arc.lock().unwrap();
                                     queue.mark_done();
 
-                                    match new_tx.send(new_candidate.clone()) {
+                                    match new_tx.send(new_candidate) {
                                         Ok(_) => {
                                             println!("Just sent a result.");
                                             return;
@@ -234,7 +234,7 @@ cached_key! {
     }
 }
 
-pub fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, trie: &Trie) -> bool {
+pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: &Trie) -> bool {
     let mut already_used = HashSet::with_capacity(word_boundaries.len());
 
     for word_boundary in word_boundaries {
@@ -258,7 +258,7 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, tri
 #[cfg(test)]
 mod tests {
     use crate::fill::parallel::is_word;
-    use crate::{default_indexes, fill::Filler};
+    use crate::fill::Filler;
 
     use crate::Trie;
     use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
@@ -324,7 +324,6 @@ YAYAS*E  N* M
         let (bigrams, trie) = index_words(default_words());
         let now = Instant::now();
 
-        let (bigrams, trie) = index_words(default_words());
         let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
         let filled_puz = filler.fill(&real_puz).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
@@ -371,7 +370,6 @@ YAYAS*E  N* M
 
         println!("{}", real_puz);
 
-        let (bigrams, trie) = default_indexes();
         println!("Loaded indices in {}ms", now.elapsed().as_millis());
         let (bigrams, trie) = index_words(default_words());
         let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
@@ -454,8 +452,6 @@ thi
 ",
         ))
         .unwrap();
-
-        let (bigrams, trie) = index_words(default_words());
 
         let now = Instant::now();
         let (bigrams, trie) = index_words(default_words());

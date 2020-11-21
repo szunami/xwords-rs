@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-pub fn bigrams(words: &Vec<String>) -> HashMap<(char, char), usize> {
+pub fn bigrams(words: &[String]) -> HashMap<(char, char), usize> {
     let mut result = HashMap::new();
 
     for word in words {

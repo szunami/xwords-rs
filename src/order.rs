@@ -137,7 +137,7 @@ impl Ord for WordScore {
             return self.start_col.cmp(&other.start_col);
         }
 
-        return self.start_row.cmp(&other.start_row);
+        self.start_row.cmp(&other.start_row)
     }
 }
 
