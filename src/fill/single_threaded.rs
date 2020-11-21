@@ -1,5 +1,5 @@
-use crate::fill::parallel::fill_one_word;
-use crate::fill::parallel::is_viable;
+use crate::fill::fill_one_word;
+use crate::fill::is_viable;
 use crate::fill::parallel::CrosswordFillState;
 use crate::order::FrequencyOrderableCrossword;
 use crate::Filler;

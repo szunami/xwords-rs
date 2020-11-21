@@ -186,12 +186,12 @@ mod tests {
     use std::fs::File;
     use std::time::Instant;
 
-    use super::{fill_one_word, is_viable, ParallelFiller};
+    use super::ParallelFiller;
 
     #[test]
     fn fill_crossword_works() {
         let (bigrams, trie) = default_indexes();
-        let filler = ParallelFiller::new(&trie, &bigrams);
+        let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
 
         let input = Crossword::new(String::from("                ")).unwrap();
 

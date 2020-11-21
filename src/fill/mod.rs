@@ -3,8 +3,8 @@ use crate::parse::WordBoundary;
 use crate::Crossword;
 use crate::Trie;
 use cached::SizedCache;
-use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
+use std::{collections::hash_map::DefaultHasher, hash::Hasher};
 
 pub mod mpmc;
 pub mod parallel;

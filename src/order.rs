@@ -164,7 +164,6 @@ pub(crate) fn score_iter(
 
 #[cfg(test)]
 mod tests {
-    use crate::default_indexes;
     use crate::default_words;
     use crate::index_words;
     use crate::order::score_iter;
