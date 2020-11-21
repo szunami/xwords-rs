@@ -10,21 +10,21 @@ fn main() {
 
     let real_puz = Crossword::new(String::from(
         "
-  S *F  N*B
-  E *L  O*A
-         *N
-  V* W *E D*
-**E  E*
+  S *F  N*B    
+  E *L  O*A    
+         *N    
+  V* W *E D*   
+**E  E*        
 RATEDR*     ***
-  I  *B N * C
-  M*       *R
-  E * L S*
+  I  *B N * C  
+  M*       *R  
+  E * L S*     
 ***ACIDY*GRATES
         *A  I**
-KIA*  A* R *C
-EVILS*
-B    *L  E* S
-YAYAS*E  N* M
+KIA*  A* R *C  
+EVILS*         
+B    *L  E* S  
+YAYAS*E  N* M  
 ",
     ))
     .unwrap();
