@@ -154,7 +154,9 @@ impl Filler for ParallelFiller {
                                     new_candidate,
                                     bigrams.as_ref(),
                                 );
-                                viables.push(orderable);
+                                if orderable.fillability_score > 0 {
+                                    viables.push(orderable);
+                                }
                             }
                         }
 

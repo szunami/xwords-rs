@@ -88,7 +88,9 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
                         return Ok(new_candidate);
                     }
                     let orderable = FrequencyOrderableCrossword::new(new_candidate, self.bigrams);
-                    crossword_fill_state.add_candidate(orderable);
+                    if orderable.fillability_score > 0 {
+                        crossword_fill_state.add_candidate(orderable);
+                    }
                 }
             }
         }
