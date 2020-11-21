@@ -1,40 +1,45 @@
 use std::sync::Arc;
-use xwords::fill::parallel::fill_crossword;
-use xwords::{crossword::Crossword, default_indexes};
+use xwords::fill::Filler;
+use xwords::{crossword::Crossword, default_indexes, fill::parallel::ParallelFiller};
 
-use criterion::Benchmark;
+use criterion::{black_box, Benchmark};
 use criterion::{criterion_group, criterion_main, Criterion};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let (bigrams, trie) = default_indexes();
-
-    let bigrams = Arc::new(bigrams);
     let trie = Arc::new(trie);
+    let bigrams = Arc::new(bigrams);
 
     let tmp_bigrams = bigrams.clone();
     let tmp_trie = trie.clone();
-
-    let input = Crossword::new(String::from("         ")).unwrap();
     c.bench(
         "fill_crosswords",
         Benchmark::new("fill_3x3_crossword", move |b| {
-            b.iter(|| fill_crossword(&input, tmp_trie.clone(), tmp_bigrams.clone()));
+            let input = Crossword::new(String::from("         ")).unwrap();
+
+            let filler = ParallelFiller::new(tmp_trie.clone(), tmp_bigrams.clone());
+            b.iter(|| filler.clone().fill(black_box(&input)).unwrap());
         }),
     );
 
-    let input = Crossword::new(String::from("                ")).unwrap();
     let tmp_bigrams = bigrams.clone();
     let tmp_trie = trie.clone();
-
     c.bench(
         "fill_crosswords",
         Benchmark::new("fill_4x4_crossword", move |b| {
-            b.iter(|| fill_crossword(&input, tmp_trie.clone(), tmp_bigrams.clone()));
+            let input = Crossword::new(String::from("                ")).unwrap();
+            let filler = ParallelFiller::new(tmp_trie.clone(), tmp_bigrams.clone());
+            b.iter(|| filler.clone().fill(black_box(&input)));
         }),
     );
 
-    let input = Crossword::new(String::from(
-        "
+    let tmp_bigrams = bigrams.clone();
+    let tmp_trie = trie.clone();
+    c.bench(
+        "fill_crosswords",
+        Benchmark::new("fill_20201012_crossword", move |b| {
+            let input = Crossword::new(String::from(
+                "
   S *FRAN*BANAL
   E *L  O*ALIBI
 BARITONES*N   O
@@ -51,16 +56,10 @@ EVILS*GOODTHING
 B  ET*L  E* S  
 YAYAS*ETON* M  
 ",
-    ))
-    .unwrap();
-
-    let tmp_bigrams = bigrams.clone();
-    let tmp_trie = trie.clone();
-
-    c.bench(
-        "fill_crosswords",
-        Benchmark::new("fill_20201012_crossword", move |b| {
-            b.iter(|| fill_crossword(&input, tmp_trie.clone(), tmp_bigrams.clone()));
+            ))
+            .unwrap();
+            let filler = ParallelFiller::new(tmp_trie.clone(), tmp_bigrams.clone());
+            b.iter(|| filler.clone().fill(black_box(&input)));
         }),
     );
 }
