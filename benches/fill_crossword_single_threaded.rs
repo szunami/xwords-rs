@@ -1,5 +1,7 @@
+use criterion::black_box;
 use std::sync::Arc;
-use xwords::fill::single_threaded::fill_crossword_single_threaded;
+use xwords::fill::single_threaded::SingleThreadedFiller;
+use xwords::fill::Filler;
 use xwords::{crossword::Crossword, default_indexes};
 
 use criterion::Benchmark;
@@ -18,8 +20,10 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench(
         "fill_crosswords_single_threaded",
         Benchmark::new("fill_3x3_crossword", move |b| {
+            let filler = SingleThreadedFiller::new(tmp_trie.as_ref(), tmp_bigrams.as_ref());
+
             b.iter(|| {
-                fill_crossword_single_threaded(&input, tmp_trie.clone(), tmp_bigrams.clone())
+                filler.clone().fill(black_box(&input));
             });
         }),
     );
@@ -31,8 +35,10 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench(
         "fill_crosswords_single_threaded",
         Benchmark::new("fill_4x4_crossword", move |b| {
+            let filler = SingleThreadedFiller::new(tmp_trie.as_ref(), tmp_bigrams.as_ref());
+
             b.iter(|| {
-                fill_crossword_single_threaded(&input, tmp_trie.clone(), tmp_bigrams.clone())
+                filler.clone().fill(black_box(&input));
             });
         }),
     );
@@ -64,8 +70,10 @@ YAYAS*ETON* M
     c.bench(
         "fill_crosswords_single_threaded",
         Benchmark::new("fill_20201012_crossword", move |b| {
+            let filler = SingleThreadedFiller::new(tmp_trie.as_ref(), tmp_bigrams.as_ref());
+
             b.iter(|| {
-                fill_crossword_single_threaded(&input, tmp_trie.clone(), tmp_bigrams.clone())
+                filler.clone().fill(black_box(&input));
             });
         }),
     );

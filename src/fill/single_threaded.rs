@@ -1,8 +1,8 @@
-use crate::Filler;
 use crate::fill::parallel::fill_one_word;
 use crate::fill::parallel::is_viable;
 use crate::fill::parallel::CrosswordFillState;
 use crate::order::FrequencyOrderableCrossword;
+use crate::Filler;
 use cached::SizedCache;
 
 use crate::crossword::CrosswordWordIterator;
@@ -26,78 +26,71 @@ pub struct SingleThreadedFiller<'s> {
     bigrams: &'s HashMap<(char, char), usize>,
 }
 
-impl <'s> SingleThreadedFiller<'s> {
+impl<'s> SingleThreadedFiller<'s> {
     pub fn new(
         trie: &'s Trie,
         bigrams: &'s HashMap<(char, char), usize>,
     ) -> SingleThreadedFiller<'s> {
-        SingleThreadedFiller{
-            trie,
-            bigrams
-        }
-        
+        SingleThreadedFiller { trie, bigrams }
     }
 }
 
-impl <'s> Filler for SingleThreadedFiller<'s> {
-    fn fill(self, crossword: &Crossword) -> std::result::Result<Crossword, String> { 
-          // parse crossword into partially filled words
-    // fill a word
+impl<'s> Filler for SingleThreadedFiller<'s> {
+    fn fill(self, crossword: &Crossword) -> std::result::Result<Crossword, String> {
+        // parse crossword into partially filled words
+        // fill a word
 
-    let thread_start = Instant::now();
+        let thread_start = Instant::now();
 
-    let mut crossword_fill_state = {
-        let mut temp_state = CrosswordFillState::new();
-        let orderable = FrequencyOrderableCrossword::new(crossword.clone(), self.bigrams);
-        temp_state.add_candidate(orderable);
-        temp_state
-    };
-
-    let word_boundaries = parse_word_boundaries(&crossword);
-    let mut candidate_count = 0;
-
-    loop {
-        let candidate = match crossword_fill_state.take_candidate() {
-            Some(c) => c,
-            None => return Err(String::from("Ran out of candidates. Yikes.")),
+        let mut crossword_fill_state = {
+            let mut temp_state = CrosswordFillState::new();
+            let orderable = FrequencyOrderableCrossword::new(crossword.clone(), self.bigrams);
+            temp_state.add_candidate(orderable);
+            temp_state
         };
 
-        candidate_count += 1;
+        let word_boundaries = parse_word_boundaries(&crossword);
+        let mut candidate_count = 0;
 
-        if candidate_count % 1_000 == 0 {
-            println!(
-                "Throughput: {}",
-                candidate_count as f32 / thread_start.elapsed().as_millis() as f32
-            );
-        }
+        loop {
+            let candidate = match crossword_fill_state.take_candidate() {
+                Some(c) => c,
+                None => return Err(String::from("Ran out of candidates. Yikes.")),
+            };
 
-        let to_fill = word_boundaries
-            .iter()
-            .map(|word_boundary| CrosswordWordIterator::new(&candidate, word_boundary))
-            .filter(|iter| iter.clone().any(|c| c == ' '))
-            .min_by_key(|iter| score_iter(iter, self.bigrams))
-            .unwrap();
-        // find valid fills for word;
-        // for each fill:
-        //   are all complete words legit?
-        //     if so, push
+            candidate_count += 1;
 
-        let potential_fills = words(to_fill.clone().to_string(), self.trie);
+            if candidate_count % 1_000 == 0 {
+                println!(
+                    "Throughput: {}",
+                    candidate_count as f32 / thread_start.elapsed().as_millis() as f32
+                );
+            }
 
-        for potential_fill in potential_fills {
-            let new_candidate = fill_one_word(&candidate, &to_fill.clone(), potential_fill);
+            let to_fill = word_boundaries
+                .iter()
+                .map(|word_boundary| CrosswordWordIterator::new(&candidate, word_boundary))
+                .filter(|iter| iter.clone().any(|c| c == ' '))
+                .min_by_key(|iter| score_iter(iter, self.bigrams))
+                .unwrap();
+            // find valid fills for word;
+            // for each fill:
+            //   are all complete words legit?
+            //     if so, push
 
-            if is_viable(&new_candidate, &word_boundaries, self.trie) {
-                if !new_candidate.contents.contains(" ") {
-                    return Ok(new_candidate);
+            let potential_fills = words(to_fill.clone().to_string(), self.trie);
+
+            for potential_fill in potential_fills {
+                let new_candidate = fill_one_word(&candidate, &to_fill.clone(), potential_fill);
+
+                if is_viable(&new_candidate, &word_boundaries, self.trie) {
+                    if !new_candidate.contents.contains(" ") {
+                        return Ok(new_candidate);
+                    }
+                    let orderable = FrequencyOrderableCrossword::new(new_candidate, self.bigrams);
+                    crossword_fill_state.add_candidate(orderable);
                 }
-                let orderable = FrequencyOrderableCrossword::new(new_candidate, self.bigrams);
-                crossword_fill_state.add_candidate(orderable);
             }
         }
     }
-        
-        
-        
-     }
 }
