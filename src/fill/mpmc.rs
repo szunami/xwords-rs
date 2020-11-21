@@ -4,7 +4,7 @@ pub struct MPMCFiller {}
 
 impl Filler for MPMCFiller {
     fn fill(self, _: &Crossword) -> std::result::Result<Crossword, String> {
-        todo!()
+        Err(String::from("Unable to do the thing :("))
     }
 }
 
