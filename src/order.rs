@@ -8,7 +8,7 @@ use crate::Crossword;
 pub struct FrequencyOrderableCrossword {
     pub(crate) crossword: Crossword,
     space_count: usize,
-    fillability_score: usize,
+    pub fillability_score: usize,
 }
 
 impl FrequencyOrderableCrossword {
