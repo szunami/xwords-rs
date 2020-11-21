@@ -1,7 +1,7 @@
+use crate::fill::Filler;
 use crate::order::score_iter;
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
-use crate::{crossword, fill::Filler};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hasher;
 
@@ -256,7 +256,7 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &Vec<WordBoundary>, tri
 #[cfg(test)]
 mod tests {
     use crate::fill::parallel::is_word;
-    use crate::{default_indexes, fill::Filler};
+    use crate::fill::Filler;
 
     use crate::Trie;
     use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
@@ -322,7 +322,6 @@ YAYAS*E  N* M
         let (bigrams, trie) = index_words(default_words());
         let now = Instant::now();
 
-        let (bigrams, trie) = index_words(default_words());
         let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
         let filled_puz = filler.fill(&real_puz).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
@@ -369,7 +368,6 @@ YAYAS*E  N* M
 
         println!("{}", real_puz);
 
-        let (bigrams, trie) = default_indexes();
         println!("Loaded indices in {}ms", now.elapsed().as_millis());
         let (bigrams, trie) = index_words(default_words());
         let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
@@ -452,8 +450,6 @@ thi
 ",
         ))
         .unwrap();
-
-        let (bigrams, trie) = index_words(default_words());
 
         let now = Instant::now();
         let (bigrams, trie) = index_words(default_words());
