@@ -43,7 +43,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
         let thread_start = Instant::now();
 
         let mut crossword_fill_state = {
-            let mut temp_state = CrosswordFillState::new();
+            let mut temp_state = CrosswordFillState::default();
             let orderable = FrequencyOrderableCrossword::new(crossword.clone(), self.bigrams);
             temp_state.add_candidate(orderable);
             temp_state
@@ -84,7 +84,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
                 let new_candidate = fill_one_word(&candidate, &to_fill.clone(), potential_fill);
 
                 if is_viable(&new_candidate, &word_boundaries, self.trie) {
-                    if !new_candidate.contents.contains(" ") {
+                    if !new_candidate.contents.contains(' ') {
                         return Ok(new_candidate);
                     }
                     let orderable = FrequencyOrderableCrossword::new(new_candidate, self.bigrams);
