@@ -23,7 +23,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             let filler = SingleThreadedFiller::new(tmp_trie.as_ref(), tmp_bigrams.as_ref());
 
             b.iter(|| {
-                filler.clone().fill(black_box(&input));
+                assert!(filler.clone().fill(black_box(&input)).is_ok());
             });
         }),
     );
@@ -38,7 +38,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             let filler = SingleThreadedFiller::new(tmp_trie.as_ref(), tmp_bigrams.as_ref());
 
             b.iter(|| {
-                filler.clone().fill(black_box(&input));
+                assert!(filler.clone().fill(black_box(&input)).is_ok());
             });
         }),
     );
@@ -73,7 +73,7 @@ YAYAS*ETON* M
             let filler = SingleThreadedFiller::new(tmp_trie.as_ref(), tmp_bigrams.as_ref());
 
             b.iter(|| {
-                filler.clone().fill(black_box(&input));
+                assert!(filler.clone().fill(black_box(&input)).is_ok());
             });
         }),
     );

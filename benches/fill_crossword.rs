@@ -18,7 +18,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             let input = Crossword::new(String::from("         ")).unwrap();
 
             let filler = ParallelFiller::new(tmp_trie.clone(), tmp_bigrams.clone());
-            b.iter(|| filler.clone().fill(black_box(&input)).unwrap());
+            b.iter(|| assert!(filler.clone().fill(black_box(&input)).is_ok()));
         }),
     );
 

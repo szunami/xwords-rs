@@ -165,7 +165,7 @@ pub(crate) fn score_iter(
 #[cfg(test)]
 mod tests {
     use crate::default_indexes;
-    use crate::default_words;
+
     use crate::index_words;
     use crate::order::score_iter;
     use crate::order::CrosswordWordIterator;
@@ -326,8 +326,7 @@ GHI
 
     #[test]
     fn crossword_ord_works() {
-        let words = default_words();
-        let (bigrams, _) = index_words(words);
+        let (bigrams, _) = default_indexes();
 
         let a = FrequencyOrderableCrossword::new(
             Crossword::new(String::from("   TNERTN")).unwrap(),

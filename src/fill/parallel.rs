@@ -257,8 +257,8 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: 
 
 #[cfg(test)]
 mod tests {
-    use crate::fill::parallel::is_word;
     use crate::fill::Filler;
+    use crate::{default_indexes, fill::parallel::is_word};
 
     use crate::Trie;
     use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
@@ -269,19 +269,19 @@ mod tests {
 
     use super::{fill_one_word, is_viable, ParallelFiller};
 
-    // #[test]
-    // fn fill_crossword_works() {
-    //     let (bigrams, trie) = index_words(default_words());
-    //     let filler = ParallelFiller::new(&trie, &bigrams);
+    #[test]
+    fn fill_crossword_works() {
+        let (bigrams, trie) = default_indexes();
+        let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
 
-    //     let input = Crossword::new(String::from("                ")).unwrap();
+        let input = Crossword::new(String::from("                ")).unwrap();
 
-    //     let result = filler.fill(&input);
+        let result = filler.fill(&input);
 
-    //     assert!(result.is_ok());
+        assert!(result.is_ok());
 
-    //     println!("{}", result.unwrap());
-    // }
+        println!("{}", result.unwrap());
+    }
 
     #[test]
     #[ignore]
@@ -321,7 +321,7 @@ YAYAS*E  N* M
 
         println!("{}", real_puz);
 
-        let (bigrams, trie) = index_words(default_words());
+        let (bigrams, trie) = default_indexes();
         let now = Instant::now();
 
         let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
@@ -371,7 +371,7 @@ YAYAS*E  N* M
         println!("{}", real_puz);
 
         println!("Loaded indices in {}ms", now.elapsed().as_millis());
-        let (bigrams, trie) = index_words(default_words());
+        let (bigrams, trie) = default_indexes();
         let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
         let filled_puz = filler.fill(&real_puz).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
@@ -454,7 +454,7 @@ thi
         .unwrap();
 
         let now = Instant::now();
-        let (bigrams, trie) = index_words(default_words());
+        let (bigrams, trie) = default_indexes();
         let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
         let filled_puz = filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
@@ -463,7 +463,7 @@ thi
 
     #[test]
     fn is_viable_works() {
-        let (_, trie) = index_words(default_words());
+        let (_, trie) = default_indexes();
 
         let crossword = Crossword::new(String::from(
             "
