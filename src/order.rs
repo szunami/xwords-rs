@@ -56,7 +56,11 @@ fn score_crossword(bigrams: &HashMap<(char, char), usize>, crossword: &Crossword
             let score = {
                 // TODO: bigrams as a type
                 let tmp;
-                if current_char == ' ' || prev_char == ' ' {
+                if current_char == ' '
+                    || prev_char == ' '
+                    || current_char == '*'
+                    || prev_char == '*'
+                {
                     tmp = std::usize::MAX;
                 } else {
                     let key = (prev_char, current_char);
@@ -76,7 +80,11 @@ fn score_crossword(bigrams: &HashMap<(char, char), usize>, crossword: &Crossword
             let score = {
                 // TODO: bigrams as a type
                 let tmp;
-                if current_char == ' ' || prev_char == ' ' {
+                if current_char == ' '
+                    || prev_char == ' '
+                    || current_char == '*'
+                    || prev_char == '*'
+                {
                     tmp = std::usize::MAX;
                 } else {
                     let key = (prev_char, current_char);
@@ -156,6 +164,7 @@ pub(crate) fn score_iter(
 
 #[cfg(test)]
 mod tests {
+    use crate::default_indexes;
     use crate::default_words;
     use crate::index_words;
     use crate::order::score_iter;
