@@ -1,5 +1,5 @@
 use crate::crossword::CrosswordWordIterator;
-use fxhash::FxHashMap;
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 #[derive(Clone, Serialize, Deserialize)]
@@ -163,7 +163,7 @@ impl Trie {
 #[cfg(test)]
 mod tests {
 
-    use fxhash::FxHashMap;
+    use rustc_hash::FxHashMap;
 
     use std::collections::HashSet;
 
