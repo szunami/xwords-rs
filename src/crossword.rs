@@ -110,15 +110,8 @@ impl fmt::Display for Crossword {
                     "{}",
                     self.contents.as_bytes()[row * self.width + col] as char
                 )?;
-                if col != self.width - 1 {
-                    write!(f, " ")?;
-                }
             }
             writeln!(f)?;
-
-            if row != self.height - 1 {
-                writeln!(f)?;
-            }
         }
         Ok(())
     }
