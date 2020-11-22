@@ -1,26 +1,15 @@
-use crate::fill::parallel::fill_one_word;
-use crate::fill::parallel::is_viable;
-use crate::fill::parallel::CrosswordFillState;
-use crate::fill::parallel::MyCache;
-use crate::order::FrequencyOrderableCrossword;
-use crate::Filler;
+use crate::{
+    fill::{fill_one_word, is_viable, words, CrosswordFillState},
+    order::FrequencyOrderableCrossword,
+    Filler,
+};
 
 use fxhash::FxHashMap;
 
-use crate::crossword::CrosswordWordIterator;
-use crate::order::score_iter;
-use crate::parse::parse_word_boundaries;
+use crate::{crossword::CrosswordWordIterator, order::score_iter, parse::parse_word_boundaries};
 use std::time::Instant;
 
 use crate::{trie::Trie, Crossword};
-
-cached_key! {
-    WORDS: MyCache<String, Vec<String>> = MyCache::default();
-    Key = { pattern.clone() };
-    fn words(pattern: String, trie: &Trie) -> Vec<String> = {
-        trie.words(pattern)
-    }
-}
 
 #[derive(Clone)]
 pub struct SingleThreadedFiller<'s> {
