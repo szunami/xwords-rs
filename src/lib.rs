@@ -5,7 +5,6 @@ extern crate fxhash;
 
 use crate::fill::parallel::ParallelFiller;
 use crate::fill::Filler;
-use crate::ngram::from_ser;
 use fxhash::FxHashMap;
 use trie::Trie;
 
@@ -40,8 +39,8 @@ pub fn default_indexes() -> (FxHashMap<(char, char), usize>, Trie) {
     let now = Instant::now();
 
     let file = File::open("./bigrams.bincode").unwrap();
-    let load = bincode::deserialize_from::<File, FxHashMap<String, usize>>(file);
-    let bigrams = from_ser(load.unwrap());
+    let load = bincode::deserialize_from::<File, FxHashMap<(char, char), usize>>(file);
+    let bigrams = load.unwrap();
     println!("Loaded bigrams in {}ms", now.elapsed().as_millis());
 
     (bigrams, trie)
@@ -60,12 +59,10 @@ pub fn index_words(raw_data: Vec<String>) -> (FxHashMap<(char, char), usize>, Tr
 
 #[cfg(test)]
 mod tests {
-    use crate::ngram::from_ser;
     use crate::FxHashMap;
     use std::time::Instant;
 
     use crate::index_words;
-    use crate::ngram::to_ser;
     use crate::File;
     use crate::{default_words, trie::Trie};
 
@@ -79,7 +76,7 @@ mod tests {
         assert!(trie_result.is_ok());
 
         let bigrams_file = File::create("bigrams.bincode").unwrap();
-        let bigrams_result = bincode::serialize_into(bigrams_file, &to_ser(bigrams));
+        let bigrams_result = bincode::serialize_into(bigrams_file, &bigrams);
         assert!(bigrams_result.is_ok());
     }
 
@@ -95,8 +92,7 @@ mod tests {
     #[test]
     fn test_bigrams_load() {
         let file = File::open("bigrams.bincode").unwrap();
-        let load = bincode::deserialize_from::<File, FxHashMap<String, usize>>(file);
+        let load = bincode::deserialize_from::<File, FxHashMap<(char, char), usize>>(file);
         assert!(load.is_ok());
-        from_ser(load.unwrap());
     }
 }
