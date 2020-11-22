@@ -15,7 +15,7 @@ use crate::crossword::Direction;
 use crate::ngram::bigrams;
 use std::fs::File;
 use std::sync::Arc;
-use std::{time::Instant};
+use std::time::Instant;
 
 pub mod crossword;
 pub mod fill;
@@ -60,8 +60,8 @@ pub fn index_words(raw_data: Vec<String>) -> (FxHashMap<(char, char), usize>, Tr
 
 #[cfg(test)]
 mod tests {
+    use crate::ngram::from_ser;
     use crate::FxHashMap;
-use crate::ngram::from_ser;
     use std::{collections::HashMap, time::Instant};
 
     use crate::index_words;

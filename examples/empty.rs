@@ -1,10 +1,10 @@
-use xwords::fill::single_threaded::SingleThreadedFiller;
 use std::fs::File;
-use std::sync::Arc;
+use xwords::fill::single_threaded::SingleThreadedFiller;
+
 use std::time::Instant;
 use xwords::crossword::Crossword;
 use xwords::default_indexes;
-use xwords::fill::parallel::ParallelFiller;
+
 use xwords::fill::Filler;
 
 fn main() {

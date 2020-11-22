@@ -1,16 +1,16 @@
-use crate::fill::parallel::MyCache;
 use crate::fill::parallel::fill_one_word;
 use crate::fill::parallel::is_viable;
 use crate::fill::parallel::CrosswordFillState;
+use crate::fill::parallel::MyCache;
 use crate::order::FrequencyOrderableCrossword;
 use crate::Filler;
-use cached::SizedCache;
+
 use fxhash::FxHashMap;
 
 use crate::crossword::CrosswordWordIterator;
 use crate::order::score_iter;
 use crate::parse::parse_word_boundaries;
-use std::{collections::HashMap, time::Instant};
+use std::time::Instant;
 
 use crate::{trie::Trie, Crossword};
 

@@ -1,12 +1,12 @@
-use std::{sync::Arc, fs::File};
+use std::fs::File;
 use std::time::Instant;
-use xwords::{crossword::Crossword, fill::single_threaded::SingleThreadedFiller};
 use xwords::default_indexes;
-use xwords::fill::parallel::ParallelFiller;
+use xwords::{crossword::Crossword, fill::single_threaded::SingleThreadedFiller};
+
 use xwords::fill::Filler;
 
 fn main() {
-  let guard = pprof::ProfilerGuard::new(1000).unwrap();
+    let guard = pprof::ProfilerGuard::new(1000).unwrap();
     std::thread::spawn(move || loop {
         match guard.report().build() {
             Ok(report) => {
@@ -17,7 +17,7 @@ fn main() {
         };
         std::thread::sleep(std::time::Duration::from_secs(5))
     });
-  
+
     let now = Instant::now();
 
     let real_puz = Crossword::new(String::from(

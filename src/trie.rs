@@ -1,7 +1,7 @@
 use crate::crossword::CrosswordWordIterator;
 use fxhash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fmt};
+use std::fmt;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TrieNode {
     contents: Option<char>,
@@ -164,7 +164,7 @@ impl Trie {
 mod tests {
 
     use fxhash::FxHashMap;
-use std::collections::HashMap;
+    use std::collections::HashMap;
     use std::collections::HashSet;
 
     use super::{Trie, TrieNode};

@@ -1,19 +1,20 @@
-use cached::Cached;
-use core::hash::Hash;
 use crate::fill::Filler;
 use crate::order::score_iter;
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
+use cached::Cached;
+use core::hash::Hash;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hasher;
 
 use crate::Direction;
 use crate::Instant;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
-use cached::SizedCache;
+
 use fxhash::{FxHashMap, FxHashSet};
 use std::{
-    collections::BinaryHeap,    sync::{mpsc, Arc, Mutex},
+    collections::BinaryHeap,
+    sync::{mpsc, Arc, Mutex},
 };
 
 use crate::{trie::Trie, Crossword};
@@ -296,13 +297,13 @@ impl<K: Hash + Eq, V> Cached<K, V> for MyCache<K, V> {
 
 #[cfg(test)]
 mod tests {
+    use crate::fill::parallel::CrosswordWordIterator;
     use crate::fill::Filler;
     use crate::{default_indexes, fill::parallel::is_word};
 
+    use crate::parse::{parse_word_boundaries, WordBoundary};
     use crate::Trie;
-    use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
-    use crate::{default_words, parse::parse_word_boundaries};
-    use crate::{index_words, Crossword, Direction};
+    use crate::{Crossword, Direction};
     use std::fs::File;
     use std::{sync::Arc, time::Instant};
 
