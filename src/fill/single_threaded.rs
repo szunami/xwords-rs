@@ -1,3 +1,4 @@
+use crate::fill::parallel::MyCache;
 use crate::fill::parallel::fill_one_word;
 use crate::fill::parallel::is_viable;
 use crate::fill::parallel::CrosswordFillState;
@@ -14,7 +15,7 @@ use std::{collections::HashMap, time::Instant};
 use crate::{trie::Trie, Crossword};
 
 cached_key! {
-    WORDS: SizedCache<String, Vec<String>> = SizedCache::with_size(10_000);
+    WORDS: MyCache<String, Vec<String>> = MyCache::default();
     Key = { pattern.clone() };
     fn words(pattern: String, trie: &Trie) -> Vec<String> = {
         trie.words(pattern)
@@ -61,7 +62,8 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
 
             candidate_count += 1;
 
-            if candidate_count % 1_000 == 0 {
+            if candidate_count % 10_000 == 0 {
+                println!("{}", candidate);
                 println!(
                     "Throughput: {}",
                     candidate_count as f32 / thread_start.elapsed().as_millis() as f32

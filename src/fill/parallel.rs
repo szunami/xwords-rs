@@ -228,7 +228,7 @@ cached_key! {
 }
 
 cached_key! {
-    WORDS: SizedCache<String, Vec<String>> = SizedCache::with_size(10_000);
+    WORDS: MyCache<String, Vec<String>> = MyCache::default();
     Key = { pattern.clone() };
     fn words(pattern: String, trie: &Trie) -> Vec<String> = {
         trie.words(pattern)
