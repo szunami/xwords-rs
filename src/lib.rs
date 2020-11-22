@@ -16,7 +16,7 @@ use std::{fs::File, sync::Arc, time::Instant};
 pub mod crossword;
 pub mod fill;
 mod ngram;
-mod order;
+pub mod order;
 pub mod parse;
 pub mod trie;
 

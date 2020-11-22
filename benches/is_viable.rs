@@ -28,7 +28,7 @@ YAYAS*E  N* M
     let (_, trie) = default_indexes();
     c.bench(
         "is_viable",
-        Benchmark::new("", move |b| {
+        Benchmark::new("20201012", move |b| {
             b.iter(|| {
                 assert!(is_viable(
                     black_box(&crossword),
