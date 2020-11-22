@@ -1,12 +1,11 @@
-use criterion::black_box;
-use xwords::{default_indexes, fill::is_viable};
-use criterion::{Benchmark, Criterion, criterion_group, criterion_main};
-use xwords::crossword::Crossword;
-use xwords::parse::parse_word_boundaries;
+use criterion::{black_box, criterion_group, criterion_main, Benchmark, Criterion};
+use xwords::{
+    crossword::Crossword, default_indexes, fill::is_viable, parse::parse_word_boundaries,
+};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
-    
-    let crossword = Crossword::new(String::from("
+    let crossword = Crossword::new(String::from(
+        "
   S *F  N*B    
   E *L  O*A    
 YARDGOODS*N    
@@ -22,19 +21,20 @@ KIA*A A* RN*C
 EVILS*GUIDELINE
 BD  T*L  E* S  
 YAYAS*E  N* M  
-")).unwrap();
+",
+    ))
+    .unwrap();
     let word_boundaries = parse_word_boundaries(&crossword);
     let (_, trie) = default_indexes();
     c.bench(
         "is_viable",
         Benchmark::new("", move |b| {
             b.iter(|| {
-                assert!(
-                    is_viable(
-                        black_box(&crossword), 
-                        black_box(&word_boundaries),
-                        black_box(&trie)
-                    ));
+                assert!(is_viable(
+                    black_box(&crossword),
+                    black_box(&word_boundaries),
+                    black_box(&trie)
+                ));
             });
         }),
     );
