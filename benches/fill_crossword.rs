@@ -65,6 +65,36 @@ YAYAS*ETON* M
             b.iter(|| filler.fill(black_box(&input)));
         }),
     );
+    
+    let tmp_bigrams = bigrams.clone();
+    let tmp_trie = trie.clone();
+    c.bench(
+        "fill_crosswords",
+        Benchmark::new("empty_20201012_crossword", move |b| {
+            let input = Crossword::new(String::from(
+        "
+    *    *     
+    *    *     
+         *     
+   *   *   *   
+**    *        
+      *     ***
+     *    *    
+   *       *   
+    *    *     
+***     *      
+        *    **
+   *   *   *   
+     *         
+     *    *    
+     *    *    
+",
+            ))
+            .unwrap();
+            let filler = ParallelFiller::new(tmp_trie.clone(), tmp_bigrams.clone());
+            b.iter(|| filler.fill(black_box(&input)));
+        }),
+    );
 }
 
 criterion_group!(benches, criterion_benchmark);
