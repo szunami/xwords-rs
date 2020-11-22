@@ -127,7 +127,7 @@ impl Filler for ParallelFiller {
                         //   are all complete words legit?
                         //     if so, push
 
-                        let potential_fills = words(to_fill.clone().to_string(), trie.as_ref());
+                        let potential_fills = trie.words(to_fill.clone().to_string());
                         let mut viables: Vec<FrequencyOrderableCrossword> = vec![];
 
                         for potential_fill in potential_fills {
@@ -226,13 +226,13 @@ cached_key! {
     }
 }
 
-cached_key! {
-    WORDS: SizedCache<String, Vec<String>> = SizedCache::with_size(10_000);
-    Key = { pattern.clone() };
-    fn words(pattern: String, trie: &Trie) -> Vec<String> = {
-        trie.words(pattern)
-    }
-}
+// cached_key! {
+//     WORDS: SizedCache<String, Box<dyn Iterator<Item = String>>> = SizedCache::with_size(10_000);
+//     Key = { pattern.clone() };
+//     fn words(pattern: String, trie: &Trie) -> Box<dyn Iterator<Item = String>> = {
+//         trie.words(pattern)
+//     }
+// }
 
 pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: &Trie) -> bool {
     let mut already_used = HashSet::with_capacity(word_boundaries.len());

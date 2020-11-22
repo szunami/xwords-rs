@@ -1,6 +1,6 @@
 use crate::crossword::CrosswordWordIterator;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fmt};
+use std::{collections::HashMap, fmt, iter};
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TrieNode {
     contents: Option<char>,
@@ -71,7 +71,14 @@ impl TrieNode {
     }
 
     // TODO: pattern could be a ref!
-    fn words(&self, pattern: String, partial: String) -> Vec<String> {
+    fn words(&self, pattern: String, partial: String) -> Box<dyn Iterator<Item = String>> {
+        let a = iter::empty();
+        
+        let b = iter::once(5);
+        
+        let c = a.chain(b);
+        
+        
         let mut new_partial = partial;
         if self.contents.is_some() {
             new_partial.push(self.contents.unwrap());
@@ -79,9 +86,9 @@ impl TrieNode {
 
         if pattern.is_empty() {
             if self.is_terminal {
-                return vec![new_partial];
+                return Box::new(iter::once(new_partial));
             }
-            return vec![];
+            return Box::new(iter::empty::<String>());
         }
 
         let new_pattern = pattern[1..].to_owned();
@@ -89,17 +96,17 @@ impl TrieNode {
         let new_char = pattern.as_bytes()[0] as char;
 
         if new_char == ' ' {
-            let mut result = vec![];
+            let mut result: Box<dyn Iterator<Item = String>> = Box::new(iter::empty());
             for child in self.children.values() {
                 let tmp = child.words(new_pattern.clone(), new_partial.clone());
-                result.extend(tmp.clone());
+                result = Box::new(result.chain(tmp));
             }
             return result;
         }
 
         match self.children.get(&new_char) {
             Some(child) => child.words(new_pattern, new_partial),
-            None => vec![],
+            None => Box::new(iter::empty::<String>()),
         }
     }
 
@@ -150,7 +157,7 @@ impl Trie {
         Trie { root }
     }
 
-    pub fn words(&self, pattern: String) -> Vec<String> {
+    pub fn words(&self, pattern: String) -> Box<dyn Iterator<Item = String>> {
         self.root.words(pattern, String::from(""))
     }
 
@@ -249,7 +256,7 @@ mod tests {
             .iter()
             .cloned()
             .collect();
-        let actual: HashSet<String> = trie.words(String::from("b ss")).iter().cloned().collect();
+        let actual: HashSet<String> = trie.words(String::from("b ss")).collect();
         assert_eq!(expected, actual,)
     }
 }

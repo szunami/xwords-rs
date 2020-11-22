@@ -12,13 +12,13 @@ use std::{collections::HashMap, time::Instant};
 
 use crate::{trie::Trie, Crossword};
 
-cached_key! {
-    WORDS: SizedCache<String, Vec<String>> = SizedCache::with_size(10_000);
-    Key = { pattern.clone() };
-    fn words(pattern: String, trie: &Trie) -> Vec<String> = {
-        trie.words(pattern)
-    }
-}
+// cached_key! {
+//     WORDS: SizedCache<String, Box<dyn Iterator<Item = String>>> = SizedCache::with_size(10_000);
+//     Key = { pattern.clone() };
+//     fn words(pattern: String, trie: &Trie) -> Vec<String> = {
+//         trie.words(pattern)
+//     }
+// }
 
 #[derive(Clone)]
 pub struct SingleThreadedFiller<'s> {
@@ -78,7 +78,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
             //   are all complete words legit?
             //     if so, push
 
-            let potential_fills = words(to_fill.clone().to_string(), self.trie);
+            let potential_fills = self.trie.words(to_fill.clone().to_string());
 
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, &to_fill.clone(), potential_fill);
