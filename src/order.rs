@@ -103,10 +103,10 @@ fn score_crossword(bigrams: &FxHashMap<(char, char), usize>, crossword: &Crosswo
 }
 
 #[derive(Eq, PartialEq, Debug)]
-pub(crate) struct WordScore {
+pub struct WordScore {
     length: usize,
     space_count: usize,
-    fillability_score: usize,
+    pub fillability_score: usize,
     start_col: usize,
     start_row: usize,
 }
@@ -142,7 +142,7 @@ impl Ord for WordScore {
     }
 }
 
-pub(crate) fn score_iter(
+pub fn score_iter(
     iter: &CrosswordWordIterator,
     bigrams: &FxHashMap<(char, char), usize>,
 ) -> WordScore {

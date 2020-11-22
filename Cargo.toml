@@ -45,5 +45,9 @@ name = "is_viable"
 harness = false
 
 [[bench]]
+name = "score_iter"
+harness = false
+
+[[bench]]
 name = "fill_crossword_single_threaded"
 harness = false
