@@ -18,32 +18,6 @@ pub fn bigrams(words: &[String]) -> FxHashMap<(char, char), usize> {
     result
 }
 
-pub(crate) fn to_ser(bigrams: FxHashMap<(char, char), usize>) -> FxHashMap<String, usize> {
-    let mut result = FxHashMap::default();
-
-    for ((a, b), freq) in bigrams.iter() {
-        use std::iter::FromIterator;
-        let key = String::from_iter(vec![*a, *b].iter());
-        result.insert(key, *freq);
-    }
-
-    result
-}
-
-pub(crate) fn from_ser(bigrams: FxHashMap<String, usize>) -> FxHashMap<(char, char), usize> {
-    let mut result = FxHashMap::default();
-
-    for (key, freq) in bigrams.iter() {
-        let mut chars = key.chars();
-        let a = chars.next().unwrap();
-        let b = chars.next().unwrap();
-
-        result.insert((a, b), *freq);
-    }
-
-    result
-}
-
 #[cfg(test)]
 mod tests {
     use std::{fs::File, time::Instant};

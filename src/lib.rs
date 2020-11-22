@@ -79,7 +79,7 @@ mod tests {
         assert!(trie_result.is_ok());
 
         let bigrams_file = File::create("bigrams.bincode").unwrap();
-        let bigrams_result = bincode::serialize_into(bigrams_file, &to_ser(bigrams));
+        let bigrams_result = bincode::serialize_into(bigrams_file, &bigrams);
         assert!(bigrams_result.is_ok());
     }
 
@@ -95,8 +95,7 @@ mod tests {
     #[test]
     fn test_bigrams_load() {
         let file = File::open("bigrams.bincode").unwrap();
-        let load = bincode::deserialize_from::<File, FxHashMap<String, usize>>(file);
+        let load = bincode::deserialize_from::<File, FxHashMap<(char, char), usize>>(file);
         assert!(load.is_ok());
-        from_ser(load.unwrap());
     }
 }
