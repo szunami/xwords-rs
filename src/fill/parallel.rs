@@ -1,3 +1,5 @@
+use cached::Cached;
+use core::hash::Hash;
 use crate::fill::Filler;
 use crate::order::score_iter;
 use crate::order::FrequencyOrderableCrossword;
@@ -210,7 +212,7 @@ pub fn fill_one_word(
 }
 
 cached_key! {
-    IS_WORD: SizedCache<u64, bool> = SizedCache::with_size(10_000);
+    IS_WORD: MyCache<u64, bool> = MyCache::default();
     Key = {
         use std::hash::Hash;
         let mut hasher = DefaultHasher::new();
@@ -252,6 +254,44 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: 
         }
     }
     true
+}
+
+// Implement our own cache type
+struct MyCache<K: Hash + Eq, V> {
+    store: FxHashMap<K, V>,
+}
+impl<K: Hash + Eq, V> MyCache<K, V> {
+    pub fn default() -> MyCache<K, V> {
+        MyCache {
+            store: FxHashMap::default(),
+        }
+    }
+}
+impl<K: Hash + Eq, V> Cached<K, V> for MyCache<K, V> {
+    fn cache_get(&mut self, k: &K) -> Option<&V> {
+        self.store.get(k)
+    }
+    fn cache_get_mut(&mut self, k: &K) -> Option<&mut V> {
+        self.store.get_mut(k)
+    }
+    fn cache_get_or_set_with<F: FnOnce() -> V>(&mut self, k: K, f: F) -> &mut V {
+        self.store.entry(k).or_insert_with(f)
+    }
+    fn cache_set(&mut self, k: K, v: V) -> Option<V> {
+        self.store.insert(k, v)
+    }
+    fn cache_remove(&mut self, k: &K) -> Option<V> {
+        self.store.remove(k)
+    }
+    fn cache_clear(&mut self) {
+        self.store.clear();
+    }
+    fn cache_reset(&mut self) {
+        self.store = FxHashMap::default();
+    }
+    fn cache_size(&self) -> usize {
+        self.store.len()
+    }
 }
 
 #[cfg(test)]
