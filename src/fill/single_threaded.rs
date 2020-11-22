@@ -38,7 +38,7 @@ impl<'s> SingleThreadedFiller<'s> {
 }
 
 impl<'s> Filler for SingleThreadedFiller<'s> {
-    fn fill(self, crossword: &Crossword) -> std::result::Result<Crossword, String> {
+    fn fill(&self, crossword: &Crossword) -> std::result::Result<Crossword, String> {
         // parse crossword into partially filled words
         // fill a word
 
