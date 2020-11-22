@@ -133,8 +133,7 @@ pub enum Direction {
 #[cfg(test)]
 mod tests {
     use super::Crossword;
-    use crate::crossword::CrosswordWordIterator;
-    use crate::parse::WordBoundary;
+    use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
     use std::collections::HashSet;
 
     use super::Direction;

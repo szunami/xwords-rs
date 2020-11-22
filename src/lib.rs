@@ -3,18 +3,14 @@ extern crate cached;
 
 extern crate fxhash;
 
-use crate::fill::parallel::ParallelFiller;
-use crate::fill::Filler;
+use crate::fill::{parallel::ParallelFiller, Filler};
 use fxhash::FxHashMap;
 use trie::Trie;
 
 use crate::crossword::Crossword;
 
-use crate::crossword::Direction;
-use crate::ngram::bigrams;
-use std::fs::File;
-use std::sync::Arc;
-use std::time::Instant;
+use crate::{crossword::Direction, ngram::bigrams};
+use std::{fs::File, sync::Arc, time::Instant};
 
 pub mod crossword;
 pub mod fill;
@@ -62,9 +58,7 @@ mod tests {
     use crate::FxHashMap;
     use std::time::Instant;
 
-    use crate::index_words;
-    use crate::File;
-    use crate::{default_words, trie::Trie};
+    use crate::{default_words, index_words, trie::Trie, File};
 
     #[test]
     #[ignore]

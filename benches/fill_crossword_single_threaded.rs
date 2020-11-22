@@ -1,11 +1,12 @@
 use criterion::black_box;
 use std::sync::Arc;
-use xwords::fill::single_threaded::SingleThreadedFiller;
-use xwords::fill::Filler;
-use xwords::{crossword::Crossword, default_indexes};
+use xwords::{
+    crossword::Crossword,
+    default_indexes,
+    fill::{single_threaded::SingleThreadedFiller, Filler},
+};
 
-use criterion::Benchmark;
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Benchmark, Criterion};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let (bigrams, trie) = default_indexes();
