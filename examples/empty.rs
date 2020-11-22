@@ -1,4 +1,3 @@
-use env;
 use std::fs::File;
 use std::sync::Arc;
 use xwords::fill::parallel::ParallelFiller;
