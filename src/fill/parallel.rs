@@ -257,7 +257,7 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: 
 }
 
 // Implement our own cache type
-struct MyCache<K: Hash + Eq, V> {
+pub struct MyCache<K: Hash + Eq, V> {
     store: FxHashMap<K, V>,
 }
 impl<K: Hash + Eq, V> MyCache<K, V> {
