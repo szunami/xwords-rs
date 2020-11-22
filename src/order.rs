@@ -167,7 +167,6 @@ pub(crate) fn score_iter(
 mod tests {
     use crate::default_indexes;
 
-    use crate::index_words;
     use crate::order::score_iter;
     use crate::order::CrosswordWordIterator;
     use crate::parse::WordBoundary;

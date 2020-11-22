@@ -164,7 +164,7 @@ impl Trie {
 mod tests {
 
     use fxhash::FxHashMap;
-    use std::collections::HashMap;
+
     use std::collections::HashSet;
 
     use super::{Trie, TrieNode};

@@ -62,7 +62,7 @@ pub fn index_words(raw_data: Vec<String>) -> (FxHashMap<(char, char), usize>, Tr
 mod tests {
     use crate::ngram::from_ser;
     use crate::FxHashMap;
-    use std::{collections::HashMap, time::Instant};
+    use std::time::Instant;
 
     use crate::index_words;
     use crate::ngram::to_ser;

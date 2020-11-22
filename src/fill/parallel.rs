@@ -60,7 +60,7 @@ impl ParallelFiller {
 }
 
 impl Filler for ParallelFiller {
-    fn fill(self, crossword: &Crossword) -> Result<Crossword, String> {
+    fn fill(&self, crossword: &Crossword) -> Result<Crossword, String> {
         let crossword_fill_state = {
             let mut temp_state = CrosswordFillState::default();
             let orderable = FrequencyOrderableCrossword::new(crossword.clone(), &self.bigrams);
@@ -70,8 +70,8 @@ impl Filler for ParallelFiller {
 
         let candidates = Arc::new(Mutex::new(crossword_fill_state));
 
-        let trie = Arc::new(self.trie);
-        let bigrams = Arc::new(self.bigrams);
+        let trie = self.trie.clone();
+        let bigrams = self.bigrams.clone();
 
         let (tx, rx) = mpsc::channel();
         // want to spawn multiple threads, have each of them perform the below

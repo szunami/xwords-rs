@@ -12,13 +12,14 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
     let tmp_bigrams = bigrams.clone();
     let tmp_trie = trie.clone();
+
     c.bench(
         "fill_crosswords",
         Benchmark::new("fill_3x3_crossword", move |b| {
             let input = Crossword::new(String::from("         ")).unwrap();
 
             let filler = ParallelFiller::new(tmp_trie.clone(), tmp_bigrams.clone());
-            b.iter(|| assert!(filler.clone().fill(black_box(&input)).is_ok()));
+            b.iter(|| assert!(filler.fill(black_box(&input)).is_ok()));
         }),
     );
 
@@ -29,7 +30,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         Benchmark::new("fill_4x4_crossword", move |b| {
             let input = Crossword::new(String::from("                ")).unwrap();
             let filler = ParallelFiller::new(tmp_trie.clone(), tmp_bigrams.clone());
-            b.iter(|| filler.clone().fill(black_box(&input)));
+            b.iter(|| filler.fill(black_box(&input)));
         }),
     );
 
@@ -59,7 +60,7 @@ YAYAS*ETON* M
             ))
             .unwrap();
             let filler = ParallelFiller::new(tmp_trie.clone(), tmp_bigrams.clone());
-            b.iter(|| filler.clone().fill(black_box(&input)));
+            b.iter(|| filler.fill(black_box(&input)));
         }),
     );
 }
