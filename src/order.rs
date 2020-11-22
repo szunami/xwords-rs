@@ -1,3 +1,5 @@
+use fxhash::FxHashMap;
+
 use crate::crossword::CrosswordWordIterator;
 use core::cmp::Ordering;
 use std::collections::HashMap;
@@ -14,7 +16,7 @@ pub struct FrequencyOrderableCrossword {
 impl FrequencyOrderableCrossword {
     pub(crate) fn new(
         crossword: Crossword,
-        bigrams: &HashMap<(char, char), usize>,
+        bigrams: &FxHashMap<(char, char), usize>,
     ) -> FrequencyOrderableCrossword {
         FrequencyOrderableCrossword {
             space_count: crossword.contents.chars().filter(|c| *c == ' ').count(),
@@ -46,7 +48,7 @@ impl Ord for FrequencyOrderableCrossword {
     }
 }
 
-fn score_crossword(bigrams: &HashMap<(char, char), usize>, crossword: &Crossword) -> usize {
+fn score_crossword(bigrams: &FxHashMap<(char, char), usize>, crossword: &Crossword) -> usize {
     let mut result = std::usize::MAX;
     let byte_array = crossword.contents.as_bytes();
     for row in 0..crossword.height {
@@ -143,7 +145,7 @@ impl Ord for WordScore {
 
 pub(crate) fn score_iter(
     iter: &CrosswordWordIterator,
-    bigrams: &HashMap<(char, char), usize>,
+    bigrams: &FxHashMap<(char, char), usize>,
 ) -> WordScore {
     let mut fillability_score = std::usize::MAX;
     for (prev, curr) in iter.clone().zip(iter.clone().skip(1)) {

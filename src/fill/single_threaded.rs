@@ -4,6 +4,7 @@ use crate::fill::parallel::CrosswordFillState;
 use crate::order::FrequencyOrderableCrossword;
 use crate::Filler;
 use cached::SizedCache;
+use fxhash::FxHashMap;
 
 use crate::crossword::CrosswordWordIterator;
 use crate::order::score_iter;
@@ -23,13 +24,13 @@ cached_key! {
 #[derive(Clone)]
 pub struct SingleThreadedFiller<'s> {
     trie: &'s Trie,
-    bigrams: &'s HashMap<(char, char), usize>,
+    bigrams: &'s FxHashMap<(char, char), usize>,
 }
 
 impl<'s> SingleThreadedFiller<'s> {
     pub fn new(
         trie: &'s Trie,
-        bigrams: &'s HashMap<(char, char), usize>,
+        bigrams: &'s FxHashMap<(char, char), usize>,
     ) -> SingleThreadedFiller<'s> {
         SingleThreadedFiller { trie, bigrams }
     }

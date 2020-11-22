@@ -1,7 +1,8 @@
-use std::collections::HashMap;
+extern crate fxhash;
+use fxhash::FxHashMap;
 
-pub fn bigrams(words: &[String]) -> HashMap<(char, char), usize> {
-    let mut result = HashMap::new();
+pub fn bigrams(words: &[String]) -> FxHashMap<(char, char), usize> {
+    let mut result = FxHashMap::default();
 
     for word in words {
         for bigram in word
@@ -17,8 +18,8 @@ pub fn bigrams(words: &[String]) -> HashMap<(char, char), usize> {
     result
 }
 
-pub(crate) fn to_ser(bigrams: HashMap<(char, char), usize>) -> HashMap<String, usize> {
-    let mut result = HashMap::new();
+pub(crate) fn to_ser(bigrams: FxHashMap<(char, char), usize>) -> FxHashMap<String, usize> {
+    let mut result = FxHashMap::default();
 
     for ((a, b), freq) in bigrams.iter() {
         use std::iter::FromIterator;
@@ -29,8 +30,8 @@ pub(crate) fn to_ser(bigrams: HashMap<(char, char), usize>) -> HashMap<String, u
     result
 }
 
-pub(crate) fn from_ser(bigrams: HashMap<String, usize>) -> HashMap<(char, char), usize> {
-    let mut result = HashMap::new();
+pub(crate) fn from_ser(bigrams: FxHashMap<String, usize>) -> FxHashMap<(char, char), usize> {
+    let mut result = FxHashMap::default();
 
     for (key, freq) in bigrams.iter() {
         let mut chars = key.chars();

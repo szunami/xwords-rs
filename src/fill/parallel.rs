@@ -9,6 +9,7 @@ use crate::Direction;
 use crate::Instant;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
 use cached::SizedCache;
+use fxhash::FxHashMap;
 use std::{
     collections::BinaryHeap,
     collections::{HashMap, HashSet},
@@ -48,11 +49,11 @@ impl CrosswordFillState {
 #[derive(Clone)]
 pub struct ParallelFiller {
     trie: Arc<Trie>,
-    bigrams: Arc<HashMap<(char, char), usize>>,
+    bigrams: Arc<FxHashMap<(char, char), usize>>,
 }
 
 impl ParallelFiller {
-    pub fn new(trie: Arc<Trie>, bigrams: Arc<HashMap<(char, char), usize>>) -> ParallelFiller {
+    pub fn new(trie: Arc<Trie>, bigrams: Arc<FxHashMap<(char, char), usize>>) -> ParallelFiller {
         ParallelFiller { trie, bigrams }
     }
 }
