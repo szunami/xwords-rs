@@ -29,6 +29,10 @@ path = "examples/sample.rs"
 name = "empty"
 path = "examples/empty.rs"
 
+[[example]]
+name = "snippet"
+path = "examples/snippet.rs"
+
 [profile.release]
 debug = 1
 

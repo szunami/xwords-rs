@@ -4,6 +4,7 @@ extern crate cached;
 extern crate fxhash;
 
 use crate::fill::{parallel::ParallelFiller, Filler};
+use fill::single_threaded::SingleThreadedFiller;
 use fxhash::FxHashMap;
 use trie::Trie;
 
@@ -18,6 +19,11 @@ mod ngram;
 mod order;
 pub mod parse;
 pub mod trie;
+
+pub fn fill_crossword_with_default_wordlist(crossword: &Crossword) -> Result<Crossword, String> {
+    let (bigrams, trie) = default_indexes();
+    SingleThreadedFiller::new(&trie, &bigrams).fill(crossword)
+}
 
 pub fn fill_crossword(contents: String, words: Vec<String>) -> Result<Crossword, String> {
     let crossword = Crossword::new(contents).unwrap();
