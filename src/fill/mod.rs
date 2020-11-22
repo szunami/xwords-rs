@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use crate::{
     crossword::{CrosswordWordIterator, Direction},
     order::FrequencyOrderableCrossword,
@@ -9,7 +8,10 @@ use crate::{
 use cached::Cached;
 use core::hash::Hash;
 use fxhash::{FxBuildHasher, FxHashSet, FxHasher};
-use std::{collections::{BinaryHeap, HashSet}, hash::Hasher};
+use std::{
+    collections::{BinaryHeap, HashMap, HashSet},
+    hash::Hasher,
+};
 
 pub mod parallel;
 pub mod single_threaded;
@@ -45,24 +47,22 @@ impl CrosswordFillState {
 }
 
 pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: &Trie) -> bool {
-    let mut already_used = HashSet::with_capacity_and_hasher(word_boundaries.len(), FxBuildHasher::default());
-    
-    for word_boundary in word_boundaries {
-        let iter = CrosswordWordIterator::new(candidate, word_boundary);
-        if iter.clone().any(|c| c == ' ') {
-            continue;
-        }
+    let completed_words = word_boundaries
+        .iter()
+        .map(|word_boundary| CrosswordWordIterator::new(candidate, word_boundary))
+        .filter(|iter| iter.clone().all(|c| c != ' '));
 
-        if already_used.contains(&iter) {
-            return false;
-        }
-        already_used.insert(iter.clone());
-
-        if !is_word(iter, trie) {
+    for completed_word in completed_words.clone() {
+        if !is_word(completed_word, trie) {
             return false;
         }
     }
-    true
+
+    let mut already_used =
+        HashSet::with_capacity_and_hasher(word_boundaries.len(), FxBuildHasher::default());
+    already_used.extend(completed_words.clone());
+
+    return already_used.len() == completed_words.count();
 }
 
 pub fn fill_one_word(
