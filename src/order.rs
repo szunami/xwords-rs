@@ -2,7 +2,6 @@ use fxhash::FxHashMap;
 
 use crate::crossword::CrosswordWordIterator;
 use core::cmp::Ordering;
-use std::collections::HashMap;
 
 use crate::Crossword;
 

@@ -9,11 +9,9 @@ use crate::Direction;
 use crate::Instant;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
 use cached::SizedCache;
-use fxhash::FxHashMap;
+use fxhash::{FxHashMap, FxHashSet};
 use std::{
-    collections::BinaryHeap,
-    collections::{HashMap, HashSet},
-    sync::{mpsc, Arc, Mutex},
+    collections::BinaryHeap,    sync::{mpsc, Arc, Mutex},
 };
 
 use crate::{trie::Trie, Crossword};
@@ -236,7 +234,7 @@ cached_key! {
 }
 
 pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: &Trie) -> bool {
-    let mut already_used = HashSet::with_capacity(word_boundaries.len());
+    let mut already_used = FxHashSet::default();
 
     for word_boundary in word_boundaries {
         let iter = CrosswordWordIterator::new(candidate, word_boundary);

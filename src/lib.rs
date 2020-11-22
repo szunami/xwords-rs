@@ -15,7 +15,7 @@ use crate::crossword::Direction;
 use crate::ngram::bigrams;
 use std::fs::File;
 use std::sync::Arc;
-use std::{collections::HashMap, time::Instant};
+use std::{time::Instant};
 
 pub mod crossword;
 pub mod fill;

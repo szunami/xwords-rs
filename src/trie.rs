@@ -1,10 +1,11 @@
 use crate::crossword::CrosswordWordIterator;
+use fxhash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt};
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TrieNode {
     contents: Option<char>,
-    children: HashMap<char, TrieNode>,
+    children: FxHashMap<char, TrieNode>,
     is_terminal: bool,
 }
 
@@ -19,7 +20,7 @@ impl TrieNode {
                     }
                     None => {
                         let tmp = TrieNode {
-                            children: HashMap::new(),
+                            children: FxHashMap::default(),
                             contents: Some(*val as char),
                             is_terminal: false,
                         };
@@ -135,7 +136,7 @@ impl Trie {
     pub fn build(words: Vec<String>) -> Trie {
         let mut root = TrieNode {
             contents: None,
-            children: HashMap::new(),
+            children: FxHashMap::default(),
             is_terminal: false,
         };
 
@@ -162,7 +163,8 @@ impl Trie {
 #[cfg(test)]
 mod tests {
 
-    use std::collections::HashMap;
+    use fxhash::FxHashMap;
+use std::collections::HashMap;
     use std::collections::HashSet;
 
     use super::{Trie, TrieNode};
@@ -171,7 +173,7 @@ mod tests {
     fn display_works() {
         let mut root = TrieNode {
             contents: None,
-            children: HashMap::new(),
+            children: FxHashMap::default(),
             is_terminal: false,
         };
 
@@ -179,14 +181,14 @@ mod tests {
             'b',
             TrieNode {
                 contents: Some('b'),
-                children: HashMap::new(),
+                children: FxHashMap::default(),
                 is_terminal: false,
             },
         );
 
         let mut c = TrieNode {
             contents: Some('c'),
-            children: HashMap::new(),
+            children: FxHashMap::default(),
             is_terminal: false,
         };
 
@@ -194,7 +196,7 @@ mod tests {
             'd',
             TrieNode {
                 contents: Some('d'),
-                children: HashMap::new(),
+                children: FxHashMap::default(),
                 is_terminal: false,
             },
         );
@@ -208,7 +210,7 @@ mod tests {
     fn add_sequence_works() {
         let root = TrieNode {
             contents: Some('a'),
-            children: HashMap::new(),
+            children: FxHashMap::default(),
             is_terminal: false,
         };
 

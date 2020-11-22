@@ -1,3 +1,4 @@
+use xwords::fill::single_threaded::SingleThreadedFiller;
 use std::fs::File;
 use std::sync::Arc;
 use std::time::Instant;
@@ -47,7 +48,7 @@ fn main() {
     let (bigrams, trie) = default_indexes();
     println!("Loaded indices in {}ms", now.elapsed().as_millis());
 
-    let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
+    let filler = SingleThreadedFiller::new(&trie, &bigrams);
 
     let filled_puz = filler.fill(&real_puz).unwrap();
     println!("Filled in {} seconds.", now.elapsed().as_secs());
