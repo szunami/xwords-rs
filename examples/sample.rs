@@ -1,9 +1,9 @@
-use std::fs::File;
-use std::sync::Arc;
-use std::time::Instant;
-use xwords::default_indexes;
-use xwords::fill::parallel::ParallelFiller;
-use xwords::{crossword::Crossword, fill::single_threaded::SingleThreadedFiller};
+use std::{fs::File, sync::Arc, time::Instant};
+use xwords::{
+    crossword::Crossword,
+    default_indexes,
+    fill::{parallel::ParallelFiller, single_threaded::SingleThreadedFiller},
+};
 
 use xwords::fill::Filler;
 

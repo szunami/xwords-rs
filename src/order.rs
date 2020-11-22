@@ -167,16 +167,18 @@ pub(crate) fn score_iter(
 mod tests {
     use crate::default_indexes;
 
-    use crate::order::score_iter;
-    use crate::order::CrosswordWordIterator;
-    use crate::parse::WordBoundary;
-    use crate::Direction::Across;
+    use crate::{
+        order::{score_iter, CrosswordWordIterator},
+        parse::WordBoundary,
+        Direction::Across,
+    };
     use std::cmp::Ordering;
 
-    use crate::bigrams;
-    use crate::order::score_crossword;
-    use crate::order::WordScore;
-    use crate::Crossword;
+    use crate::{
+        bigrams,
+        order::{score_crossword, WordScore},
+        Crossword,
+    };
 
     use super::FrequencyOrderableCrossword;
 
