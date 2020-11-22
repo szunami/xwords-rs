@@ -1,6 +1,6 @@
 on: [push]
 
-name: Build
+name: build
 
 jobs:
   build_and_test:
