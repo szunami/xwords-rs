@@ -7,9 +7,9 @@ use crate::{
 };
 use cached::Cached;
 use core::hash::Hash;
-use fxhash::{FxBuildHasher, FxHashSet, FxHasher};
+use fxhash::{FxBuildHasher, FxHasher};
 use std::{
-    collections::{BinaryHeap, HashMap, HashSet},
+    collections::{BinaryHeap, HashSet},
     hash::Hasher,
 };
 
