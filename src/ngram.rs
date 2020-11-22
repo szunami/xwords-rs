@@ -1,5 +1,5 @@
-extern crate fxhash;
-use fxhash::FxHashMap;
+extern crate rustc_hash;
+use rustc_hash::FxHashMap;
 
 pub fn bigrams(words: &[String]) -> FxHashMap<(char, char), usize> {
     let mut result = FxHashMap::default();

@@ -4,7 +4,7 @@ use crate::{
     Filler,
 };
 
-use fxhash::FxHashMap;
+use rustc_hash::FxHashMap;
 
 use crate::{crossword::CrosswordWordIterator, order::score_iter, parse::parse_word_boundaries};
 use std::time::Instant;

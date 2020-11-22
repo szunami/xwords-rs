@@ -1,11 +1,11 @@
 #[macro_use]
 extern crate cached;
 
-extern crate fxhash;
+extern crate rustc_hash;
 
 use crate::fill::{parallel::ParallelFiller, Filler};
 use fill::single_threaded::SingleThreadedFiller;
-use fxhash::FxHashMap;
+use rustc_hash::FxHashMap;
 use trie::Trie;
 
 use crate::crossword::Crossword;

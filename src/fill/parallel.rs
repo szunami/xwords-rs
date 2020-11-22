@@ -9,7 +9,7 @@ use crate::{
 
 use crate::{crossword::CrosswordWordIterator, Instant};
 
-use fxhash::FxHashMap;
+use rustc_hash::FxHashMap;
 use std::sync::{mpsc, Arc, Mutex};
 
 use crate::{trie::Trie, Crossword};

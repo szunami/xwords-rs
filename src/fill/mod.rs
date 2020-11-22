@@ -6,8 +6,8 @@ use crate::{
     Crossword, FxHashMap,
 };
 use cached::Cached;
-use core::hash::Hash;
-use fxhash::{FxBuildHasher, FxHasher};
+use core::hash::{BuildHasherDefault, Hash};
+use rustc_hash::FxHasher;
 use std::{
     collections::{BinaryHeap, HashSet},
     hash::Hasher,
@@ -47,8 +47,10 @@ impl CrosswordFillState {
 }
 
 pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: &Trie) -> bool {
-    let mut already_used =
-        HashSet::with_capacity_and_hasher(word_boundaries.len(), FxBuildHasher::default());
+    let mut already_used = HashSet::with_capacity_and_hasher(
+        word_boundaries.len(),
+        BuildHasherDefault::<FxHasher>::default(),
+    );
 
     for word_boundary in word_boundaries {
         let iter = CrosswordWordIterator::new(candidate, word_boundary);
