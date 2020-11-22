@@ -1,6 +1,6 @@
 use crate::{Crossword, Direction};
 
-pub(crate) fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
+pub fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
     let mut result = vec![];
 
     let byte_array = crossword.contents.as_bytes();
