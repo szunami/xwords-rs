@@ -2,16 +2,18 @@ use crate::fill::Filler;
 use crate::order::score_iter;
 use crate::order::FrequencyOrderableCrossword;
 use crate::parse::parse_word_boundaries;
+use cached::Cached;
+use core::hash::Hash;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hasher;
 
 use crate::Direction;
 use crate::Instant;
 use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
-use cached::SizedCache;
+
+use fxhash::{FxHashMap, FxHashSet};
 use std::{
     collections::BinaryHeap,
-    collections::{HashMap, HashSet},
     sync::{mpsc, Arc, Mutex},
 };
 
@@ -48,11 +50,11 @@ impl CrosswordFillState {
 #[derive(Clone)]
 pub struct ParallelFiller {
     trie: Arc<Trie>,
-    bigrams: Arc<HashMap<(char, char), usize>>,
+    bigrams: Arc<FxHashMap<(char, char), usize>>,
 }
 
 impl ParallelFiller {
-    pub fn new(trie: Arc<Trie>, bigrams: Arc<HashMap<(char, char), usize>>) -> ParallelFiller {
+    pub fn new(trie: Arc<Trie>, bigrams: Arc<FxHashMap<(char, char), usize>>) -> ParallelFiller {
         ParallelFiller { trie, bigrams }
     }
 }
@@ -211,7 +213,7 @@ pub fn fill_one_word(
 }
 
 cached_key! {
-    IS_WORD: SizedCache<u64, bool> = SizedCache::with_size(10_000);
+    IS_WORD: MyCache<u64, bool> = MyCache::default();
     Key = {
         use std::hash::Hash;
         let mut hasher = DefaultHasher::new();
@@ -227,7 +229,7 @@ cached_key! {
 }
 
 cached_key! {
-    WORDS: SizedCache<String, Vec<String>> = SizedCache::with_size(10_000);
+    WORDS: MyCache<String, Vec<String>> = MyCache::default();
     Key = { pattern.clone() };
     fn words(pattern: String, trie: &Trie) -> Vec<String> = {
         trie.words(pattern)
@@ -235,7 +237,7 @@ cached_key! {
 }
 
 pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: &Trie) -> bool {
-    let mut already_used = HashSet::with_capacity(word_boundaries.len());
+    let mut already_used = FxHashSet::default();
 
     for word_boundary in word_boundaries {
         let iter = CrosswordWordIterator::new(candidate, word_boundary);
@@ -255,15 +257,53 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: 
     true
 }
 
+// Implement our own cache type
+pub struct MyCache<K: Hash + Eq, V> {
+    store: FxHashMap<K, V>,
+}
+impl<K: Hash + Eq, V> MyCache<K, V> {
+    pub fn default() -> MyCache<K, V> {
+        MyCache {
+            store: FxHashMap::default(),
+        }
+    }
+}
+impl<K: Hash + Eq, V> Cached<K, V> for MyCache<K, V> {
+    fn cache_get(&mut self, k: &K) -> Option<&V> {
+        self.store.get(k)
+    }
+    fn cache_get_mut(&mut self, k: &K) -> Option<&mut V> {
+        self.store.get_mut(k)
+    }
+    fn cache_get_or_set_with<F: FnOnce() -> V>(&mut self, k: K, f: F) -> &mut V {
+        self.store.entry(k).or_insert_with(f)
+    }
+    fn cache_set(&mut self, k: K, v: V) -> Option<V> {
+        self.store.insert(k, v)
+    }
+    fn cache_remove(&mut self, k: &K) -> Option<V> {
+        self.store.remove(k)
+    }
+    fn cache_clear(&mut self) {
+        self.store.clear();
+    }
+    fn cache_reset(&mut self) {
+        self.store = FxHashMap::default();
+    }
+    fn cache_size(&self) -> usize {
+        self.store.len()
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::fill::parallel::CrosswordWordIterator;
     use crate::fill::Filler;
     use crate::{default_indexes, fill::parallel::is_word};
 
+    use crate::parse::{parse_word_boundaries, WordBoundary};
     use crate::Trie;
-    use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
-    use crate::{default_words, parse::parse_word_boundaries};
-    use crate::{index_words, Crossword, Direction};
+    use crate::{Crossword, Direction};
     use std::fs::File;
     use std::{sync::Arc, time::Instant};
 

@@ -1,19 +1,21 @@
 use crate::fill::parallel::fill_one_word;
 use crate::fill::parallel::is_viable;
 use crate::fill::parallel::CrosswordFillState;
+use crate::fill::parallel::MyCache;
 use crate::order::FrequencyOrderableCrossword;
 use crate::Filler;
-use cached::SizedCache;
+
+use fxhash::FxHashMap;
 
 use crate::crossword::CrosswordWordIterator;
 use crate::order::score_iter;
 use crate::parse::parse_word_boundaries;
-use std::{collections::HashMap, time::Instant};
+use std::time::Instant;
 
 use crate::{trie::Trie, Crossword};
 
 cached_key! {
-    WORDS: SizedCache<String, Vec<String>> = SizedCache::with_size(10_000);
+    WORDS: MyCache<String, Vec<String>> = MyCache::default();
     Key = { pattern.clone() };
     fn words(pattern: String, trie: &Trie) -> Vec<String> = {
         trie.words(pattern)
@@ -23,13 +25,13 @@ cached_key! {
 #[derive(Clone)]
 pub struct SingleThreadedFiller<'s> {
     trie: &'s Trie,
-    bigrams: &'s HashMap<(char, char), usize>,
+    bigrams: &'s FxHashMap<(char, char), usize>,
 }
 
 impl<'s> SingleThreadedFiller<'s> {
     pub fn new(
         trie: &'s Trie,
-        bigrams: &'s HashMap<(char, char), usize>,
+        bigrams: &'s FxHashMap<(char, char), usize>,
     ) -> SingleThreadedFiller<'s> {
         SingleThreadedFiller { trie, bigrams }
     }
@@ -60,7 +62,8 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
 
             candidate_count += 1;
 
-            if candidate_count % 1_000 == 0 {
+            if candidate_count % 10_000 == 0 {
+                println!("{}", candidate);
                 println!(
                     "Throughput: {}",
                     candidate_count as f32 / thread_start.elapsed().as_millis() as f32

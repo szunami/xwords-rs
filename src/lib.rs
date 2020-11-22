@@ -1,9 +1,12 @@
 #[macro_use]
 extern crate cached;
 
+extern crate fxhash;
+
 use crate::fill::parallel::ParallelFiller;
 use crate::fill::Filler;
 use crate::ngram::from_ser;
+use fxhash::FxHashMap;
 use trie::Trie;
 
 use crate::crossword::Crossword;
@@ -12,7 +15,7 @@ use crate::crossword::Direction;
 use crate::ngram::bigrams;
 use std::fs::File;
 use std::sync::Arc;
-use std::{collections::HashMap, time::Instant};
+use std::time::Instant;
 
 pub mod crossword;
 pub mod fill;
@@ -28,7 +31,7 @@ pub fn fill_crossword(contents: String, words: Vec<String>) -> Result<Crossword,
     filler.fill(&crossword)
 }
 
-pub fn default_indexes() -> (HashMap<(char, char), usize>, Trie) {
+pub fn default_indexes() -> (FxHashMap<(char, char), usize>, Trie) {
     let now = Instant::now();
     let file = File::open("./trie.bincode").unwrap();
     let load = bincode::deserialize_from::<File, Trie>(file);
@@ -37,7 +40,7 @@ pub fn default_indexes() -> (HashMap<(char, char), usize>, Trie) {
     let now = Instant::now();
 
     let file = File::open("./bigrams.bincode").unwrap();
-    let load = bincode::deserialize_from::<File, HashMap<String, usize>>(file);
+    let load = bincode::deserialize_from::<File, FxHashMap<String, usize>>(file);
     let bigrams = from_ser(load.unwrap());
     println!("Loaded bigrams in {}ms", now.elapsed().as_millis());
 
@@ -49,7 +52,7 @@ pub fn default_words() -> Vec<String> {
     serde_json::from_reader(file).expect("JSON was not well-formatted")
 }
 
-pub fn index_words(raw_data: Vec<String>) -> (HashMap<(char, char), usize>, Trie) {
+pub fn index_words(raw_data: Vec<String>) -> (FxHashMap<(char, char), usize>, Trie) {
     let bigram = bigrams(&raw_data);
     let trie = Trie::build(raw_data);
     (bigram, trie)
@@ -58,6 +61,7 @@ pub fn index_words(raw_data: Vec<String>) -> (HashMap<(char, char), usize>, Trie
 #[cfg(test)]
 mod tests {
     use crate::ngram::from_ser;
+    use crate::FxHashMap;
     use std::{collections::HashMap, time::Instant};
 
     use crate::index_words;
@@ -91,7 +95,7 @@ mod tests {
     #[test]
     fn test_bigrams_load() {
         let file = File::open("bigrams.bincode").unwrap();
-        let load = bincode::deserialize_from::<File, HashMap<String, usize>>(file);
+        let load = bincode::deserialize_from::<File, FxHashMap<String, usize>>(file);
         assert!(load.is_ok());
         from_ser(load.unwrap());
     }
