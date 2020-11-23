@@ -146,12 +146,11 @@ pub fn score_iter(
     iter: &CrosswordWordIterator,
     bigrams: &FxHashMap<(char, char), usize>,
 ) -> WordScore {
-    
     let mut fillability_score = std::usize::MAX;
-    
+
     let mut prev = None;
     let mut curr = None;
-    
+
     for c in iter.clone() {
         prev = curr;
         curr = Some(c);
