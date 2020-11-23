@@ -19,7 +19,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
     let input = Crossword::new(String::from("         ")).unwrap();
     c.bench(
-        "fill_crosswords_single_threaded",
+        "single_threaded_filler",
         Benchmark::new("fill_3x3_crossword", move |b| {
             let filler = SingleThreadedFiller::new(tmp_trie.as_ref(), tmp_bigrams.as_ref());
 
@@ -34,7 +34,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let tmp_trie = trie.clone();
 
     c.bench(
-        "fill_crosswords_single_threaded",
+        "single_threaded_filler",
         Benchmark::new("fill_4x4_crossword", move |b| {
             let filler = SingleThreadedFiller::new(tmp_trie.as_ref(), tmp_bigrams.as_ref());
 
@@ -69,7 +69,7 @@ YAYAS*ETON* M
     let tmp_trie = trie.clone();
 
     c.bench(
-        "fill_crosswords_single_threaded",
+        "single_threaded_filler",
         Benchmark::new("fill_20201012_crossword", move |b| {
             let filler = SingleThreadedFiller::new(tmp_trie.as_ref(), tmp_bigrams.as_ref());
 
@@ -82,7 +82,7 @@ YAYAS*ETON* M
     let tmp_bigrams = bigrams.clone();
     let tmp_trie = trie.clone();
     c.bench(
-        "fill_crosswords",
+        "single_threaded_filler",
         Benchmark::new("empty_20201012_crossword", move |b| {
             let input = Crossword::new(String::from(
                 "
