@@ -65,14 +65,14 @@ YAYAS*ETON* M
             b.iter(|| filler.fill(black_box(&input)));
         }),
     );
-    
+
     let tmp_bigrams = bigrams.clone();
     let tmp_trie = trie.clone();
     c.bench(
         "fill_crosswords",
         Benchmark::new("empty_20201012_crossword", move |b| {
             let input = Crossword::new(String::from(
-        "
+                "
     *    *     
     *    *     
          *     

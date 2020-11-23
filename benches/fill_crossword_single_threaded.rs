@@ -78,6 +78,36 @@ YAYAS*ETON* M
             });
         }),
     );
+
+    let tmp_bigrams = bigrams.clone();
+    let tmp_trie = trie.clone();
+    c.bench(
+        "fill_crosswords",
+        Benchmark::new("empty_20201012_crossword", move |b| {
+            let input = Crossword::new(String::from(
+                "
+    *    *     
+    *    *     
+         *     
+   *   *   *   
+**    *        
+      *     ***
+     *    *    
+   *       *   
+    *    *     
+***     *      
+        *    **
+   *   *   *   
+     *         
+     *    *    
+     *    *    
+",
+            ))
+            .unwrap();
+            let filler = SingleThreadedFiller::new(tmp_trie.as_ref(), tmp_bigrams.as_ref());
+            b.iter(|| filler.fill(black_box(&input)));
+        }),
+    );
 }
 
 criterion_group!(benches, criterion_benchmark);
