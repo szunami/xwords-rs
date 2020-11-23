@@ -47,7 +47,7 @@ impl Ord for FrequencyOrderableCrossword {
     }
 }
 
-fn score_crossword(bigrams: &FxHashMap<(char, char), usize>, crossword: &Crossword) -> usize {
+pub fn score_crossword(bigrams: &FxHashMap<(char, char), usize>, crossword: &Crossword) -> usize {
     let mut result = std::usize::MAX;
     let byte_array = crossword.contents.as_bytes();
     for row in 0..crossword.height {
