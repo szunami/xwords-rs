@@ -4,6 +4,8 @@ use crate::{
     Filler,
 };
 
+use rayon::prelude::*;
+
 use rustc_hash::FxHashMap;
 
 use crate::{crossword::CrosswordWordIterator, order::score_iter, parse::parse_word_boundaries};
@@ -26,6 +28,8 @@ impl<'s> SingleThreadedFiller<'s> {
     }
 }
 
+const BATCH_SIZE: usize = 4;
+
 impl<'s> Filler for SingleThreadedFiller<'s> {
     fn fill(&self, crossword: &Crossword) -> std::result::Result<Crossword, String> {
         // parse crossword into partially filled words
@@ -44,47 +48,104 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
         let mut candidate_count = 0;
 
         loop {
-            let candidate = match crossword_fill_state.take_candidate() {
-                Some(c) => c,
-                None => return Err(String::from("Ran out of candidates. Yikes.")),
+            let candidates = {
+                let mut candidates = vec![];
+
+                for _ in 0..BATCH_SIZE {
+                    match crossword_fill_state.take_candidate() {
+                        Some(candidate) => candidates.push(candidate),
+                        None => continue,
+                    }
+                }
+
+                candidates
             };
 
-            candidate_count += 1;
+            if candidates.is_empty() {
+                return Err(String::from("Yikes"));
+            }
 
-            if candidate_count % 10_000 == 0 {
-                println!("{}", candidate);
+            candidate_count += candidates.len();
+
+            if candidate_count % 1_000 <= candidates.len() {
+                // println!("{}", candidate);
                 println!(
                     "Throughput: {}",
                     candidate_count as f32 / thread_start.elapsed().as_millis() as f32
                 );
             }
 
-            let to_fill = word_boundaries
-                .iter()
-                .map(|word_boundary| CrosswordWordIterator::new(&candidate, word_boundary))
-                .filter(|iter| iter.clone().any(|c| c == ' '))
-                .min_by_key(|iter| score_iter(iter, self.bigrams))
-                .unwrap();
-            // find valid fills for word;
-            // for each fill:
-            //   are all complete words legit?
-            //     if so, push
+            let viables: Vec<Crossword> = candidates.par_iter().flat_map(|candidate| {
+                let to_fill = word_boundaries
+                    .iter()
+                    .map(|word_boundary| CrosswordWordIterator::new(&candidate, word_boundary))
+                    .filter(|iter| iter.clone().any(|c| c == ' '))
+                    .min_by_key(|iter| score_iter(iter, self.bigrams))
+                    .unwrap();
+                // find valid fills for word;
+                // for each fill:
+                //   are all complete words legit?
+                //     if so, push
 
-            let potential_fills = words(to_fill.clone().to_string(), self.trie);
+                let potential_fills = words(to_fill.clone().to_string(), self.trie);
 
-            for potential_fill in potential_fills {
-                let new_candidate = fill_one_word(&candidate, &to_fill.clone(), potential_fill);
+                let mut viables = vec![];
 
-                if is_viable(&new_candidate, &word_boundaries, self.trie) {
-                    if !new_candidate.contents.contains(' ') {
-                        return Ok(new_candidate);
+                for potential_fill in potential_fills {
+                    let new_candidate = fill_one_word(&candidate, &to_fill.clone(), potential_fill);
+
+                    if is_viable(&new_candidate, &word_boundaries, self.trie) {
+                        viables.push(new_candidate);
                     }
-                    let orderable = FrequencyOrderableCrossword::new(new_candidate, self.bigrams);
-                    if orderable.fillability_score > 0 {
-                        crossword_fill_state.add_candidate(orderable);
-                    }
+                }
+                viables
+            }).collect();
+
+            for viable in viables {
+                if !viable.contents.contains(' ') {
+                    return Ok(viable);
+                }
+                let orderable = FrequencyOrderableCrossword::new(viable, self.bigrams);
+                if orderable.fillability_score > 0 {
+                    crossword_fill_state.add_candidate(orderable);
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::{default_indexes, fill::Filler};
+
+    use crate::Crossword;
+
+    use std::{sync::Arc, time::Instant};
+
+    use super::SingleThreadedFiller;
+
+
+    #[test]
+    fn medium_grid() {
+        let grid = Crossword::new(String::from(
+            "
+    ***
+    ***
+    ***
+       
+***    
+***    
+***    
+",
+        ))
+        .unwrap();
+
+        let now = Instant::now();
+        let (bigrams, trie) = default_indexes();
+        let filler = SingleThreadedFiller::new(&trie, &bigrams);
+        let filled_puz = filler.fill(&grid).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
     }
 }
