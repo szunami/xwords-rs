@@ -20,6 +20,8 @@ pub struct ParallelFiller {
     bigrams: Arc<FxHashMap<(char, char), usize>>,
 }
 
+const BATCH_SIZE: usize = 10;
+
 impl ParallelFiller {
     pub fn new(trie: Arc<Trie>, bigrams: Arc<FxHashMap<(char, char), usize>>) -> ParallelFiller {
         ParallelFiller { trie, bigrams }
@@ -61,70 +63,86 @@ impl Filler for ParallelFiller {
                     let thread_start = Instant::now();
 
                     loop {
-                        let candidate = {
+                        let candidates = {
                             let mut queue = new_arc.lock().unwrap();
                             if queue.done {
                                 return;
                             }
-                            match queue.take_candidate() {
-                                Some(candidate) => candidate,
-                                None => continue,
+
+                            let mut candidates = vec![];
+                            for _ in 0..BATCH_SIZE {
+                                match queue.take_candidate() {
+                                    Some(candidate) => candidates.push(candidate),
+                                    None => continue,
+                                }
                             }
+                            candidates
                         };
 
-                        candidate_count += 1;
+                        if candidates.is_empty() {
+                            continue;
+                        }
 
-                        if candidate_count % 1_000 == 0 {
+                        candidate_count += candidates.len();
+
+                        if candidate_count % 1_000 <= candidates.len() {
                             println!(
-                                "Thread {} throughput: {}",
+                                "Thread {}, total candidates: {}, throughput: {}",
                                 thread_index,
+                                candidate_count,
                                 candidate_count as f32 / thread_start.elapsed().as_millis() as f32
                             );
                             // println!("{}", candidate);
                         }
 
-                        let to_fill = word_boundaries
-                            .iter()
-                            .map(|word_boundary| {
-                                CrosswordWordIterator::new(&candidate, word_boundary)
-                            })
-                            .filter(|iter| iter.clone().any(|c| c == ' '))
-                            .min_by_key(|iter| score_iter(iter, bigrams.as_ref()))
-                            .unwrap();
-                        // find valid fills for word;
-                        // for each fill:
-                        //   are all complete words legit?
-                        //     if so, push
-
-                        let potential_fills = words(to_fill.clone().to_string(), trie.as_ref());
                         let mut viables: Vec<FrequencyOrderableCrossword> = vec![];
 
-                        for potential_fill in potential_fills {
-                            let new_candidate =
-                                fill_one_word(&candidate, &to_fill.clone(), potential_fill);
+                        for candidate in candidates {
+                            let to_fill = word_boundaries
+                                .iter()
+                                .map(|word_boundary| {
+                                    CrosswordWordIterator::new(&candidate, word_boundary)
+                                })
+                                .filter(|iter| iter.clone().any(|c| c == ' '))
+                                .min_by_key(|iter| score_iter(iter, bigrams.as_ref()))
+                                .unwrap();
+                            // find valid fills for word;
+                            // for each fill:
+                            //   are all complete words legit?
+                            //     if so, push
 
-                            if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
-                                if !new_candidate.contents.contains(' ') {
-                                    let mut queue = new_arc.lock().unwrap();
-                                    queue.mark_done();
+                            let potential_fills = words(to_fill.clone().to_string(), trie.as_ref());
 
-                                    match new_tx.send(new_candidate) {
-                                        Ok(_) => {
-                                            println!("Just sent a result.");
-                                            return;
-                                        }
-                                        Err(err) => {
-                                            println!("Failed to send a result, error was {}", err);
-                                            return;
+                            for potential_fill in potential_fills {
+                                let new_candidate =
+                                    fill_one_word(&candidate, &to_fill.clone(), potential_fill);
+
+                                if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
+                                    if !new_candidate.contents.contains(' ') {
+                                        let mut queue = new_arc.lock().unwrap();
+                                        queue.mark_done();
+
+                                        match new_tx.send(new_candidate) {
+                                            Ok(_) => {
+                                                println!("Just sent a result.");
+                                                return;
+                                            }
+                                            Err(err) => {
+                                                println!(
+                                                    "Failed to send a result, error was {}",
+                                                    err
+                                                );
+                                                return;
+                                            }
                                         }
                                     }
-                                }
-                                let orderable = FrequencyOrderableCrossword::new(
-                                    new_candidate,
-                                    bigrams.as_ref(),
-                                );
-                                if orderable.fillability_score > 0 {
-                                    viables.push(orderable);
+                                    let orderable = FrequencyOrderableCrossword::new(
+                                        new_candidate,
+                                        bigrams.as_ref(),
+                                    );
+                                    if orderable.fillability_score > 0 {
+                                        viables.push(orderable);
+                                    }
                                 }
                             }
                         }
