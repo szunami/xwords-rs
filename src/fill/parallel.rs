@@ -10,7 +10,7 @@ use crate::{
 use crate::{crossword::CrosswordWordIterator, Instant};
 
 use rustc_hash::FxHashMap;
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{mpsc, Arc};
 
 use crate::{trie::Trie, Crossword};
 
@@ -35,7 +35,7 @@ impl Filler for ParallelFiller {
             temp_state
         };
 
-        let candidates = Arc::new(Mutex::new(crossword_fill_state));
+        let candidates = Arc::new(parking_lot::const_mutex::<CrosswordFillState>(crossword_fill_state));
 
         let trie = self.trie.clone();
         let bigrams = self.bigrams.clone();
@@ -62,7 +62,7 @@ impl Filler for ParallelFiller {
 
                     loop {
                         let candidate = {
-                            let mut queue = new_arc.lock().unwrap();
+                            let mut queue = new_arc.lock();
                             if queue.done {
                                 return;
                             }
@@ -105,7 +105,7 @@ impl Filler for ParallelFiller {
 
                             if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
                                 if !new_candidate.contents.contains(' ') {
-                                    let mut queue = new_arc.lock().unwrap();
+                                    let mut queue = new_arc.lock();
                                     queue.mark_done();
 
                                     match new_tx.send(new_candidate) {
@@ -130,7 +130,7 @@ impl Filler for ParallelFiller {
                         }
 
                         if !viables.is_empty() {
-                            let mut queue = new_arc.lock().unwrap();
+                            let mut queue = new_arc.lock();
                             for viable_crossword in viables {
                                 queue.add_candidate(viable_crossword);
                             }
