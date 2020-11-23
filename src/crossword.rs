@@ -56,6 +56,7 @@ impl<'s> fmt::Display for CrosswordWordIterator<'s> {
 impl<'s> Iterator for CrosswordWordIterator<'s> {
     type Item = char;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= self.word_boundary.length {
             return None;

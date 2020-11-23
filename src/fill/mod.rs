@@ -139,6 +139,7 @@ impl<K: Hash + Eq, V> Cached<K, V> for FxCache<K, V> {
     }
 }
 
+#[inline(always)]
 pub fn is_word(iter: CrosswordWordIterator, trie: &Trie) -> bool {
     is_word_internal(iter, trie)
 }
@@ -158,6 +159,7 @@ cached_key! {
     }
 }
 
+#[inline(always)]
 pub fn words(pattern: String, trie: &Trie) -> Vec<String> {
     words_internal(pattern, trie)
 }
