@@ -13,6 +13,7 @@ use rustc_hash::FxHashMap;
 use std::sync::{mpsc, Arc, Mutex};
 
 use crate::{trie::Trie, Crossword};
+use rayon::prelude::*;
 
 #[derive(Clone)]
 pub struct ParallelFiller {
@@ -84,7 +85,7 @@ impl Filler for ParallelFiller {
                         }
 
                         let to_fill = word_boundaries
-                            .iter()
+                            .par_iter()
                             .map(|word_boundary| {
                                 CrosswordWordIterator::new(&candidate, word_boundary)
                             })

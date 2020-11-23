@@ -148,7 +148,7 @@ pub fn score_iter(
 ) -> WordScore {
     let mut fillability_score = std::usize::MAX;
 
-    let mut prev = None;
+    let mut prev;
     let mut curr = None;
 
     for c in iter.clone() {

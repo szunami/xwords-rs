@@ -3,7 +3,7 @@ use crate::{
     order::FrequencyOrderableCrossword,
     Filler,
 };
-
+use rayon::prelude::*;
 use rustc_hash::FxHashMap;
 
 use crate::{crossword::CrosswordWordIterator, order::score_iter, parse::parse_word_boundaries};
@@ -60,7 +60,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
             }
 
             let to_fill = word_boundaries
-                .iter()
+                .par_iter()
                 .map(|word_boundary| CrosswordWordIterator::new(&candidate, word_boundary))
                 .filter(|iter| iter.clone().any(|c| c == ' '))
                 .min_by_key(|iter| score_iter(iter, self.bigrams))
