@@ -140,23 +140,24 @@ impl<K: Hash + Eq, V> Cached<K, V> for FxCache<K, V> {
 }
 
 pub fn is_word(iter: CrosswordWordIterator, trie: &Trie) -> bool {
-    is_word_internal(iter, trie)
+    // is_word_internal(iter, trie)
+    trie.is_word(iter)
 }
 
-cached_key! {
-    IS_WORD: FxCache<u64, bool> = FxCache::default();
-    Key = {
-        use std::hash::Hash;
-        let mut hasher = FxHasher::default();
-        for c in iter.clone() {
-            c.hash(&mut hasher)
-        }
-        hasher.finish()
-    };
-    fn is_word_internal(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
-        trie.is_word(iter)
-    }
-}
+// cached_key! {
+//     IS_WORD: FxCache<u64, bool> = FxCache::default();
+//     Key = {
+//         use std::hash::Hash;
+//         let mut hasher = FxHasher::default();
+//         for c in iter.clone() {
+//             c.hash(&mut hasher)
+//         }
+//         hasher.finish()
+//     };
+//     fn is_word_internal(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
+//         trie.is_word(iter)
+//     }
+// }
 
 pub fn words(pattern: String, trie: &Trie) -> Vec<String> {
     words_internal(pattern, trie)
