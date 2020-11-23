@@ -62,16 +62,21 @@ pub fn score_crossword(bigrams: &FxHashMap<(char, char), usize>, crossword: &Cro
                     || current_char == '*'
                     || prev_char == '*'
                 {
-                    tmp = std::usize::MAX;
+                    continue;
                 } else {
                     let key = (prev_char, current_char);
-                    tmp = *bigrams.get(&key).unwrap_or(&std::usize::MIN)
+                    match bigrams.get(&key) {
+                        Some(val) => {
+                            tmp = *val;
+                        }
+                        None => {
+                            return std::usize::MIN;
+                        }
+                    }
                 }
                 tmp
             };
-            if result > score {
-                result = score;
-            }
+            result = result.min(score);
         }
     }
     for row in 1..(crossword.height - 1) {
@@ -86,16 +91,21 @@ pub fn score_crossword(bigrams: &FxHashMap<(char, char), usize>, crossword: &Cro
                     || current_char == '*'
                     || prev_char == '*'
                 {
-                    tmp = std::usize::MAX;
+                    continue;
                 } else {
                     let key = (prev_char, current_char);
-                    tmp = *bigrams.get(&key).unwrap_or(&std::usize::MIN)
+                    match bigrams.get(&key) {
+                        Some(val) => {
+                            tmp = *val;
+                        }
+                        None => {
+                            return std::usize::MIN;
+                        }
+                    }
                 }
                 tmp
             };
-            if result > score {
-                result = score;
-            }
+            result = result.min(score);
         }
     }
 
