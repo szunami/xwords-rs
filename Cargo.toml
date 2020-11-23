@@ -34,6 +34,7 @@ path = "examples/snippet.rs"
 
 [profile.release]
 debug = 1
+lto = true
 
 [[bench]]
 name = "fill_crossword"
