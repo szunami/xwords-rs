@@ -3,7 +3,7 @@ use std::sync::Arc;
 use xwords::{
     crossword::Crossword,
     default_indexes,
-    fill::{single_threaded_filler::SingleThreadedFiller, Filler},
+    fill::{single_threaded::SingleThreadedFiller, Filler},
 };
 
 use criterion::{criterion_group, criterion_main, Benchmark, Criterion};
