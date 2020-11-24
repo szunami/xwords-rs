@@ -14,6 +14,7 @@ use std::{
 };
 
 pub mod parallel;
+pub mod simple;
 pub mod single_threaded;
 
 pub trait Filler {

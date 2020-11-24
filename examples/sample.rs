@@ -2,7 +2,7 @@ use std::{fs::File, sync::Arc, time::Instant};
 use xwords::{
     crossword::Crossword,
     default_indexes,
-    fill::{parallel::ParallelFiller, single_threaded::SingleThreadedFiller},
+    fill::{parallel::ParallelFiller, simple::SimpleFiller, single_threaded::SingleThreadedFiller},
 };
 
 use xwords::fill::Filler;
@@ -52,12 +52,11 @@ YAYAS*E  N* M
 
     println!("{:?}", args);
     let filler: Box<dyn Filler> = match args.get(1) {
-        Some(flag) => {
-            if flag != "parallel" {
-                return Err(String::from("Unable to parse flag"));
-            }
-            Box::new(ParallelFiller::new(Arc::new(trie), Arc::new(bigrams)))
-        }
+        Some(flag) => match flag.as_str() {
+            "parallel" => Box::new(ParallelFiller::new(Arc::new(trie), Arc::new(bigrams))),
+            "simple" => Box::new(SimpleFiller::new(&trie)),
+            _ => return Err(String::from("Unable to parse flag")),
+        },
         None => Box::new(SingleThreadedFiller::new(&trie, &bigrams)),
     };
     let filled_puz = filler.fill(&real_puz).unwrap();
