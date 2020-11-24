@@ -158,14 +158,21 @@ cached_key! {
     }
 }
 
-pub fn words(pattern: String, trie: &Trie) -> Vec<String> {
+pub fn words(pattern: CrosswordWordIterator, trie: &Trie) -> Vec<String> {
     words_internal(pattern, trie)
 }
 
 cached_key! {
-    WORDS: FxCache<String, Vec<String>> = FxCache::default();
-    Key = { pattern.clone() };
-    fn words_internal(pattern: String, trie: &Trie) -> Vec<String> = {
+    WORDS: FxCache<u64, Vec<String>> = FxCache::default();
+    Key = { 
+        use std::hash::Hash;
+        let mut hasher = FxHasher::default();
+        for c in pattern.clone() {
+            c.hash(&mut hasher)
+        }
+        hasher.finish()
+     };
+    fn words_internal(pattern: CrosswordWordIterator, trie: &Trie) -> Vec<String> = {
         trie.words(pattern)
     }
 }

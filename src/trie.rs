@@ -72,36 +72,37 @@ impl TrieNode {
     }
 
     // TODO: pattern could be a ref!
-    fn words(&self, pattern: String, partial: String) -> Vec<String> {
+    fn words(&self, mut pattern: CrosswordWordIterator, partial: String) -> Vec<String> {
         let mut new_partial = partial;
         if self.contents.is_some() {
             new_partial.push(self.contents.unwrap());
         }
-
-        if pattern.is_empty() {
-            if self.is_terminal {
-                return vec![new_partial];
+        
+        match pattern.next() {
+            Some(new_char) => {
+                if new_char == ' ' {
+                    let mut result = vec![];
+                    for child in self.children.values() {
+                        let tmp = child.words(pattern.clone(), new_partial.clone());
+                        result.extend(tmp.clone());
+                    }
+                    return result;
+                }
+        
+                match self.children.get(&new_char) {
+                    Some(child) => child.words(pattern, new_partial),
+                    None => vec![],
+                }
             }
-            return vec![];
-        }
-
-        let new_pattern = pattern[1..].to_owned();
-
-        let new_char = pattern.as_bytes()[0] as char;
-
-        if new_char == ' ' {
-            let mut result = vec![];
-            for child in self.children.values() {
-                let tmp = child.words(new_pattern.clone(), new_partial.clone());
-                result.extend(tmp.clone());
+            None => {
+                if self.is_terminal {
+                    return vec![new_partial];
+                }
+                return vec![];
             }
-            return result;
         }
 
-        match self.children.get(&new_char) {
-            Some(child) => child.words(new_pattern, new_partial),
-            None => vec![],
-        }
+
     }
 
     fn is_word(&self, mut chars: CrosswordWordIterator) -> bool {
@@ -151,7 +152,7 @@ impl Trie {
         Trie { root }
     }
 
-    pub fn words(&self, pattern: String) -> Vec<String> {
+    pub fn words(&self, pattern: CrosswordWordIterator) -> Vec<String> {
         self.root.words(pattern, String::from(""))
     }
 
@@ -166,6 +167,8 @@ mod tests {
     use rustc_hash::FxHashMap;
 
     use std::collections::HashSet;
+
+    use crate::{crossword::{Crossword, CrosswordWordIterator, Direction}, parse::WordBoundary};
 
     use super::{Trie, TrieNode};
 
@@ -251,7 +254,17 @@ mod tests {
             .iter()
             .cloned()
             .collect();
-        let actual: HashSet<String> = trie.words(String::from("b ss")).iter().cloned().collect();
+        
+        let c = Crossword::new(String::from("
+b ss
+    
+    
+    
+")).unwrap();
+
+        let word_boundary = WordBoundary::new( 0,  0,  4,  Direction::Across);
+        let iter = CrosswordWordIterator::new(&c, &word_boundary);
+        let actual: HashSet<String> = trie.words(iter).iter().cloned().collect();
         assert_eq!(expected, actual,)
     }
 }
