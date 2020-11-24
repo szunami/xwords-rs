@@ -46,15 +46,12 @@ fn main() -> Result<(), String> {
         .expect("failed to load algorithm");
 
     if matches.is_present("profile") {
-        let guard = pprof::ProfilerGuard::new(1000).unwrap();
+        let guard = pprof::ProfilerGuard::new(100).unwrap();
         std::thread::spawn(move || loop {
-            match guard.report().build() {
-                Ok(report) => {
-                    let file = File::create("flamegraph.svg").unwrap();
-                    report.flamegraph(file).unwrap();
-                }
-                Err(_) => {}
-            };
+            if let Ok(report) = guard.report().build() {
+                let file = File::create("flamegraph.svg").unwrap();
+                report.flamegraph(file).unwrap();
+            }
             std::thread::sleep(std::time::Duration::from_secs(5))
         });
     }
