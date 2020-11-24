@@ -155,6 +155,9 @@ pub fn score_iter(
         prev = curr;
         curr = Some(c);
         if let (Some(prev), Some(curr)) = (prev, curr) {
+            if prev == ' ' || curr == ' ' {
+                continue;
+            }
             let score = *bigrams.get(&(prev, curr)).unwrap_or(&std::usize::MIN);
             if fillability_score > score {
                 fillability_score = score;
