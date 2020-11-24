@@ -61,9 +61,14 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
 
             let to_fill = word_boundaries
                 .iter()
-                .map(|word_boundary| CrosswordWordIterator::new(&candidate, word_boundary))
-                .filter(|iter| iter.clone().any(|c| c == ' '))
-                .min_by_key(|iter| score_iter(iter, self.bigrams))
+                .filter_map(|word_boundary| {
+                    let iter = CrosswordWordIterator::new(&candidate, word_boundary);
+                    if iter.clone().any(|c| c == ' ') {
+                        return Some(iter);
+                    }
+                    None
+                })
+                .min_by_key(|iter| score_iter(iter, bigrams.as_ref()))
                 .unwrap();
             // find valid fills for word;
             // for each fill:
