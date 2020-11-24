@@ -30,14 +30,6 @@ name = "xwords"
 required-features = ["cli"]
 
 [[example]]
-name = "sample"
-path = "examples/sample.rs"
-
-[[example]]
-name = "empty"
-path = "examples/empty.rs"
-
-[[example]]
 name = "snippet"
 path = "examples/snippet.rs"
 
