@@ -1,6 +1,10 @@
 use criterion::black_box;
 use std::sync::Arc;
-use xwords::{crossword::Crossword, fill::simple::SimpleFiller, default_indexes, fill::{Filler}};
+use xwords::{
+    crossword::Crossword,
+    default_indexes,
+    fill::{simple::SimpleFiller, Filler},
+};
 
 use criterion::{criterion_group, criterion_main, Benchmark, Criterion};
 
@@ -71,34 +75,34 @@ YAYAS*ETON* M
         }),
     );
 
-//     let tmp_trie = trie.clone();
-//     c.bench(
-//         "simple_filler",
-//         Benchmark::new("empty_20201012_crossword", move |b| {
-//             let input = Crossword::new(String::from(
-//                 "
-//     *    *     
-//     *    *     
-//          *     
-//    *   *   *   
-// **    *        
-//       *     ***
-//      *    *    
-//    *       *   
-//     *    *     
-// ***     *      
-//         *    **
-//    *   *   *   
-//      *         
-//      *    *    
-//      *    *    
-// ",
-//             ))
-//             .unwrap();
-//             let filler = SimpleFiller::new(tmp_trie.as_ref());
-//             b.iter(|| filler.fill(black_box(&input)));
-//         }),
-//     );
+    //     let tmp_trie = trie.clone();
+    //     c.bench(
+    //         "simple_filler",
+    //         Benchmark::new("empty_20201012_crossword", move |b| {
+    //             let input = Crossword::new(String::from(
+    //                 "
+    //     *    *
+    //     *    *
+    //          *
+    //    *   *   *
+    // **    *
+    //       *     ***
+    //      *    *
+    //    *       *
+    //     *    *
+    // ***     *
+    //         *    **
+    //    *   *   *
+    //      *
+    //      *    *
+    //      *    *
+    // ",
+    //             ))
+    //             .unwrap();
+    //             let filler = SimpleFiller::new(tmp_trie.as_ref());
+    //             b.iter(|| filler.fill(black_box(&input)));
+    //         }),
+    //     );
 }
 
 criterion_group!(benches, criterion_benchmark);

@@ -1,6 +1,6 @@
-use std::sync::Arc;
 use criterion::{black_box, criterion_group, criterion_main, Benchmark, Criterion};
-use xwords::{crossword::{Crossword}, default_indexes, order::score_crossword};
+use std::sync::Arc;
+use xwords::{crossword::Crossword, default_indexes, order::score_crossword};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let (bigrams, _) = default_indexes();
@@ -32,7 +32,9 @@ YAYAS*E  N* M
             .unwrap();
 
             b.iter(|| {
-                assert!(score_crossword(black_box(&tmp_bigrams.as_ref()), black_box(&crossword)) > 0);
+                assert!(
+                    score_crossword(black_box(&tmp_bigrams.as_ref()), black_box(&crossword)) > 0
+                );
             });
         }),
     );
@@ -63,7 +65,10 @@ YAYAS*E  N* M
             .unwrap();
 
             b.iter(|| {
-                assert_eq!(score_crossword(black_box(&tmp_bigrams.as_ref()), black_box(&crossword)), 0);
+                assert_eq!(
+                    score_crossword(black_box(&tmp_bigrams.as_ref()), black_box(&crossword)),
+                    0
+                );
             });
         }),
     );
