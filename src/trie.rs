@@ -77,7 +77,7 @@ impl TrieNode {
         if self.contents.is_some() {
             new_partial.push(self.contents.unwrap());
         }
-        
+
         match pattern.next() {
             Some(new_char) => {
                 if new_char == ' ' {
@@ -88,7 +88,7 @@ impl TrieNode {
                     }
                     return result;
                 }
-        
+
                 match self.children.get(&new_char) {
                     Some(child) => child.words(pattern, new_partial),
                     None => vec![],
@@ -101,8 +101,6 @@ impl TrieNode {
                 return vec![];
             }
         }
-
-
     }
 
     fn is_word(&self, mut chars: CrosswordWordIterator) -> bool {
@@ -168,7 +166,10 @@ mod tests {
 
     use std::collections::HashSet;
 
-    use crate::{crossword::{Crossword, CrosswordWordIterator, Direction}, parse::WordBoundary};
+    use crate::{
+        crossword::{Crossword, CrosswordWordIterator, Direction},
+        parse::WordBoundary,
+    };
 
     use super::{Trie, TrieNode};
 
@@ -254,15 +255,18 @@ mod tests {
             .iter()
             .cloned()
             .collect();
-        
-        let c = Crossword::new(String::from("
+
+        let c = Crossword::new(String::from(
+            "
 b ss
     
     
     
-")).unwrap();
+",
+        ))
+        .unwrap();
 
-        let word_boundary = WordBoundary::new( 0,  0,  4,  Direction::Across);
+        let word_boundary = WordBoundary::new(0, 0, 4, Direction::Across);
         let iter = CrosswordWordIterator::new(&c, &word_boundary);
         let actual: HashSet<String> = trie.words(iter).iter().cloned().collect();
         assert_eq!(expected, actual,)

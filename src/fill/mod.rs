@@ -165,7 +165,7 @@ pub fn words(pattern: CrosswordWordIterator, trie: &Trie) -> Vec<String> {
 
 cached_key! {
     WORDS: FxCache<u64, Vec<String>> = FxCache::default();
-    Key = { 
+    Key = {
         use std::hash::Hash;
         let mut hasher = FxHasher::default();
         for c in pattern.clone() {
