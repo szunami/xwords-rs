@@ -68,7 +68,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
                     }
                     None
                 })
-                .min_by_key(|iter| score_iter(iter, bigrams.as_ref()))
+                .min_by_key(|iter| score_iter(iter, self.bigrams))
                 .unwrap();
             // find valid fills for word;
             // for each fill:
