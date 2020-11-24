@@ -148,10 +148,15 @@ pub fn score_iter(
 ) -> WordScore {
     let mut fillability_score = std::usize::MAX;
 
+    let mut space_count = 0;
     let mut prev;
     let mut curr = None;
 
     for c in iter.clone() {
+        if c == ' ' {
+            space_count += 1;
+        }
+
         prev = curr;
         curr = Some(c);
         if let (Some(prev), Some(curr)) = (prev, curr) {
@@ -164,7 +169,7 @@ pub fn score_iter(
 
     WordScore {
         length: iter.word_boundary.length,
-        space_count: iter.clone().filter(|c| *c == ' ').count(),
+        space_count,
         fillability_score,
         start_col: iter.word_boundary.start_col,
         start_row: iter.word_boundary.start_row,
