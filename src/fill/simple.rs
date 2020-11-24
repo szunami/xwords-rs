@@ -56,7 +56,7 @@ impl<'s> Filler for SimpleFiller<'s> {
                         length += 1;
                     }
 
-                    (length, -1 * space_count)
+                    (length, -space_count)
                 })
                 .unwrap();
 
