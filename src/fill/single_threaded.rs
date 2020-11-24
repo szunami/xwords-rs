@@ -70,7 +70,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
             //   are all complete words legit?
             //     if so, push
 
-            let potential_fills = words(to_fill.clone().to_string(), self.trie);
+            let potential_fills = words(to_fill.clone(), self.trie);
 
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, &to_fill.clone(), potential_fill);

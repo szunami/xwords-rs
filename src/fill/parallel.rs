@@ -96,7 +96,7 @@ impl Filler for ParallelFiller {
                         //   are all complete words legit?
                         //     if so, push
 
-                        let potential_fills = words(to_fill.clone().to_string(), trie.as_ref());
+                        let potential_fills = words(to_fill.clone(), trie.as_ref());
                         let mut viables: Vec<FrequencyOrderableCrossword> = vec![];
 
                         for potential_fill in potential_fills {
