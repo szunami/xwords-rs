@@ -1,5 +1,7 @@
 use std::{fs::File, sync::Arc};
-use xwords::fill::{parallel::ParallelFiller, single_threaded::SingleThreadedFiller};
+use xwords::fill::{
+    parallel::ParallelFiller, simple::SimpleFiller, single_threaded::SingleThreadedFiller,
+};
 
 use std::time::Instant;
 use xwords::{crossword::Crossword, default_indexes};
@@ -22,26 +24,8 @@ fn main() -> Result<(), String> {
         std::thread::sleep(std::time::Duration::from_secs(5))
     });
 
-    let real_puz = Crossword::new(String::from(
-        "
-    *    *     
-    *    *     
-         *     
-   *   *   *   
-**    *        
-      *     ***
-     *    *    
-   *       *   
-    *    *     
-***     *      
-        *    **
-   *   *   *   
-     *         
-     *    *    
-     *    *    
-",
-    ))
-    .unwrap();
+    let input = std::fs::read_to_string("./grids/20201107_empty.txt").expect("Failed to load file");
+    let real_puz = Crossword::new(input).unwrap();
 
     println!("{}", real_puz);
 
@@ -49,12 +33,11 @@ fn main() -> Result<(), String> {
     println!("Loaded indices in {}ms", now.elapsed().as_millis());
 
     let filler: Box<dyn Filler> = match args.get(1) {
-        Some(flag) => {
-            if flag != "parallel" {
-                return Err(String::from("Unable to parse flag"));
-            }
-            Box::new(ParallelFiller::new(Arc::new(trie), Arc::new(bigrams)))
-        }
+        Some(flag) => match flag.as_str() {
+            "parallel" => Box::new(ParallelFiller::new(Arc::new(trie), Arc::new(bigrams))),
+            "simple" => Box::new(SimpleFiller::new(&trie)),
+            _ => return Err(String::from("Unable to parse flag")),
+        },
         None => Box::new(SingleThreadedFiller::new(&trie, &bigrams)),
     };
 

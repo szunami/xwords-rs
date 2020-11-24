@@ -54,3 +54,7 @@ harness = false
 [[bench]]
 name = "score_crossword"
 harness = false
+
+[[bench]]
+name = "fill_crossword_simple"
+harness = false
