@@ -112,6 +112,10 @@ impl TrieNode {
             None => self.is_terminal,
         }
     }
+    
+    pub fn is_viable(&self, mut chars: CrosswordWordIterator) -> bool {
+        false
+    }
 }
 
 impl fmt::Display for TrieNode {
@@ -156,6 +160,10 @@ impl Trie {
 
     pub fn is_word(&self, chars: CrosswordWordIterator) -> bool {
         self.root.is_word(chars)
+    }
+    
+    pub fn is_viable(&self, chars: CrosswordWordIterator) -> bool {
+        self.root.is_viable(chars)
     }
 }
 
@@ -270,5 +278,33 @@ b ss
         let iter = CrosswordWordIterator::new(&c, &word_boundary);
         let actual: HashSet<String> = trie.words(iter).iter().cloned().collect();
         assert_eq!(expected, actual,)
+    }
+
+    #[test]
+    fn is_viable_works() {
+        let trie = Trie::build(vec![
+            String::from("bass"),
+            String::from("bats"),
+            String::from("bess"),
+            String::from("be"),
+        ]);
+        
+        let c = Crossword::new(String::from(
+            "
+b ss
+Z   
+    
+    
+",
+        ))
+        .unwrap();
+        
+        let word_boundary = WordBoundary::new(0, 0, 4, Direction::Across);
+        let iter = CrosswordWordIterator::new(&c, &word_boundary);
+        assert!(trie.is_viable(iter));
+        
+        let word_boundary = WordBoundary::new(0, 0, 4, Direction::Down);
+        let iter = CrosswordWordIterator::new(&c, &word_boundary);
+        assert!(!trie.is_viable(iter));
     }
 }
