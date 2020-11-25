@@ -27,7 +27,7 @@ impl ParallelFiller {
 }
 
 impl Filler for ParallelFiller {
-    fn fill(&self, crossword: &Crossword) -> Result<Crossword, String> {
+    fn fill(&mut self, crossword: &Crossword) -> Result<Crossword, String> {
         let crossword_fill_state = {
             let mut temp_state = CrosswordFillState::default();
             let orderable = FrequencyOrderableCrossword::new(crossword.clone(), &self.bigrams);
@@ -101,7 +101,7 @@ impl Filler for ParallelFiller {
 
                         for potential_fill in potential_fills {
                             let new_candidate =
-                                fill_one_word(&candidate, &to_fill.clone(), potential_fill);
+                                fill_one_word(&candidate, &to_fill.clone(), &potential_fill);
 
                             if is_viable(&new_candidate, &word_boundaries, trie.as_ref()) {
                                 if !new_candidate.contents.contains(' ') {
@@ -175,7 +175,7 @@ mod tests {
 
         let now = Instant::now();
         let (bigrams, trie) = default_indexes();
-        let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
+        let mut filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
         let filled_puz = filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);

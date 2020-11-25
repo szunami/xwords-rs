@@ -13,12 +13,13 @@ use std::{
     hash::Hasher,
 };
 
+pub mod cache;
 pub mod parallel;
 pub mod simple;
 pub mod single_threaded;
 
 pub trait Filler {
-    fn fill(&self, crossword: &Crossword) -> Result<Crossword, String>;
+    fn fill(&mut self, crossword: &Crossword) -> Result<Crossword, String>;
 }
 
 struct CrosswordFillState {
@@ -74,7 +75,7 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: 
 pub fn fill_one_word(
     candidate: &Crossword,
     iter: &CrosswordWordIterator,
-    word: String,
+    word: &String,
 ) -> Crossword {
     let mut result_contents = candidate.contents.clone();
     let mut bytes = result_contents.into_bytes();
@@ -214,7 +215,7 @@ ghi
                         direction: Direction::Across,
                     },
                 ),
-                String::from("cat")
+                &String::from("cat")
             ),
             Crossword::new(String::from(
                 "
@@ -238,7 +239,7 @@ ghi
                         direction: Direction::Down,
                     }
                 ),
-                String::from("cat"),
+                &String::from("cat"),
             ),
             Crossword::new(String::from(
                 "

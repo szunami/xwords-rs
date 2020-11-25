@@ -28,7 +28,7 @@ pub fn fill_crossword_with_default_wordlist(crossword: &Crossword) -> Result<Cro
 pub fn fill_crossword(contents: String, words: Vec<String>) -> Result<Crossword, String> {
     let crossword = Crossword::new(contents).unwrap();
     let (bigrams, trie) = index_words(words);
-    let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
+    let mut filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
     filler.fill(&crossword)
 }
 

@@ -19,7 +19,7 @@ impl<'s> SimpleFiller<'s> {
 }
 
 impl<'s> Filler for SimpleFiller<'s> {
-    fn fill(&self, initial_crossword: &Crossword) -> Result<Crossword, String> {
+    fn fill(&mut self, initial_crossword: &Crossword) -> Result<Crossword, String> {
         let thread_start = Instant::now();
         let mut candidate_count = 0;
 
@@ -63,7 +63,7 @@ impl<'s> Filler for SimpleFiller<'s> {
             let potential_fills = words(to_fill.clone(), self.trie);
 
             for potential_fill in potential_fills {
-                let new_candidate = fill_one_word(&candidate, &to_fill.clone(), potential_fill);
+                let new_candidate = fill_one_word(&candidate, &to_fill.clone(), &potential_fill);
 
                 if is_viable(&new_candidate, &word_boundaries, self.trie) {
                     if !new_candidate.contents.contains(' ') {
@@ -111,8 +111,8 @@ mod tests {
 
         let now = Instant::now();
         let (_bigrams, trie) = default_indexes();
-        let filler = SimpleFiller::new(&trie);
-        let filled_puz = filler.fill(&grid).unwrap();
+        let mut filler = SimpleFiller::new(&trie);
+        let filled_puz =  filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
     }
