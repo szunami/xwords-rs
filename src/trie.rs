@@ -114,7 +114,30 @@ impl TrieNode {
     }
     
     pub fn is_viable(&self, mut chars: CrosswordWordIterator) -> bool {
-        false
+        
+        match chars.next() {
+            None => self.is_terminal,
+            
+            Some(c) => {
+                
+                if c == ' ' {
+                    for child in self.children.values() {
+                        if child.is_viable(chars.clone()) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                else {
+                    match self.children.get(&c) {
+                        None => false,
+                        Some(child) => child.is_viable(chars)
+                    }
+                }
+                
+                
+            }
+        }
     }
 }
 
