@@ -156,7 +156,7 @@ cached_key! {
         hasher.finish()
     };
     fn is_word_internal(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
-        trie.is_word(iter)
+        trie.is_viable(iter)
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::fill::cache::CachedIsWord;
+use crate::fill::cache::CachedIsViable;
 use crate::parse::WordBoundary;
 use std::{hash::BuildHasherDefault, collections::HashSet};
 use crate::{
@@ -19,7 +19,7 @@ use super::cache::{CachedWords};
 #[derive(Clone)]
 pub struct SingleThreadedFiller<'s> {
     word_cache: CachedWords,
-    is_word_cache: CachedIsWord,
+    is_word_cache: CachedIsViable,
     
     
     trie: &'s Trie,
@@ -33,7 +33,7 @@ impl<'s> SingleThreadedFiller<'s> {
     ) -> SingleThreadedFiller<'s> {
         SingleThreadedFiller { 
             word_cache: CachedWords::new(),
-            is_word_cache: CachedIsWord::new(),
+            is_word_cache: CachedIsViable::new(),
             trie, bigrams }
     }
 }
@@ -104,7 +104,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
 }
 
 pub fn is_viable_tmp(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: &Trie,
-    is_word_cache: &mut CachedIsWord) -> bool {
+    is_word_cache: &mut CachedIsViable) -> bool {
     let mut already_used = HashSet::with_capacity_and_hasher(
         word_boundaries.len(),
         BuildHasherDefault::<FxHasher>::default(),
@@ -113,16 +113,18 @@ pub fn is_viable_tmp(candidate: &Crossword, word_boundaries: &[WordBoundary], tr
     for word_boundary in word_boundaries {
         let iter = CrosswordWordIterator::new(candidate, word_boundary);
         if iter.clone().any(|c| c == ' ') {
-            continue;
-        }
-
-        if already_used.contains(&iter) {
-            return false;
-        }
-        already_used.insert(iter.clone());
-
-        if !is_word_cache.is_word(iter, trie) {
-            return false;
+            if !is_word_cache.is_viable(iter, trie) {
+                return false;
+            }            
+        } else {
+            if already_used.contains(&iter) {
+                return false;
+            }
+            already_used.insert(iter.clone());
+    
+            if !is_word_cache.is_viable(iter, trie) {
+                return false;
+            }
         }
     }
     true

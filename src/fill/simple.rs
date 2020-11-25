@@ -6,11 +6,11 @@ use crate::{
     trie::Trie,
 };
 
-use super::{Filler, cache::{CachedIsWord, CachedWords}, fill_one_word, is_viable, single_threaded::is_viable_tmp, words};
+use super::{Filler, cache::{CachedIsViable, CachedWords}, fill_one_word, is_viable, single_threaded::is_viable_tmp, words};
 
 pub struct SimpleFiller<'s> {
     word_cache: CachedWords,
-    is_word_cache: CachedIsWord,
+    is_word_cache: CachedIsViable,
     
     trie: &'s Trie,
 }
@@ -19,7 +19,7 @@ impl<'s> SimpleFiller<'s> {
     pub fn new(trie: &'s Trie) -> SimpleFiller<'s> {
         SimpleFiller { 
             word_cache: CachedWords::new(),
-            is_word_cache: CachedIsWord::new(),
+            is_word_cache: CachedIsViable::new(),
             trie }
     }
 }
