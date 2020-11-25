@@ -55,17 +55,22 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: 
 
     for word_boundary in word_boundaries {
         let iter = CrosswordWordIterator::new(candidate, word_boundary);
+        // if it isn't full, is there a viable fill?
         if iter.clone().any(|c| c == ' ') {
-            continue;
-        }
+            if words(iter.clone(), trie).is_empty() {
+                println!("Pruning unfillable grid because of {:?}", iter.to_string());
+                return false;
+            }
+        } else {
+            // it is full; is it a unique word?
+            if already_used.contains(&iter) {
+                return false;
+            }
+            already_used.insert(iter.clone());
 
-        if already_used.contains(&iter) {
-            return false;
-        }
-        already_used.insert(iter.clone());
-
-        if !is_word(iter, trie) {
-            return false;
+            if !is_word(iter, trie) {
+                return false;
+            }
         }
     }
     true
@@ -160,6 +165,11 @@ cached_key! {
 }
 
 pub fn words(pattern: CrosswordWordIterator, trie: &Trie) -> Vec<String> {
+    {
+        let cache = WORDS.lock().unwrap();
+        println!("hits={:?}", cache.cache_hits());
+        println!("misses={:?}", cache.cache_misses());
+    }
     words_internal(pattern, trie)
 }
 
@@ -174,6 +184,7 @@ cached_key! {
         hasher.finish()
      };
     fn words_internal(pattern: CrosswordWordIterator, trie: &Trie) -> Vec<String> = {
+        println!("Cache miss for {:?}", pattern.clone().to_string());
         trie.words(pattern)
     }
 }

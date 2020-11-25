@@ -57,6 +57,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
                     "Throughput: {}",
                     candidate_count as f32 / thread_start.elapsed().as_millis() as f32
                 );
+                
             }
 
             let to_fill = word_boundaries
@@ -86,5 +87,41 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::{default_indexes, fill::Filler};
+
+    use crate::Crossword;
+
+    use std::{sync::Arc, time::Instant};
+
+    use super::SingleThreadedFiller;
+
+
+    #[test]
+    fn medium_grid() {
+        let grid = Crossword::new(String::from(
+            "
+    ***
+    ***
+    ***
+       
+***    
+***    
+***    
+",
+        ))
+        .unwrap();
+
+        let now = Instant::now();
+        let (bigrams, trie) = default_indexes();
+        let filler = SingleThreadedFiller::new(&trie, &bigrams);
+        let filled_puz = filler.fill(&grid).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
     }
 }
