@@ -88,3 +88,38 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use crate::{default_indexes, fill::Filler};
+
+    use crate::Crossword;
+
+    use std::time::Instant;
+
+    use super::SingleThreadedFiller;
+
+    #[test]
+    fn medium_grid() {
+        let grid = Crossword::new(String::from(
+            "
+    ***
+    ***
+    ***
+       
+***    
+***    
+***    
+",
+        ))
+        .unwrap();
+
+        let now = Instant::now();
+        let (bigrams, trie) = default_indexes();
+        let filler = SingleThreadedFiller::new(&trie, &bigrams);
+        let filled_puz = filler.fill(&grid).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
+    }
+}
