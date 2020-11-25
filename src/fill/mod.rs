@@ -57,7 +57,7 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: 
         let iter = CrosswordWordIterator::new(candidate, word_boundary);
         // if it isn't full, is there a viable fill?
         if iter.clone().any(|c| c == ' ') {
-            if words(iter.clone(), trie).is_empty() {
+            if !trie.is_viable(iter.clone()) {
                 println!("Pruning unfillable grid because of {:?}", iter.to_string());
                 return false;
             }
