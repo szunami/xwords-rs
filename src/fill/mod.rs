@@ -110,18 +110,40 @@ pub fn fill_one_word(
 
 pub struct FxCache<K: Hash + Eq, V> {
     store: FxHashMap<K, V>,
+    misses: u64,
+    hits: u64,
 }
 impl<K: Hash + Eq, V> FxCache<K, V> {
     pub fn default() -> FxCache<K, V> {
         FxCache {
             store: FxHashMap::default(),
+            hits: 0,
+            misses: 0,
         }
     }
 }
 impl<K: Hash + Eq, V> Cached<K, V> for FxCache<K, V> {
     fn cache_get(&mut self, k: &K) -> Option<&V> {
-        self.store.get(k)
+        match self.store.get(k) {
+            Some(x) => {
+                self.hits += 1;
+                Some(x)
+            }
+            None => {
+                self.misses += 1;
+                None
+            }
+        }
     }
+    
+    fn cache_hits(&self) -> Option<u64> {
+        Some(self.hits)
+    }
+    
+    fn cache_misses(&self) -> Option<u64> {
+        Some(self.misses)
+    }
+    
     fn cache_get_mut(&mut self, k: &K) -> Option<&mut V> {
         self.store.get_mut(k)
     }
@@ -165,11 +187,12 @@ cached_key! {
 }
 
 pub fn words(pattern: CrosswordWordIterator, trie: &Trie) -> Vec<String> {
-    {
-        let cache = WORDS.lock().unwrap();
-        println!("hits={:?}", cache.cache_hits());
-        println!("misses={:?}", cache.cache_misses());
-    }
+    // {
+    //     let cache = WORDS.lock().unwrap();
+    //     println!("hits={:?}", cache.cache_hits());
+    //     println!("misses={:?}", cache.cache_misses());
+    //     println!("size={:?}", cache.cache_size());
+    // }
     words_internal(pattern, trie)
 }
 
@@ -184,7 +207,7 @@ cached_key! {
         hasher.finish()
      };
     fn words_internal(pattern: CrosswordWordIterator, trie: &Trie) -> Vec<String> = {
-        println!("Cache miss for {:?}", pattern.clone().to_string());
+        // println!("Cache miss for {:?}", pattern.clone().to_string());
         trie.words(pattern)
     }
 }
