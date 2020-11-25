@@ -6,15 +6,21 @@ use crate::{
     trie::Trie,
 };
 
-use super::{fill_one_word, is_viable, words, Filler};
+use super::{Filler, cache::{CachedIsWord, CachedWords}, fill_one_word, is_viable, single_threaded::is_viable_tmp, words};
 
 pub struct SimpleFiller<'s> {
+    word_cache: CachedWords,
+    is_word_cache: CachedIsWord,
+    
     trie: &'s Trie,
 }
 
 impl<'s> SimpleFiller<'s> {
     pub fn new(trie: &'s Trie) -> SimpleFiller<'s> {
-        SimpleFiller { trie }
+        SimpleFiller { 
+            word_cache: CachedWords::new(),
+            is_word_cache: CachedIsWord::new(),
+            trie }
     }
 }
 
@@ -60,12 +66,12 @@ impl<'s> Filler for SimpleFiller<'s> {
                 })
                 .unwrap();
 
-            let potential_fills = words(to_fill.clone(), self.trie);
+                let potential_fills = self.word_cache.words(to_fill.clone(), self.trie);
 
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, &to_fill.clone(), &potential_fill);
 
-                if is_viable(&new_candidate, &word_boundaries, self.trie) {
+                if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.is_word_cache) {
                     if !new_candidate.contents.contains(' ') {
                         return Ok(new_candidate);
                     }
