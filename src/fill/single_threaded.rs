@@ -1,3 +1,4 @@
+use crate::fill::cache::CachedIsWord;
 use crate::parse::WordBoundary;
 use std::{hash::BuildHasherDefault, collections::HashSet};
 use crate::{
@@ -13,11 +14,12 @@ use std::time::Instant;
 
 use crate::{trie::Trie, Crossword};
 
-use super::cache::CachedWordSet;
+use super::cache::{CachedWords};
 
 #[derive(Clone)]
 pub struct SingleThreadedFiller<'s> {
-    word_cache: CachedWordSet,
+    word_cache: CachedWords,
+    is_word_cache: CachedIsWord,
     
     
     trie: &'s Trie,
@@ -30,7 +32,8 @@ impl<'s> SingleThreadedFiller<'s> {
         bigrams: &'s FxHashMap<(char, char), usize>,
     ) -> SingleThreadedFiller<'s> {
         SingleThreadedFiller { 
-            word_cache: CachedWordSet::new(),
+            word_cache: CachedWords::new(),
+            is_word_cache: CachedIsWord::new(),
             trie, bigrams }
     }
 }
@@ -86,7 +89,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, &to_fill.clone(), potential_fill);
 
-                if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.word_cache) {
+                if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.is_word_cache) {
                     if !new_candidate.contents.contains(' ') {
                         return Ok(new_candidate);
                     }
@@ -100,7 +103,8 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
     }
 }
 
-pub fn is_viable_tmp(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: &Trie, cache: &mut  CachedWordSet) -> bool {
+pub fn is_viable_tmp(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: &Trie,
+    is_word_cache: &mut CachedIsWord) -> bool {
     let mut already_used = HashSet::with_capacity_and_hasher(
         word_boundaries.len(),
         BuildHasherDefault::<FxHasher>::default(),
@@ -117,7 +121,7 @@ pub fn is_viable_tmp(candidate: &Crossword, word_boundaries: &[WordBoundary], tr
         }
         already_used.insert(iter.clone());
 
-        if !cache.is_word(iter, trie) {
+        if !is_word_cache.is_word(iter, trie) {
             return false;
         }
     }

@@ -4,41 +4,41 @@ use rustc_hash::{FxHashMap, FxHasher};
 
 use crate::{crossword::CrosswordWordIterator, trie::Trie};
 
-#[derive(Clone)]
-pub struct CachedWordSet {
-    words_cache: FxHashMap<u64, Vec<String>>,
-    is_word_cache: FxHashMap<u64, bool>,
-}
+// #[derive(Clone)]
+// pub struct CachedWordSet {
+//     words_cache: FxHashMap<u64, Vec<String>>,
+//     is_word_cache: FxHashMap<u64, bool>,
+// }
 
-impl CachedWordSet {
+// impl CachedWordSet {
     
-    pub fn new() -> CachedWordSet {
-        CachedWordSet{
-            words_cache: FxHashMap::default(),
-            is_word_cache: FxHashMap::default(),
-        }
-    }
+//     pub fn new() -> CachedWordSet {
+//         CachedWordSet{
+//             words_cache: FxHashMap::default(),
+//             is_word_cache: FxHashMap::default(),
+//         }
+//     }
     
-    pub fn words(&mut self, iter: CrosswordWordIterator, trie: &Trie) -> &Vec<String> {
-        let mut hasher = FxHasher::default();
-        for c in iter.clone() {
-            c.hash(&mut hasher);
-        }
-        let key = hasher.finish();
+//     pub fn words(&mut self, iter: CrosswordWordIterator, trie: &Trie) -> &Vec<String> {
+//         let mut hasher = FxHasher::default();
+//         for c in iter.clone() {
+//             c.hash(&mut hasher);
+//         }
+//         let key = hasher.finish();
         
-        self.words_cache.entry(key).or_insert_with(|| trie.words(iter))
-    }
+//         self.words_cache.entry(key).or_insert_with(|| trie.words(iter))
+//     }
     
-    pub fn is_word(&mut self, iter: CrosswordWordIterator, trie: &Trie) -> bool {
-        let mut hasher = FxHasher::default();
-        for c in iter.clone() {
-            c.hash(&mut hasher);
-        }
-        let key = hasher.finish();
+//     pub fn is_word(&mut self, iter: CrosswordWordIterator, trie: &Trie) -> bool {
+//         let mut hasher = FxHasher::default();
+//         for c in iter.clone() {
+//             c.hash(&mut hasher);
+//         }
+//         let key = hasher.finish();
         
-        *self.is_word_cache.entry(key).or_insert_with(|| trie.is_word(iter))
-    }
-}
+//         *self.is_word_cache.entry(key).or_insert_with(|| trie.is_word(iter))
+//     }
+// }
 
 #[derive(Clone)]
 pub struct CachedWords {
@@ -77,7 +77,7 @@ impl CachedIsWord {
         }
     }
     
-    pub fn words(&mut self, iter: CrosswordWordIterator, trie: &Trie) -> bool {
+    pub fn is_word(&mut self, iter: CrosswordWordIterator, trie: &Trie) -> bool {
         let mut hasher = FxHasher::default();
         for c in iter.clone() {
             c.hash(&mut hasher);
