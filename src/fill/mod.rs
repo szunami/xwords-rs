@@ -7,7 +7,7 @@ use crate::{
 };
 use cached::Cached;
 use core::hash::{BuildHasherDefault, Hash};
-use rustc_hash::FxHasher;
+use rustc_hash::{FxHashSet, FxHasher};
 use std::{
     collections::{BinaryHeap, HashSet},
     hash::Hasher,
@@ -69,6 +69,38 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: 
         }
     }
     true
+}
+
+pub fn  is_viable_tmp (candidate: &Crossword, word_boundaries: & [WordBoundary], trie: &Trie, mut already_used: FxHashSet<u64>)
+-> (bool, FxHashSet<u64>) {
+
+
+    for word_boundary in word_boundaries {
+        let iter = CrosswordWordIterator::new(candidate, word_boundary);
+        if iter.clone().any(|c| c == ' ') {
+            continue;
+        }
+        
+        use std::hash::Hash;
+        let mut hasher = FxHasher::default();
+        for c in iter.clone() {
+            c.hash(&mut hasher);
+        }
+        let key = hasher.finish();
+
+        if already_used.contains(&key) {
+            already_used.clear();
+            return (false, already_used);
+        }
+        already_used.insert(key);
+
+        if !is_word(iter, trie) {
+            already_used.clear();
+            return (false, already_used);
+        }
+    }
+    already_used.clear();
+    (true, already_used)
 }
 
 pub fn fill_one_word(
@@ -150,7 +182,7 @@ cached_key! {
         use std::hash::Hash;
         let mut hasher = FxHasher::default();
         for c in iter.clone() {
-            c.hash(&mut hasher)
+            c.hash(&mut hasher);
         }
         hasher.finish()
     };
