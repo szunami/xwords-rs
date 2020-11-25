@@ -68,7 +68,7 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: 
             }
             already_used.insert(iter.clone());
 
-            if !is_word(iter, trie) {
+            if !is_word_viable(iter, trie) {
                 return false;
             }
         }
@@ -167,32 +167,26 @@ impl<K: Hash + Eq, V> Cached<K, V> for FxCache<K, V> {
     }
 }
 
-pub fn is_word(iter: CrosswordWordIterator, trie: &Trie) -> bool {
-    is_word_internal(iter, trie)
-}
+// pub fn is_word(iter: CrosswordWordIterator, trie: &Trie) -> bool {
+//     is_word_internal(iter, trie)
+// }
 
-cached_key! {
-    IS_WORD: FxCache<u64, bool> = FxCache::default();
-    Key = {
-        use std::hash::Hash;
-        let mut hasher = FxHasher::default();
-        for c in iter.clone() {
-            c.hash(&mut hasher)
-        }
-        hasher.finish()
-    };
-    fn is_word_internal(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
-        trie.is_word(iter)
-    }
-}
+// cached_key! {
+//     IS_WORD: FxCache<u64, bool> = FxCache::default();
+//     Key = {
+//         use std::hash::Hash;
+//         let mut hasher = FxHasher::default();
+//         for c in iter.clone() {
+//             c.hash(&mut hasher)
+//         }
+//         hasher.finish()
+//     };
+//     fn is_word_internal(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
+//         trie.is_word(iter)
+//     }
+// }
 
 pub fn words(pattern: CrosswordWordIterator, trie: &Trie) -> Vec<String> {
-    // {
-    //     let cache = WORDS.lock().unwrap();
-    //     println!("hits={:?}", cache.cache_hits());
-    //     println!("misses={:?}", cache.cache_misses());
-    //     println!("size={:?}", cache.cache_size());
-    // }
     words_internal(pattern, trie)
 }
 
@@ -236,12 +230,12 @@ mod tests {
     use crate::{
         crossword::Direction,
         default_indexes,
-        fill::{is_word, CrosswordWordIterator},
+        fill::{CrosswordWordIterator},
         parse::{parse_word_boundaries, WordBoundary},
         Crossword, Trie,
     };
 
-    use super::{fill_one_word, is_viable};
+    use super::{fill_one_word, is_viable, is_word_viable};
 
     #[test]
 
@@ -360,7 +354,7 @@ s
         };
         let iter = CrosswordWordIterator::new(&crossword, &word_boundary);
 
-        assert!(is_word(iter, &trie));
+        assert!(is_word_viable(iter, &trie));
 
         let word_boundary = WordBoundary {
             start_row: 0,
@@ -370,6 +364,6 @@ s
         };
         let iter = CrosswordWordIterator::new(&crossword, &word_boundary);
 
-        assert!(is_word(iter, &trie));
+        assert!(is_word_viable(iter, &trie));
     }
 }
