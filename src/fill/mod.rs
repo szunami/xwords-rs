@@ -57,8 +57,8 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: 
         let iter = CrosswordWordIterator::new(candidate, word_boundary);
         // if it isn't full, is there a viable fill?
         if iter.clone().any(|c| c == ' ') {
-            if !trie.is_viable(iter.clone()) {
-                println!("Pruning unfillable grid because of {:?}", iter.to_string());
+            if !is_word_viable(iter.clone(), trie) {
+                // println!("Pruning unfillable grid because of {:?}", iter.to_string());
                 return false;
             }
         } else {
@@ -209,6 +209,25 @@ cached_key! {
     fn words_internal(pattern: CrosswordWordIterator, trie: &Trie) -> Vec<String> = {
         // println!("Cache miss for {:?}", pattern.clone().to_string());
         trie.words(pattern)
+    }
+}
+
+pub fn is_word_viable(pattern: CrosswordWordIterator, trie: &Trie) -> bool {
+    is_word_viable_internal(pattern, trie)
+}
+
+cached_key! {
+    IS_WORD_VIABLE: FxCache<u64, bool> = FxCache::default();
+    Key = {
+        use std::hash::Hash;
+        let mut hasher = FxHasher::default();
+        for c in iter.clone() {
+            c.hash(&mut hasher)
+        }
+        hasher.finish()
+    };
+    fn is_word_viable_internal(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
+        trie.is_viable(iter)
     }
 }
 
