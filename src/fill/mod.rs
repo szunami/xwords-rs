@@ -71,16 +71,18 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: 
     true
 }
 
-pub fn  is_viable_reuse(candidate: &Crossword, word_boundaries: & [WordBoundary], trie: &Trie, mut already_used: FxHashSet<u64>)
--> (bool, FxHashSet<u64>) {
-
-
+pub fn is_viable_reuse(
+    candidate: &Crossword,
+    word_boundaries: &[WordBoundary],
+    trie: &Trie,
+    mut already_used: FxHashSet<u64>,
+) -> (bool, FxHashSet<u64>) {
     for word_boundary in word_boundaries {
         let iter = CrosswordWordIterator::new(candidate, word_boundary);
         if iter.clone().any(|c| c == ' ') {
             continue;
         }
-        
+
         let mut hasher = FxHasher::default();
         for c in iter.clone() {
             c.hash(&mut hasher);

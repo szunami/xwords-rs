@@ -7,7 +7,7 @@ use crate::{
 use rustc_hash::{FxHashMap, FxHasher};
 
 use crate::{crossword::CrosswordWordIterator, order::score_iter, parse::parse_word_boundaries};
-use std::{hash::BuildHasherDefault, collections::HashSet, time::Instant};
+use std::{collections::HashSet, hash::BuildHasherDefault, time::Instant};
 
 use crate::{trie::Trie, Crossword};
 
@@ -43,11 +43,11 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
         };
 
         let word_boundaries = parse_word_boundaries(&crossword);
-    let mut already_used = HashSet::with_capacity_and_hasher(
-        word_boundaries.len(),
-        BuildHasherDefault::<FxHasher>::default(),
-    );        
-    let mut candidate_count = 0;
+        let mut already_used = HashSet::with_capacity_and_hasher(
+            word_boundaries.len(),
+            BuildHasherDefault::<FxHasher>::default(),
+        );
+        let mut candidate_count = 0;
 
         loop {
             let candidate = match crossword_fill_state.take_candidate() {
@@ -81,10 +81,11 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, &to_fill.clone(), potential_fill);
 
-                let (viable, tmp) = is_viable_reuse(&new_candidate, &word_boundaries, self.trie, already_used);
-                
+                let (viable, tmp) =
+                    is_viable_reuse(&new_candidate, &word_boundaries, self.trie, already_used);
+
                 already_used = tmp;
-                
+
                 if viable {
                     if !new_candidate.contents.contains(' ') {
                         return Ok(new_candidate);
