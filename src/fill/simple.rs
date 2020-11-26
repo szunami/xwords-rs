@@ -1,4 +1,6 @@
-use std::time::Instant;
+use std::{collections::HashSet, hash::BuildHasherDefault, time::Instant};
+
+use rustc_hash::FxHasher;
 
 use crate::{
     crossword::{Crossword, CrosswordWordIterator},
@@ -6,7 +8,7 @@ use crate::{
     trie::Trie,
 };
 
-use super::{Filler, cache::{CachedIsWord, CachedWords}, fill_one_word, is_viable, single_threaded::is_viable_tmp, words};
+use super::{Filler, cache::{CachedIsWord, CachedWords}, fill_one_word, is_viable_reuse};
 
 pub struct SimpleFiller<'s> {
     word_cache: CachedWords,
@@ -30,6 +32,10 @@ impl<'s> Filler for SimpleFiller<'s> {
         let mut candidate_count = 0;
 
         let word_boundaries = parse_word_boundaries(&initial_crossword);
+        let mut already_used = HashSet::with_capacity_and_hasher(
+            word_boundaries.len(),
+            BuildHasherDefault::<FxHasher>::default(),
+        );
 
         let mut candidates = vec![initial_crossword.to_owned()];
 
@@ -71,7 +77,13 @@ impl<'s> Filler for SimpleFiller<'s> {
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, &to_fill.clone(), &potential_fill);
 
-                if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.is_word_cache) {
+                // if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.is_word_cache) {
+                let (viable, tmp) =
+                    is_viable_reuse(&new_candidate, &word_boundaries, self.trie, already_used, &mut self.is_word_cache);
+                already_used = tmp;
+                already_used.clear();
+
+                if viable {
                     if !new_candidate.contents.contains(' ') {
                         return Ok(new_candidate);
                     }
