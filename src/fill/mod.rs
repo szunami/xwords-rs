@@ -82,9 +82,10 @@ pub fn is_viable_reuse(
 ) -> (bool, FxHashSet<u64>) {
     for word_boundary in word_boundaries {
         let iter = CrosswordWordIterator::new(candidate, word_boundary);
-        if iter.clone().any(|c| c == ' ') {
-            continue;
-        }
+        
+        // if iter.clone().any(|c| c == ' ') {
+        //     continue;
+        // }
 
         let mut hasher = FxHasher::default();
         for c in iter.clone() {
@@ -92,12 +93,14 @@ pub fn is_viable_reuse(
         }
         let key = hasher.finish();
 
-        if already_used.contains(&key) {
+        if already_used.contains(&key) && !iter.clone().any(|c| c == ' ') {
+            // println!("Not viable b/c of collision");
             return (false, already_used);
         }
         already_used.insert(key);
 
-        if !is_word_cache.is_viable(iter, trie) {
+        if !is_word_cache.is_viable(iter.clone(), trie) {
+            // println!("Not viable b/c of {}", iter.to_string());
             return (false, already_used);
         }
     }

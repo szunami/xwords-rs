@@ -71,6 +71,8 @@ impl<'s> Filler for SimpleFiller<'s> {
                     (length, -space_count)
                 })
                 .unwrap();
+                // println!("{}", candidate);
+                // println!("{:?}", to_fill.clone().to_string());
 
                 let potential_fills = self.word_cache.words(to_fill.clone(), self.trie);
 
@@ -87,6 +89,8 @@ impl<'s> Filler for SimpleFiller<'s> {
                     if !new_candidate.contents.contains(' ') {
                         return Ok(new_candidate);
                     }
+                    // println!("Inserting:");
+                    // println!("{}", new_candidate);
                     candidates.push(new_candidate);
                 }
             }
@@ -99,7 +103,11 @@ impl<'s> Filler for SimpleFiller<'s> {
 #[cfg(test)]
 mod tests {
 
-    use crate::{default_indexes, fill::Filler};
+    use cached::Cached;
+    use rustc_hash::FxHashSet;
+
+    use crate::{fill::{cache::CachedIsViable, is_viable_reuse}, parse::parse_word_boundaries};
+use crate::{crossword::CrosswordWordIterator, parse::WordBoundary, default_indexes, fill::Filler};
 
     use crate::Crossword;
 
@@ -112,6 +120,40 @@ mod tests {
         assert_eq!((1, 2).cmp(&(3, 4)), Ordering::Less)
     }
 
+    #[test]
+    fn weird() {
+        let puz = Crossword::new(String::from("
+   C***
+   I***
+   C***
+CIGARET
+***D LC
+***A IB
+***SIZY
+")).unwrap();
+
+        let (_bigrams, trie) = default_indexes();
+        let word_boundaries = parse_word_boundaries(&puz);
+        
+        let mut is_viable = CachedIsViable::new();
+        
+        let (viable, _) = is_viable_reuse(&puz, &word_boundaries, &trie, FxHashSet::default(), &mut is_viable);
+        
+        assert!(!viable);
+        
+        // let word_boundary = WordBoundary::new(
+        //     4, 3, 4, crate::crossword::Direction::Across
+        // );
+
+        // let iter = CrosswordWordIterator::new(
+        //     &puz,
+        //     &word_boundary
+        // );
+        
+        // assert_eq!(iter.clone().to_string(), String::from("D LC"));
+        // assert!(trie.is_viable(iter));
+    }
+    
     #[test]
     fn medium_grid() {
         let grid = Crossword::new(String::from(
