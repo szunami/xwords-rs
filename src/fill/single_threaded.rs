@@ -1,5 +1,5 @@
 use crate::{
-    fill::{fill_one_word, is_viable, words, CrosswordFillState},
+    fill::{fill_one_word, words, CrosswordFillState},
     order::FrequencyOrderableCrossword,
     Filler,
 };

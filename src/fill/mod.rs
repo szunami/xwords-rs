@@ -81,7 +81,6 @@ pub fn  is_viable_tmp (candidate: &Crossword, word_boundaries: & [WordBoundary],
             continue;
         }
         
-        use std::hash::Hash;
         let mut hasher = FxHasher::default();
         for c in iter.clone() {
             c.hash(&mut hasher);
