@@ -1,3 +1,4 @@
+use crate::fill::cache::CachedIsWord;
 use crate::{
     crossword::{CrosswordWordIterator, Direction},
     order::FrequencyOrderableCrossword,
@@ -77,6 +78,7 @@ pub fn is_viable_reuse(
     word_boundaries: &[WordBoundary],
     trie: &Trie,
     mut already_used: FxHashSet<u64>,
+    is_word_cache: &mut CachedIsWord,
 ) -> (bool, FxHashSet<u64>) {
     for word_boundary in word_boundaries {
         let iter = CrosswordWordIterator::new(candidate, word_boundary);
@@ -95,7 +97,7 @@ pub fn is_viable_reuse(
         }
         already_used.insert(key);
 
-        if !is_word(iter, trie) {
+        if !is_word_cache.is_word(iter, trie) {
             return (false, already_used);
         }
     }
