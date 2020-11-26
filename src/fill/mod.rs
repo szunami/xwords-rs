@@ -71,7 +71,7 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: 
     true
 }
 
-pub fn  is_viable_tmp (candidate: &Crossword, word_boundaries: & [WordBoundary], trie: &Trie, mut already_used: FxHashSet<u64>)
+pub fn  is_viable_reuse(candidate: &Crossword, word_boundaries: & [WordBoundary], trie: &Trie, mut already_used: FxHashSet<u64>)
 -> (bool, FxHashSet<u64>) {
 
 

@@ -11,7 +11,7 @@ use std::{hash::BuildHasherDefault, collections::HashSet, time::Instant};
 
 use crate::{trie::Trie, Crossword};
 
-use super::is_viable_tmp;
+use super::is_viable_reuse;
 
 #[derive(Clone)]
 pub struct SingleThreadedFiller<'s> {
@@ -81,7 +81,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, &to_fill.clone(), potential_fill);
 
-                let (viable, tmp) = is_viable_tmp(&new_candidate, &word_boundaries, self.trie, already_used);
+                let (viable, tmp) = is_viable_reuse(&new_candidate, &word_boundaries, self.trie, already_used);
                 
                 already_used = tmp;
                 
