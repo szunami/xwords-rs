@@ -40,22 +40,22 @@ debug = 1
 # name = "fill_crossword"
 # harness = false
 
-# [[bench]]
-# name = "is_viable"
-# harness = false
+[[bench]]
+name = "is_viable"
+harness = false
 
-# [[bench]]
-# name = "score_iter"
-# harness = false
+[[bench]]
+name = "score_iter"
+harness = false
 
-# [[bench]]
-# name = "fill_crossword_single_threaded"
-# harness = false
+[[bench]]
+name = "fill_crossword_single_threaded"
+harness = false
 
-# [[bench]]
-# name = "score_crossword"
-# harness = false
+[[bench]]
+name = "score_crossword"
+harness = false
 
-# [[bench]]
-# name = "fill_crossword_simple"
-# harness = false
+[[bench]]
+name = "fill_crossword_simple"
+harness = false
