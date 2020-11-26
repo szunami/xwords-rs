@@ -3,7 +3,7 @@ extern crate cached;
 
 extern crate rustc_hash;
 
-use crate::fill::{parallel::ParallelFiller, Filler};
+use crate::fill::{Filler};
 use fill::single_threaded::SingleThreadedFiller;
 use rustc_hash::FxHashMap;
 use trie::Trie;
@@ -23,13 +23,6 @@ pub mod trie;
 pub fn fill_crossword_with_default_wordlist(crossword: &Crossword) -> Result<Crossword, String> {
     let (bigrams, trie) = default_indexes();
     SingleThreadedFiller::new(&trie, &bigrams).fill(crossword)
-}
-
-pub fn fill_crossword(contents: String, words: Vec<String>) -> Result<Crossword, String> {
-    let crossword = Crossword::new(contents).unwrap();
-    let (bigrams, trie) = index_words(words);
-    let filler = ParallelFiller::new(Arc::new(trie), Arc::new(bigrams));
-    filler.fill(&crossword)
 }
 
 pub fn default_indexes() -> (FxHashMap<(char, char), usize>, Trie) {

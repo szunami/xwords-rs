@@ -36,9 +36,9 @@ path = "examples/snippet.rs"
 [profile.release]
 debug = 1
 
-[[bench]]
-name = "fill_crossword"
-harness = false
+# [[bench]]
+# name = "fill_crossword"
+# harness = false
 
 [[bench]]
 name = "is_viable"

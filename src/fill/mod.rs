@@ -1,3 +1,4 @@
+use crate::fill::cache::CachedIsWord;
 use crate::{
     crossword::{CrosswordWordIterator, Direction},
     order::FrequencyOrderableCrossword,
@@ -13,12 +14,13 @@ use std::{
     hash::Hasher,
 };
 
+pub mod cache;
 pub mod parallel;
 pub mod simple;
 pub mod single_threaded;
 
 pub trait Filler {
-    fn fill(&self, crossword: &Crossword) -> Result<Crossword, String>;
+    fn fill(&mut self, crossword: &Crossword) -> Result<Crossword, String>;
 }
 
 struct CrosswordFillState {
@@ -76,6 +78,7 @@ pub fn is_viable_reuse(
     word_boundaries: &[WordBoundary],
     trie: &Trie,
     mut already_used: FxHashSet<u64>,
+    is_word_cache: &mut CachedIsWord,
 ) -> (bool, FxHashSet<u64>) {
     for word_boundary in word_boundaries {
         let iter = CrosswordWordIterator::new(candidate, word_boundary);
@@ -94,7 +97,7 @@ pub fn is_viable_reuse(
         }
         already_used.insert(key);
 
-        if !is_word(iter, trie) {
+        if !is_word_cache.is_word(iter, trie) {
             return (false, already_used);
         }
     }
@@ -104,7 +107,7 @@ pub fn is_viable_reuse(
 pub fn fill_one_word(
     candidate: &Crossword,
     iter: &CrosswordWordIterator,
-    word: String,
+    word: &String,
 ) -> Crossword {
     let mut result_contents = candidate.contents.clone();
     let mut bytes = result_contents.into_bytes();
@@ -244,7 +247,7 @@ ghi
                         direction: Direction::Across,
                     },
                 ),
-                String::from("cat")
+                &String::from("cat")
             ),
             Crossword::new(String::from(
                 "
@@ -268,7 +271,7 @@ ghi
                         direction: Direction::Down,
                     }
                 ),
-                String::from("cat"),
+                &String::from("cat"),
             ),
             Crossword::new(String::from(
                 "

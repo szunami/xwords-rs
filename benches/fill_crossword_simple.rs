@@ -19,7 +19,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench(
         "simple_filler",
         Benchmark::new("fill_3x3_crossword", move |b| {
-            let filler = SimpleFiller::new(tmp_trie.as_ref());
+            let mut filler = SimpleFiller::new(tmp_trie.as_ref());
 
             b.iter(|| {
                 assert!(filler.fill(black_box(&input)).is_ok());
@@ -33,7 +33,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench(
         "simple_filler",
         Benchmark::new("fill_4x4_crossword", move |b| {
-            let filler = SimpleFiller::new(tmp_trie.as_ref());
+            let mut filler = SimpleFiller::new(tmp_trie.as_ref());
 
             b.iter(|| {
                 assert!(filler.fill(black_box(&input)).is_ok());
@@ -67,7 +67,7 @@ YAYAS*ETON* M
     c.bench(
         "simple_filler",
         Benchmark::new("fill_20201012_crossword", move |b| {
-            let filler = SimpleFiller::new(tmp_trie.as_ref());
+            let mut filler = SimpleFiller::new(tmp_trie.as_ref());
 
             b.iter(|| {
                 assert!(filler.fill(black_box(&input)).is_ok());

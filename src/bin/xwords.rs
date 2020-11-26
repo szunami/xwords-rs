@@ -6,7 +6,7 @@ use xwords::{
     crossword::Crossword,
     default_indexes,
     fill::{
-        parallel::ParallelFiller, simple::SimpleFiller, single_threaded::SingleThreadedFiller,
+        simple::SimpleFiller, single_threaded::SingleThreadedFiller,
         Filler,
     },
 };
@@ -26,7 +26,7 @@ fn main() -> Result<(), String> {
                 .short("a")
                 .long("algorithm")
                 .value_name("ALGORITHM")
-                .possible_values(&["simple", "single_threaded", "parallel"])
+                .possible_values(&["simple", "single_threaded"])
                 .default_value("single_threaded"),
         )
         .arg(
@@ -64,10 +64,6 @@ fn main() -> Result<(), String> {
         "simple" => {
             let (_bigrams, trie) = default_indexes();
             SimpleFiller::new(&trie).fill(&input)
-        }
-        "parallel" => {
-            let (bigrams, trie) = default_indexes();
-            ParallelFiller::new(Arc::new(trie), Arc::new(bigrams)).fill(&input)
         }
         _ => {
             return Err(String::from("Failed to parse algorithm"));

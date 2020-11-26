@@ -8,20 +8,26 @@ use crate::{
     trie::Trie,
 };
 
-use super::{fill_one_word, is_viable_reuse, words, Filler};
+use super::{Filler, cache::{CachedIsWord, CachedWords}, fill_one_word, is_viable_reuse};
 
 pub struct SimpleFiller<'s> {
+    word_cache: CachedWords,
+    is_word_cache: CachedIsWord,
+    
     trie: &'s Trie,
 }
 
 impl<'s> SimpleFiller<'s> {
     pub fn new(trie: &'s Trie) -> SimpleFiller<'s> {
-        SimpleFiller { trie }
+        SimpleFiller { 
+            word_cache: CachedWords::new(),
+            is_word_cache: CachedIsWord::new(),
+            trie }
     }
 }
 
 impl<'s> Filler for SimpleFiller<'s> {
-    fn fill(&self, initial_crossword: &Crossword) -> Result<Crossword, String> {
+    fn fill(&mut self, initial_crossword: &Crossword) -> Result<Crossword, String> {
         let thread_start = Instant::now();
         let mut candidate_count = 0;
 
@@ -66,13 +72,14 @@ impl<'s> Filler for SimpleFiller<'s> {
                 })
                 .unwrap();
 
-            let potential_fills = words(to_fill.clone(), self.trie);
+                let potential_fills = self.word_cache.words(to_fill.clone(), self.trie);
 
             for potential_fill in potential_fills {
-                let new_candidate = fill_one_word(&candidate, &to_fill.clone(), potential_fill);
+                let new_candidate = fill_one_word(&candidate, &to_fill.clone(), &potential_fill);
 
+                // if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.is_word_cache) {
                 let (viable, tmp) =
-                    is_viable_reuse(&new_candidate, &word_boundaries, self.trie, already_used);
+                    is_viable_reuse(&new_candidate, &word_boundaries, self.trie, already_used, &mut self.is_word_cache);
                 already_used = tmp;
                 already_used.clear();
 
@@ -122,8 +129,8 @@ mod tests {
 
         let now = Instant::now();
         let (_bigrams, trie) = default_indexes();
-        let filler = SimpleFiller::new(&trie);
-        let filled_puz = filler.fill(&grid).unwrap();
+        let mut filler = SimpleFiller::new(&trie);
+        let filled_puz =  filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
     }

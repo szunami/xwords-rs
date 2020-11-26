@@ -120,7 +120,7 @@ impl fmt::Display for TrieNode {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Trie {
     pub root: TrieNode,
 }
