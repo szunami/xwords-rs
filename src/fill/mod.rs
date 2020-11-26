@@ -90,17 +90,14 @@ pub fn is_viable_reuse(
         let key = hasher.finish();
 
         if already_used.contains(&key) {
-            already_used.clear();
             return (false, already_used);
         }
         already_used.insert(key);
 
         if !is_word(iter, trie) {
-            already_used.clear();
             return (false, already_used);
         }
     }
-    already_used.clear();
     (true, already_used)
 }
 

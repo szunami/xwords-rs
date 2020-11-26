@@ -83,8 +83,8 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
 
                 let (viable, tmp) =
                     is_viable_reuse(&new_candidate, &word_boundaries, self.trie, already_used);
-
                 already_used = tmp;
+                already_used.clear();
 
                 if viable {
                     if !new_candidate.contents.contains(' ') {
