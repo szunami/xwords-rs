@@ -88,18 +88,21 @@ pub fn is_viable_reuse(
         // }
 
         let mut hasher = FxHasher::default();
+        let mut full = true;
+        
         for c in iter.clone() {
             c.hash(&mut hasher);
+            full = full && c != ' ';
         }
         let key = hasher.finish();
 
-        if already_used.contains(&key) && !iter.clone().any(|c| c == ' ') {
-            // println!("Not viable b/c of collision");
-            return (false, already_used);
-        }
-        already_used.insert(key);
+        // if already_used.contains(&key) && full {
+        //     println!("Not viable b/c of collision");
+        //     return (false, already_used);
+        // }
+        // already_used.insert(key);
 
-        if !is_word_cache.is_viable(iter.clone(), trie) {
+        if !is_word_cache.is_viable(iter, key, trie) {
             // println!("Not viable b/c of {}", iter.to_string());
             return (false, already_used);
         }

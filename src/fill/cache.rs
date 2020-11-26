@@ -41,13 +41,8 @@ impl CachedIsViable {
         }
     }
     
-    pub fn is_viable(&mut self, iter: CrosswordWordIterator, trie: &Trie) -> bool {
-        let mut hasher = FxHasher::default();
-        for c in iter.clone() {
-            c.hash(&mut hasher);
-        }
-        let key = hasher.finish();
-        
+    #[inline(always)]
+    pub fn is_viable(&mut self, iter: CrosswordWordIterator, key: u64, trie: &Trie) -> bool {
         *self.is_word_cache.entry(key).or_insert_with(|| trie.is_viable(iter))
     }
 }

@@ -183,10 +183,7 @@ mod tests {
 
     use std::collections::HashSet;
 
-    use crate::{
-        crossword::{Crossword, CrosswordWordIterator, Direction},
-        parse::WordBoundary,
-    };
+    use crate::{crossword::{Crossword, CrosswordWordIterator, Direction}, parse::WordBoundary, default_indexes};
 
     use super::{Trie, TrieNode};
 
@@ -287,5 +284,65 @@ b ss
         let iter = CrosswordWordIterator::new(&c, &word_boundary);
         let actual: HashSet<String> = trie.words(iter).iter().cloned().collect();
         assert_eq!(expected, actual,)
+    }
+    
+    #[test]
+    #[ignore]
+    fn data_collection() {
+        
+        let (_, trie) = default_indexes();
+        
+        let crossword = Crossword::new(String::from("
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+")).unwrap();
+        let wb = WordBoundary::new(0, 0, 3, Direction::Across);
+        let iter = CrosswordWordIterator::new(
+            &crossword,
+            &wb,
+        );
+        println!("3: {}", trie.words(iter).len());
+        
+        let wb = WordBoundary::new(0, 0, 4, Direction::Across);
+        let iter = CrosswordWordIterator::new(
+            &crossword,
+            &wb,
+        );
+        println!("4: {}", trie.words(iter).len());
+        
+        let wb = WordBoundary::new(0, 0, 5, Direction::Across);
+        let iter = CrosswordWordIterator::new(
+            &crossword,
+            &wb,
+        );
+        println!("5: {}", trie.words(iter).len());
+        
+        let wb = WordBoundary::new(0, 0, 6, Direction::Across);
+        let iter = CrosswordWordIterator::new(
+            &crossword,
+            &wb,
+        );
+        println!("6: {}", trie.words(iter).len());
+        
+        
+        let wb = WordBoundary::new(0, 0, 7, Direction::Across);
+        let iter = CrosswordWordIterator::new(
+            &crossword,
+            &wb,
+        );
+        println!("7: {}", trie.words(iter).len());
     }
 }

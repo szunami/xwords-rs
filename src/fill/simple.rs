@@ -87,6 +87,7 @@ impl<'s> Filler for SimpleFiller<'s> {
 
                 if viable {
                     if !new_candidate.contents.contains(' ') {
+                        println!("Evaluated {} candidates", candidate_count);
                         return Ok(new_candidate);
                     }
                     // println!("Inserting:");
