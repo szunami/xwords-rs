@@ -9,13 +9,13 @@ use crate::{
 };
 
 use super::{
-    cache::{CachedIsWord, CachedWords},
+    cache::{CachedIsViable, CachedWords},
     fill_one_word, is_viable_reuse, Filler,
 };
 
 pub struct SimpleFiller<'s> {
     word_cache: CachedWords,
-    is_word_cache: CachedIsWord,
+    is_viable_cache: CachedIsViable,
 
     trie: &'s Trie,
 }
@@ -24,7 +24,7 @@ impl<'s> SimpleFiller<'s> {
     pub fn new(trie: &'s Trie) -> SimpleFiller<'s> {
         SimpleFiller {
             word_cache: CachedWords::default(),
-            is_word_cache: CachedIsWord::new(),
+            is_viable_cache: CachedIsViable::new(),
             trie,
         }
     }
@@ -67,13 +67,13 @@ impl<'s> Filler for SimpleFiller<'s> {
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, &to_fill.clone(), &potential_fill);
 
-                // if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.is_word_cache) {
+                // if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.is_viable_cache) {
                 let (viable, tmp) = is_viable_reuse(
                     &new_candidate,
                     &word_boundaries,
                     self.trie,
                     already_used,
-                    &mut self.is_word_cache,
+                    &mut self.is_viable_cache,
                 );
                 already_used = tmp;
                 already_used.clear();

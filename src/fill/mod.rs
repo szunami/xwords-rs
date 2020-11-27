@@ -1,6 +1,6 @@
 use crate::{
     crossword::{CrosswordWordIterator, Direction},
-    fill::cache::CachedIsWord,
+    fill::cache::CachedIsViable,
     order::FrequencyOrderableCrossword,
     parse::WordBoundary,
     trie::Trie,
@@ -43,55 +43,30 @@ impl CrosswordFillState {
     }
 }
 
-pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: &Trie) -> bool {
-    let mut already_used = HashSet::with_capacity_and_hasher(
-        word_boundaries.len(),
-        BuildHasherDefault::<FxHasher>::default(),
-    );
-
-    for word_boundary in word_boundaries {
-        let iter = CrosswordWordIterator::new(candidate, word_boundary);
-        if iter.clone().any(|c| c == ' ') {
-            continue;
-        }
-
-        if already_used.contains(&iter) {
-            return false;
-        }
-        already_used.insert(iter.clone());
-
-        if !is_word(iter, trie) {
-            return false;
-        }
-    }
-    true
-}
-
 pub fn is_viable_reuse(
     candidate: &Crossword,
     word_boundaries: &[WordBoundary],
     trie: &Trie,
     mut already_used: FxHashSet<u64>,
-    is_word_cache: &mut CachedIsWord,
+    is_viable_cache: &mut CachedIsViable,
 ) -> (bool, FxHashSet<u64>) {
     for word_boundary in word_boundaries {
         let iter = CrosswordWordIterator::new(candidate, word_boundary);
-        if iter.clone().any(|c| c == ' ') {
-            continue;
-        }
 
         let mut hasher = FxHasher::default();
+        let mut full = true;
         for c in iter.clone() {
             c.hash(&mut hasher);
+            full = full && c != ' ';
         }
         let key = hasher.finish();
 
-        if already_used.contains(&key) {
+        if full && already_used.contains(&key) {
             return (false, already_used);
         }
         already_used.insert(key);
 
-        if !is_word_cache.is_word(iter, trie) {
+        if !is_viable_cache.is_viable(iter, trie) {
             return (false, already_used);
         }
     }
@@ -167,8 +142,8 @@ impl<K: Hash + Eq, V> Cached<K, V> for FxCache<K, V> {
     }
 }
 
-pub fn is_word(iter: CrosswordWordIterator, trie: &Trie) -> bool {
-    is_word_internal(iter, trie)
+pub fn is_viable(iter: CrosswordWordIterator, trie: &Trie) -> bool {
+    is_viable_internal(iter, trie)
 }
 
 cached_key! {
@@ -181,8 +156,8 @@ cached_key! {
         }
         hasher.finish()
     };
-    fn is_word_internal(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
-        trie.is_word(iter)
+    fn is_viable_internal(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
+        trie.is_viable(iter)
     }
 }
 
@@ -210,7 +185,7 @@ mod tests {
     use crate::{
         crossword::Direction,
         default_indexes,
-        fill::{is_word, CrosswordWordIterator},
+        fill::{is_viable, CrosswordWordIterator},
         parse::{parse_word_boundaries, WordBoundary},
         Crossword, Trie,
     };
@@ -334,7 +309,7 @@ s
         };
         let iter = CrosswordWordIterator::new(&crossword, &word_boundary);
 
-        assert!(is_word(iter, &trie));
+        assert!(is_viable(iter, &trie));
 
         let word_boundary = WordBoundary {
             start_row: 0,
@@ -344,6 +319,6 @@ s
         };
         let iter = CrosswordWordIterator::new(&crossword, &word_boundary);
 
-        assert!(is_word(iter, &trie));
+        assert!(is_viable(iter, &trie));
     }
 }

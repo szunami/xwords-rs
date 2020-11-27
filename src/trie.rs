@@ -103,13 +103,25 @@ impl TrieNode {
         }
     }
 
-    fn is_word(&self, mut chars: CrosswordWordIterator) -> bool {
+    pub fn is_viable(&self, mut chars: CrosswordWordIterator) -> bool {
         match chars.next() {
-            Some(c) => match self.children.get(&c) {
-                Some(child) => child.is_word(chars),
-                None => false,
-            },
             None => self.is_terminal,
+
+            Some(c) => {
+                if c == ' ' {
+                    for child in self.children.values() {
+                        if child.is_viable(chars.clone()) {
+                            return true;
+                        }
+                    }
+                    return false;
+                } else {
+                    match self.children.get(&c) {
+                        None => false,
+                        Some(child) => child.is_viable(chars),
+                    }
+                }
+            }
         }
     }
 }
@@ -154,8 +166,8 @@ impl Trie {
         self.root.words(pattern, String::from(""))
     }
 
-    pub fn is_word(&self, chars: CrosswordWordIterator) -> bool {
-        self.root.is_word(chars)
+    pub fn is_viable(&self, chars: CrosswordWordIterator) -> bool {
+        self.root.is_viable(chars)
     }
 }
 

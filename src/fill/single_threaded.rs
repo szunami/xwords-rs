@@ -1,5 +1,5 @@
 use crate::{
-    fill::{cache::CachedIsWord, fill_one_word, CrosswordFillState},
+    fill::{cache::CachedIsViable, fill_one_word, CrosswordFillState},
     order::FrequencyOrderableCrossword,
     parse::WordBoundary,
     Filler,
@@ -18,7 +18,7 @@ use super::{cache::CachedWords, is_viable_reuse};
 #[derive(Clone)]
 pub struct SingleThreadedFiller<'s> {
     word_cache: CachedWords,
-    is_word_cache: CachedIsWord,
+    is_viable_cache: CachedIsViable,
 
     trie: &'s Trie,
     bigrams: &'s FxHashMap<(char, char), usize>,
@@ -31,7 +31,7 @@ impl<'s> SingleThreadedFiller<'s> {
     ) -> SingleThreadedFiller<'s> {
         SingleThreadedFiller {
             word_cache: CachedWords::default(),
-            is_word_cache: CachedIsWord::new(),
+            is_viable_cache: CachedIsViable::new(),
             trie,
             bigrams,
         }
@@ -93,13 +93,13 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, &to_fill.clone(), potential_fill);
 
-                // if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.is_word_cache) {
+                // if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.is_viable_cache) {
                 let (viable, tmp) = is_viable_reuse(
                     &new_candidate,
                     &word_boundaries,
                     self.trie,
                     already_used,
-                    &mut self.is_word_cache,
+                    &mut self.is_viable_cache,
                 );
                 already_used = tmp;
                 already_used.clear();
@@ -122,7 +122,7 @@ pub fn is_viable_tmp(
     candidate: &Crossword,
     word_boundaries: &[WordBoundary],
     trie: &Trie,
-    is_word_cache: &mut CachedIsWord,
+    is_viable_cache: &mut CachedIsViable,
 ) -> bool {
     let mut already_used = HashSet::with_capacity_and_hasher(
         word_boundaries.len(),
@@ -140,7 +140,7 @@ pub fn is_viable_tmp(
         }
         already_used.insert(iter.clone());
 
-        if !is_word_cache.is_word(iter, trie) {
+        if !is_viable_cache.is_viable(iter, trie) {
             return false;
         }
     }
