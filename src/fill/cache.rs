@@ -46,7 +46,7 @@ pub struct CachedWords {
 }
 
 impl CachedWords {
-    pub fn new() -> CachedWords {
+    pub fn default() -> CachedWords {
         CachedWords {
             words_cache: FxHashMap::default(),
         }

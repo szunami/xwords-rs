@@ -23,7 +23,7 @@ pub struct SimpleFiller<'s> {
 impl<'s> SimpleFiller<'s> {
     pub fn new(trie: &'s Trie) -> SimpleFiller<'s> {
         SimpleFiller {
-            word_cache: CachedWords::new(),
+            word_cache: CachedWords::default(),
             is_word_cache: CachedIsWord::new(),
             trie,
         }

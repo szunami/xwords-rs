@@ -8,7 +8,7 @@ use std::{collections::HashSet, hash::BuildHasherDefault};
 
 use rustc_hash::{FxHashMap, FxHasher};
 
-use crate::{crossword::CrosswordWordIterator, order::score_iter, parse::parse_word_boundaries};
+use crate::{crossword::CrosswordWordIterator, parse::parse_word_boundaries};
 use std::time::Instant;
 
 use crate::{trie::Trie, Crossword};
@@ -30,7 +30,7 @@ impl<'s> SingleThreadedFiller<'s> {
         bigrams: &'s FxHashMap<(char, char), usize>,
     ) -> SingleThreadedFiller<'s> {
         SingleThreadedFiller {
-            word_cache: CachedWords::new(),
+            word_cache: CachedWords::default(),
             is_word_cache: CachedIsWord::new(),
             trie,
             bigrams,

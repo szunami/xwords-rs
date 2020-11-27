@@ -11,7 +11,7 @@ use trie::Trie;
 use crate::crossword::Crossword;
 
 use crate::{crossword::Direction, ngram::bigrams};
-use std::{fs::File, sync::Arc, time::Instant};
+use std::{fs::File, time::Instant};
 
 pub mod crossword;
 pub mod fill;
