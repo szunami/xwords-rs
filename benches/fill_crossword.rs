@@ -50,14 +50,14 @@
 // **E  E*BROILERS
 // RATEDR*AINTI***
 // AMITY*B N *ACDC
-// M M*AMALGAM*R  
+// M M*AMALGAM*R
 // P E * L S*AMINO
 // ***ACIDY*GRATES
 // ENDZONES*A  I**
-// KIA*A A* R *C  
+// KIA*A A* R *C
 // EVILS*GOODTHING
-// B  ET*L  E* S  
-// YAYAS*ETON* M  
+// B  ET*L  E* S
+// YAYAS*ETON* M
 // ",
 //             ))
 //             .unwrap();

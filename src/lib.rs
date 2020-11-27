@@ -3,7 +3,7 @@ extern crate cached;
 
 extern crate rustc_hash;
 
-use crate::fill::{Filler};
+use crate::fill::Filler;
 use fill::single_threaded::SingleThreadedFiller;
 use rustc_hash::FxHashMap;
 use trie::Trie;

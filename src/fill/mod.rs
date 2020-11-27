@@ -1,6 +1,6 @@
-use crate::fill::cache::CachedIsWord;
 use crate::{
     crossword::{CrosswordWordIterator, Direction},
+    fill::cache::CachedIsWord,
     order::FrequencyOrderableCrossword,
     parse::WordBoundary,
     trie::Trie,
