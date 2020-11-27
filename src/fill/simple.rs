@@ -55,20 +55,8 @@ impl<'s> Filler for SimpleFiller<'s> {
                 .iter()
                 .map(|word_boundary| CrosswordWordIterator::new(&candidate, word_boundary))
                 .filter(|iter| iter.clone().any(|c| c == ' '))
-                .max_by_key(|iter| {
-                    // choose a long word with few spaces
-
-                    let mut length = 0;
-                    let mut space_count = 0;
-
-                    for c in iter.clone() {
-                        if c == ' ' {
-                            space_count += 1;
-                        }
-                        length += 1;
-                    }
-
-                    (length, -space_count)
+                .min_by_key(|iter| {
+                    self.word_cache.words(iter.clone(), self.trie).len()
                 })
                 .unwrap();
 
