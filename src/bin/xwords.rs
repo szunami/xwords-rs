@@ -1,14 +1,11 @@
 extern crate clap;
-use std::{fs::File, sync::Arc};
+use std::fs::File;
 
 use clap::{App, Arg};
 use xwords::{
     crossword::Crossword,
     default_indexes,
-    fill::{
-        simple::SimpleFiller, single_threaded::SingleThreadedFiller,
-        Filler,
-    },
+    fill::{simple::SimpleFiller, single_threaded::SingleThreadedFiller, Filler},
 };
 
 fn main() -> Result<(), String> {

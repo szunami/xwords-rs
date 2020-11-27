@@ -3,7 +3,7 @@ extern crate cached;
 
 extern crate rustc_hash;
 
-use crate::fill::{Filler};
+use crate::fill::Filler;
 use fill::single_threaded::SingleThreadedFiller;
 use rustc_hash::FxHashMap;
 use trie::Trie;
@@ -11,7 +11,7 @@ use trie::Trie;
 use crate::crossword::Crossword;
 
 use crate::{crossword::Direction, ngram::bigrams};
-use std::{fs::File, sync::Arc, time::Instant};
+use std::{fs::File, time::Instant};
 
 pub mod crossword;
 pub mod fill;

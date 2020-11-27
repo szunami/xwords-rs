@@ -1,6 +1,6 @@
-use crate::fill::cache::CachedIsWord;
 use crate::{
     crossword::{CrosswordWordIterator, Direction},
+    fill::cache::CachedIsWord,
     order::FrequencyOrderableCrossword,
     parse::WordBoundary,
     trie::Trie,
@@ -25,14 +25,12 @@ pub trait Filler {
 
 struct CrosswordFillState {
     candidate_queue: BinaryHeap<FrequencyOrderableCrossword>,
-    done: bool,
 }
 
 impl CrosswordFillState {
     pub fn default() -> CrosswordFillState {
         CrosswordFillState {
             candidate_queue: BinaryHeap::new(),
-            done: false,
         }
     }
 
@@ -42,10 +40,6 @@ impl CrosswordFillState {
 
     pub fn add_candidate(&mut self, candidate: FrequencyOrderableCrossword) {
         self.candidate_queue.push(candidate);
-    }
-
-    pub fn mark_done(&mut self) {
-        self.done = true;
     }
 }
 
