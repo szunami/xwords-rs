@@ -80,7 +80,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
                 .iter()
                 .map(|word_boundary| CrosswordWordIterator::new(&candidate, word_boundary))
                 .filter(|iter| iter.clone().any(|c| c == ' '))
-                .min_by_key(|iter| score_iter(iter, self.bigrams))
+                .min_by_key(|iter| self.word_cache.words(iter.clone(), self.trie).len())
                 .unwrap();
             // find valid fills for word;
             // for each fill:
