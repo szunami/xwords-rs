@@ -75,7 +75,7 @@ pub fn is_viable(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: 
 
 pub fn is_viable_reuse(
     candidate: &Crossword,
-    word_boundaries: &[WordBoundary],
+    word_boundaries: &[&WordBoundary],
     trie: &Trie,
     mut already_used: FxHashSet<u64>,
     is_word_cache: &mut CachedIsViable,

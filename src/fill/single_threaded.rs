@@ -1,6 +1,6 @@
 use crate::parse::WordBoundary;
 use crate::{
-    crossword::Direction::Across, crossword::Direction::Down, fill::cache::CachedIsViable,
+    crossword::Direction, fill::cache::CachedIsViable,
 };
 use crate::{
     fill::{fill_one_word, CrosswordFillState},
@@ -57,7 +57,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
         };
 
         let word_boundaries = parse_word_boundaries(&crossword);
-        let word_boundary_lookup = build_lookup(&word_boundaries);
+        let (down_lookup, across_lookup) = build_lookup(&word_boundaries);
 
         let mut already_used = HashSet::with_capacity_and_hasher(
             word_boundaries.len(),
@@ -88,7 +88,16 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
                 .min_by_key(|iter| score_iter(iter, self.bigrams))
                 .unwrap();
 
-            let orthogonals = orthagonals(to_fill.word_boundary, &word_boundary_lookup);
+            let orthogonals = match to_fill.word_boundary.direction {
+                Across => {
+                    orthogonals(to_fill.word_boundary, &down_lookup)
+                }
+                Down => {
+                    orthogonals(to_fill.word_boundary, &across_lookup)
+
+                }
+            };
+            // let orthogonals = orthogonals(to_fill.word_boundary, &word_boundary_lookup);
             // find valid fills for word;
             // for each fill:
             //   are all complete words legit?
@@ -106,7 +115,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
                 // if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.is_word_cache) {
                 let (viable, tmp) = is_viable_reuse(
                     &new_candidate,
-                    &word_boundaries,
+                    &orthogonals,
                     self.trie,
                     already_used,
                     &mut self.is_word_cache,
@@ -129,7 +138,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
     }
 }
 
-fn orthagonals<'s>(
+pub fn orthogonals<'s>(
     to_fill: &'s WordBoundary,
     word_boundary_lookup: &std::collections::HashMap<
         (usize, usize),
@@ -137,6 +146,7 @@ fn orthagonals<'s>(
         BuildHasherDefault<FxHasher>,
     >,
 ) -> Vec<&'s WordBoundary> {
+    // TODO: avoid allocating here
     let mut result = Vec::with_capacity(to_fill.length);
 
     match to_fill.direction {
@@ -159,10 +169,14 @@ fn orthagonals<'s>(
     result
 }
 
-fn build_lookup<'s>(
+pub fn build_lookup<'s>(
     word_boundaries: &'s Vec<WordBoundary>,
-) -> FxHashMap<(usize, usize), &'s WordBoundary> {
-    let mut result = FxHashMap::default();
+) -> (
+    FxHashMap<(usize, usize), &'s WordBoundary>,
+    FxHashMap<(usize, usize), &'s WordBoundary>,
+    ) {
+    let mut down_result = FxHashMap::default();
+    let mut across_result = FxHashMap::default();
 
     for word_boundary in word_boundaries {
         match word_boundary.direction {
@@ -170,20 +184,20 @@ fn build_lookup<'s>(
                 for index in 0..word_boundary.length {
                     let col = word_boundary.start_col + index;
 
-                    result.insert((word_boundary.start_row, col), word_boundary);
+                    across_result.insert((word_boundary.start_row, col), word_boundary);
                 }
             }
             Down => {
                 for index in 0..word_boundary.length {
                     let row = word_boundary.start_row + index;
 
-                    result.insert((row, word_boundary.start_col), word_boundary);
+                    down_result.insert((row, word_boundary.start_col), word_boundary);
                 }
             }
         }
     }
 
-    result
+    (down_result, across_result)
 }
 
 // pub fn is_viable_tmp(candidate: &Crossword, word_boundaries: &[WordBoundary], trie: &Trie,
@@ -216,13 +230,15 @@ fn build_lookup<'s>(
 #[cfg(test)]
 mod tests {
 
-    use crate::{default_indexes, fill::Filler};
+    use crate::{crossword::Direction, parse::parse_word_boundaries};
+use crate::parse::WordBoundary;
+use crate::{default_indexes, fill::Filler};
 
     use crate::Crossword;
 
     use std::time::Instant;
 
-    use super::SingleThreadedFiller;
+    use super::{SingleThreadedFiller, build_lookup, orthogonals};
 
     #[test]
     fn medium_grid() {
@@ -245,5 +261,34 @@ mod tests {
         let filled_puz = filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
+    }
+    
+    #[test]
+    fn build_lookup_works() {
+        let input = std::fs::read_to_string("./grids/empty_4x4.txt").expect("failed to read input");
+        let input = Crossword::new(input).expect("failed to parse input");
+    
+        let word_boundaries = parse_word_boundaries(&input);
+        
+        let (down_lookup, across_lookup) = build_lookup(&word_boundaries);
+        
+        assert_eq!(16, down_lookup.len());
+        assert_eq!(16, across_lookup.len());
+        
+        let word_boundary = WordBoundary::new(
+            0, 0, 4, Direction::Across
+        );
+        
+        let orthogonals = orthogonals(
+            &word_boundary, &down_lookup);
+            
+        assert_eq!(orthogonals.len(), 4);
+            
+        assert_eq!(**orthogonals.first().unwrap(),
+            WordBoundary::new(
+                0, 0, 4, Direction::Down
+            )
+        );
+            
     }
 }

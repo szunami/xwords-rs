@@ -1,3 +1,4 @@
+use crate::fill::single_threaded::build_lookup;
 use std::{collections::HashSet, hash::BuildHasherDefault, time::Instant};
 
 use rustc_hash::FxHasher;
@@ -6,9 +7,12 @@ use crate::{
     crossword::{Crossword, CrosswordWordIterator},
     parse::parse_word_boundaries,
     trie::Trie,
+    crossword::Direction,
 };
 
-use super::{Filler, cache::{CachedIsViable, CachedWords}, fill_one_word, is_viable_reuse};
+use super::{Filler, cache::{CachedIsViable, CachedWords}, fill_one_word, is_viable_reuse, single_threaded::orthogonals};
+
+
 
 pub struct SimpleFiller<'s> {
     word_cache: CachedWords,
@@ -32,6 +36,9 @@ impl<'s> Filler for SimpleFiller<'s> {
         let mut candidate_count = 0;
 
         let word_boundaries = parse_word_boundaries(&initial_crossword);
+        let (down_lookup, across_lookup) = build_lookup(&word_boundaries);
+
+        
         let mut already_used = HashSet::with_capacity_and_hasher(
             word_boundaries.len(),
             BuildHasherDefault::<FxHasher>::default(),
@@ -74,6 +81,16 @@ impl<'s> Filler for SimpleFiller<'s> {
                 // println!("{}", candidate);
                 // println!("{:?}", to_fill.clone().to_string());
 
+                ////// BADD
+                let orthogonals = match to_fill.word_boundary.direction {
+                    Direction::Across => {
+                        orthogonals(to_fill.word_boundary, &down_lookup)
+                    }
+                    Direction::Down => {
+                        orthogonals(to_fill.word_boundary, &across_lookup)
+    
+                    }
+                };                
                 let potential_fills = self.word_cache.words(to_fill.clone(), self.trie);
 
             for potential_fill in potential_fills {
@@ -81,7 +98,7 @@ impl<'s> Filler for SimpleFiller<'s> {
 
                 // if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.is_word_cache) {
                 let (viable, tmp) =
-                    is_viable_reuse(&new_candidate, &word_boundaries, self.trie, already_used, &mut self.is_word_cache);
+                    is_viable_reuse(&new_candidate, &orthogonals, self.trie, already_used, &mut self.is_word_cache);
                 already_used = tmp;
                 already_used.clear();
 
@@ -121,39 +138,39 @@ use crate::{crossword::CrosswordWordIterator, parse::WordBoundary, default_index
         assert_eq!((1, 2).cmp(&(3, 4)), Ordering::Less)
     }
 
-    #[test]
-    fn weird() {
-        let puz = Crossword::new(String::from("
-   C***
-   I***
-   C***
-CIGARET
-***D LC
-***A IB
-***SIZY
-")).unwrap();
+//     #[test]
+//     fn weird() {
+//         let puz = Crossword::new(String::from("
+//    C***
+//    I***
+//    C***
+// CIGARET
+// ***D LC
+// ***A IB
+// ***SIZY
+// ")).unwrap();
 
-        let (_bigrams, trie) = default_indexes();
-        let word_boundaries = parse_word_boundaries(&puz);
+//         let (_bigrams, trie) = default_indexes();
+//         let word_boundaries = parse_word_boundaries(&puz);
         
-        let mut is_viable = CachedIsViable::new();
+//         let mut is_viable = CachedIsViable::new();
         
-        let (viable, _) = is_viable_reuse(&puz, &word_boundaries, &trie, FxHashSet::default(), &mut is_viable);
+//         let (viable, _) = is_viable_reuse(&puz, &word_boundaries, &trie, FxHashSet::default(), &mut is_viable);
         
-        assert!(!viable);
+//         assert!(!viable);
         
-        // let word_boundary = WordBoundary::new(
-        //     4, 3, 4, crate::crossword::Direction::Across
-        // );
+//         // let word_boundary = WordBoundary::new(
+//         //     4, 3, 4, crate::crossword::Direction::Across
+//         // );
 
-        // let iter = CrosswordWordIterator::new(
-        //     &puz,
-        //     &word_boundary
-        // );
+//         // let iter = CrosswordWordIterator::new(
+//         //     &puz,
+//         //     &word_boundary
+//         // );
         
-        // assert_eq!(iter.clone().to_string(), String::from("D LC"));
-        // assert!(trie.is_viable(iter));
-    }
+//         // assert_eq!(iter.clone().to_string(), String::from("D LC"));
+//         // assert!(trie.is_viable(iter));
+//     }
     
     #[test]
     fn medium_grid() {
