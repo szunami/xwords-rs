@@ -110,6 +110,45 @@ pub fn is_viable_reuse(
     (true, already_used)
 }
 
+
+// only check orthogonals!
+pub fn is_viable_reuse_given_fill(
+    candidate: &Crossword,
+    word_boundaries: &[WordBoundary],
+    trie: &Trie,
+    mut already_used: FxHashSet<u64>,
+    is_word_cache: &mut CachedIsViable,
+) -> (bool, FxHashSet<u64>) {
+    for word_boundary in word_boundaries {
+        let iter = CrosswordWordIterator::new(candidate, word_boundary);
+        
+        // if iter.clone().any(|c| c == ' ') {
+        //     continue;
+        // }
+
+        let mut hasher = FxHasher::default();
+        let mut full = true;
+        
+        for c in iter.clone() {
+            c.hash(&mut hasher);
+            full = full && c != ' ';
+        }
+        let key = hasher.finish();
+
+        // if already_used.contains(&key) && full {
+        //     println!("Not viable b/c of collision");
+        //     return (false, already_used);
+        // }
+        // already_used.insert(key);
+
+        if !is_word_cache.is_viable(iter, key, trie) {
+            // println!("Not viable b/c of {}", iter.to_string());
+            return (false, already_used);
+        }
+    }
+    (true, already_used)
+}
+
 pub fn fill_one_word(
     candidate: &Crossword,
     iter: &CrosswordWordIterator,
