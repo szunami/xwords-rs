@@ -89,10 +89,10 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
                 .unwrap();
 
             let orthogonals = match to_fill.word_boundary.direction {
-                Across => {
+                Direction::Across => {
                     orthogonals(to_fill.word_boundary, &down_lookup)
                 }
-                Down => {
+                Direction::Down => {
                     orthogonals(to_fill.word_boundary, &across_lookup)
 
                 }
@@ -150,14 +150,14 @@ pub fn orthogonals<'s>(
     let mut result = Vec::with_capacity(to_fill.length);
 
     match to_fill.direction {
-        Across => {
+        Direction::Across => {
             for index in 0..to_fill.length {
                 let col = to_fill.start_col + index;
 
                 result.push(*word_boundary_lookup.get(&(to_fill.start_row, col)).unwrap());
             }
         }
-        Down => {
+        Direction::Down => {
             for index in 0..to_fill.length {
                 let row = to_fill.start_row + index;
 
@@ -180,14 +180,14 @@ pub fn build_lookup<'s>(
 
     for word_boundary in word_boundaries {
         match word_boundary.direction {
-            Across => {
+            Direction::Across => {
                 for index in 0..word_boundary.length {
                     let col = word_boundary.start_col + index;
 
                     across_result.insert((word_boundary.start_row, col), word_boundary);
                 }
             }
-            Down => {
+            Direction::Down => {
                 for index in 0..word_boundary.length {
                     let row = word_boundary.start_row + index;
 
