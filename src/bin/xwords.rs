@@ -1,5 +1,5 @@
 extern crate clap;
-use std::{fs::File, sync::Arc};
+use std::fs::File;
 
 use clap::{App, Arg};
 use xwords::{
