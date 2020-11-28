@@ -164,7 +164,7 @@ impl Trie {
     }
 
     pub fn words<T: Iterator<Item = char> + Clone>(&self, pattern: T) -> Vec<String> {
-        let mut result = vec![];
+        let mut result = Vec::with_capacity(4);
         self.root.words(pattern, String::from(""), &mut result);
         result
     }
