@@ -62,7 +62,13 @@ impl<'s> Filler for SimpleFiller<'s> {
                 .iter()
                 .map(|word_boundary| CrosswordWordIterator::new(&candidate, word_boundary))
                 .filter(|iter| iter.clone().any(|c| c == ' '))
-                .min_by_key(|iter| self.word_cache.words(iter.clone(), self.trie).len())
+                .min_by_key(|iter| {
+                    (
+                        self.word_cache.words(iter.clone(), self.trie).len(),
+                        iter.word_boundary.start_row,
+                        iter.word_boundary.start_col,
+                    )
+                })
                 .unwrap();
 
             let orthogonals = orthogonals(&to_fill.word_boundary, &word_boundary_lookup);
@@ -98,7 +104,7 @@ impl<'s> Filler for SimpleFiller<'s> {
 #[cfg(test)]
 mod tests {
 
-    use crate::{default_indexes, fill::Filler};
+    use crate::{fill::Filler, Trie};
 
     use crate::Crossword;
 
@@ -127,7 +133,7 @@ mod tests {
         .unwrap();
 
         let now = Instant::now();
-        let (_bigrams, trie) = default_indexes();
+        let trie = Trie::load_default().expect("Failed to load trie");
         let mut filler = SimpleFiller::new(&trie);
         let filled_puz = filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());

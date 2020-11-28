@@ -1,3 +1,4 @@
+use crate::File;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -144,6 +145,12 @@ impl fmt::Display for Trie {
 }
 
 impl Trie {
+    pub fn load_default() -> Result<Trie, String> {
+        let file = File::open("./trie.bincode").unwrap();
+        let load = bincode::deserialize_from::<File, Trie>(file);
+        load.map_err(|_| String::from("Failed to load trie."))
+    }
+
     pub fn build(words: Vec<String>) -> Trie {
         let mut root = TrieNode {
             contents: None,
@@ -176,11 +183,30 @@ impl Trie {
 #[cfg(test)]
 mod tests {
 
+    use crate::File;
     use rustc_hash::FxHashMap;
 
     use std::collections::HashSet;
 
     use super::{Trie, TrieNode};
+
+    #[test]
+    #[ignore]
+    fn rebuild_serialized_trie() {
+        let file = File::open("wordlist.json").unwrap();
+        let words = serde_json::from_reader(file).expect("JSON was not well-formatted");
+        let trie = Trie::build(words);
+        let trie_file = File::create("trie.bincode").unwrap();
+        let trie_result = bincode::serialize_into(trie_file, &trie);
+        assert!(trie_result.is_ok());
+    }
+
+    #[test]
+    fn test_trie_load() {
+        let file = File::open("./trie.bincode").unwrap();
+        let load = bincode::deserialize_from::<File, Trie>(file);
+        assert!(load.is_ok());
+    }
 
     #[test]
     fn display_works() {

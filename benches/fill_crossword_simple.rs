@@ -1,15 +1,15 @@
+use xwords::trie::Trie;
 use criterion::black_box;
 use std::sync::Arc;
 use xwords::{
     crossword::Crossword,
-    default_indexes,
     fill::{simple::SimpleFiller, Filler},
 };
 
 use criterion::{criterion_group, criterion_main, Benchmark, Criterion};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
-    let (_bigrams, trie) = default_indexes();
+    let trie = Trie::load_default().expect("Failed to load trie");
 
     let trie = Arc::new(trie);
 

@@ -1,7 +1,6 @@
 use crate::{
     crossword::{CrosswordWordIterator, Direction},
     fill::cache::CachedIsViable,
-    order::FrequencyOrderableCrossword,
     parse::WordBoundary,
     trie::Trie,
     Crossword, FxHashMap,
@@ -9,34 +8,13 @@ use crate::{
 
 use core::hash::{BuildHasherDefault, Hash};
 use rustc_hash::{FxHashSet, FxHasher};
-use std::{collections, collections::BinaryHeap, hash::Hasher};
+use std::{collections, hash::Hasher};
 
 pub mod cache;
 pub mod simple;
-pub mod single_threaded;
 
 pub trait Filler {
     fn fill(&mut self, crossword: &Crossword) -> Result<Crossword, String>;
-}
-
-struct CrosswordFillState {
-    candidate_queue: BinaryHeap<FrequencyOrderableCrossword>,
-}
-
-impl CrosswordFillState {
-    pub fn default() -> CrosswordFillState {
-        CrosswordFillState {
-            candidate_queue: BinaryHeap::new(),
-        }
-    }
-
-    pub fn take_candidate(&mut self) -> Option<Crossword> {
-        self.candidate_queue.pop().map(|x| x.crossword)
-    }
-
-    pub fn add_candidate(&mut self, candidate: FrequencyOrderableCrossword) {
-        self.candidate_queue.push(candidate);
-    }
 }
 
 pub fn is_viable_reuse(
