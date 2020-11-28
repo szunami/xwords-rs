@@ -19,7 +19,7 @@ pub trait Filler {
 
 pub fn is_viable_reuse(
     candidate: &Crossword,
-    word_boundaries: &Vec<&WordBoundary>,
+    word_boundaries: &[&WordBoundary],
     trie: &Trie,
     mut already_used: FxHashSet<u64>,
     is_viable_cache: &mut CachedIsViable,
@@ -50,7 +50,7 @@ pub fn is_viable_reuse(
 pub fn fill_one_word(
     candidate: &Crossword,
     iter: &CrosswordWordIterator,
-    word: &String,
+    word: &str,
 ) -> Crossword {
     let mut result_contents = String::with_capacity(iter.word_boundary.length);
     let word_boundary = iter.word_boundary;
@@ -96,7 +96,7 @@ pub fn fill_one_word(
 }
 
 pub fn build_lookup<'s>(
-    word_boundaries: &'s Vec<WordBoundary>,
+    word_boundaries: &'s[WordBoundary],
 ) -> FxHashMap<(Direction, usize, usize), &'s WordBoundary> {
     let mut result = FxHashMap::default();
 
