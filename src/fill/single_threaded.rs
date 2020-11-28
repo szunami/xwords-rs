@@ -1,7 +1,6 @@
 use crate::{
     fill::{cache::CachedIsViable, fill_one_word, CrosswordFillState},
     order::FrequencyOrderableCrossword,
-    parse::WordBoundary,
     Filler,
 };
 use std::{collections::HashSet, hash::BuildHasherDefault};
