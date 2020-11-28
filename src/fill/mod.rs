@@ -177,7 +177,7 @@ pub fn orthogonals<'s>(
 #[cfg(test)]
 mod tests {
     use crate::{
-        crossword::Direction, fill::CrosswordWordIterator, parse::WordBoundary, Crossword, Trie,
+        crossword::Direction, fill::CrosswordWordIterator, parse::WordBoundary, Crossword,
     };
 
     use super::fill_one_word;
