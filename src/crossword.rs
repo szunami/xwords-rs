@@ -22,7 +22,7 @@ impl Crossword {
             height: width,
         })
     }
-    
+
     pub fn rectangle(contents: String, width: usize, height: usize) -> Result<Crossword, String> {
         let without_newlines: String = contents.chars().filter(|c| *c != '\n').collect();
         if without_newlines.len() != width * height {

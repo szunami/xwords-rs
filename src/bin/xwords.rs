@@ -23,15 +23,14 @@ fn main() -> Result<(), String> {
                 .short("w")
                 .long("width")
                 .value_name("HEIGHT")
-                .help("Input crossword height. Required if input is not a square")
-                
+                .help("Input crossword height. Required if input is not a square"),
         )
         .arg(
             Arg::with_name("height")
                 .short("h")
                 .long("height")
                 .value_name("HEIGHT")
-                .help("Input crossword height. Required if input is not a square")
+                .help("Input crossword height. Required if input is not a square"),
         )
         .arg(
             Arg::with_name("profile")
@@ -39,29 +38,22 @@ fn main() -> Result<(), String> {
                 .long("profile")
                 .takes_value(false),
         )
-
         .get_matches();
 
     let input = matches.value_of("input").expect("input not included");
     let input = std::fs::read_to_string(input).expect("failed to read input");
-    
+
     let input = match (matches.value_of("width"), matches.value_of("height")) {
         (Some(width), Some(height)) => {
             let width = width.parse().expect("Failed to parse width");
             let height = height.parse().expect("Failed to parse height");
             Crossword::rectangle(input, width, height).expect("Failed to parse crossword")
         }
-        (None, None) => {
-            Crossword::square(input).expect("Failed to parse crossword")
-        }
-        (None, Some(_)) => {
-            return Err(String::from("Width specified but not height."))
-        }
-        (Some(_), None) => {
-            return Err(String::from("Height specified but not width."))
-        }
+        (None, None) => Crossword::square(input).expect("Failed to parse crossword"),
+        (None, Some(_)) => return Err(String::from("Width specified but not height.")),
+        (Some(_), None) => return Err(String::from("Height specified but not width.")),
     };
-    
+
     if matches.is_present("profile") {
         let guard = pprof::ProfilerGuard::new(100).unwrap();
         std::thread::spawn(move || loop {
