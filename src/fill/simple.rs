@@ -62,7 +62,13 @@ impl<'s> Filler for SimpleFiller<'s> {
                 .iter()
                 .map(|word_boundary| CrosswordWordIterator::new(&candidate, word_boundary))
                 .filter(|iter| iter.clone().any(|c| c == ' '))
-                .min_by_key(|iter| self.word_cache.words(iter.clone(), self.trie).len())
+                .min_by_key(|iter| {
+                    (
+                        self.word_cache.words(iter.clone(), self.trie).len(),
+                        iter.word_boundary.start_row,
+                        iter.word_boundary.start_col,
+                    )
+                })
                 .unwrap();
 
             let orthogonals = orthogonals(&to_fill.word_boundary, &word_boundary_lookup);
