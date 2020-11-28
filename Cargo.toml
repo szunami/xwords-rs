@@ -38,3 +38,7 @@ debug = 1
 [[bench]]
 name = "fill_crossword_simple"
 harness = false
+
+[[bench]]
+name = "trie"
+harness = false

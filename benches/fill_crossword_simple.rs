@@ -1,5 +1,5 @@
 use criterion::black_box;
-use std::{fs::File, sync::Arc};
+use std::sync::Arc;
 use xwords::{
     crossword::Crossword,
     fill::{simple::SimpleFiller, Filler},
