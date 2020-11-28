@@ -71,7 +71,6 @@ impl TrieNode {
         Ok(())
     }
 
-    // TODO: pattern could be a ref!
     fn words(&self, mut pattern: CrosswordWordIterator, partial: String) -> Vec<String> {
         let mut new_partial = partial;
         if self.contents.is_some() {
@@ -99,6 +98,35 @@ impl TrieNode {
                     return vec![new_partial];
                 }
                 return vec![];
+            }
+        }
+    }
+    
+    fn words_tmp(&self, mut pattern: CrosswordWordIterator, partial: String, result: &mut Vec<String>) {
+        let mut new_partial = partial;
+        if self.contents.is_some() {
+            new_partial.push(self.contents.unwrap());
+        }
+
+        match pattern.next() {
+            Some(new_char) => {
+                if new_char == ' ' {
+                    for child in self.children.values() {
+                        child.words_tmp(pattern.clone(), new_partial.clone(), result);
+                    }
+                }
+                else {
+                    match self.children.get(&new_char) {
+                        Some(child) => child.words_tmp(pattern, new_partial, result),
+                        None => {},
+                    }
+                }
+            }
+            None => {
+                if self.is_terminal {
+                    result.push(new_partial);
+                }
+                return;
             }
         }
     }
@@ -163,7 +191,9 @@ impl Trie {
     }
 
     pub fn words(&self, pattern: CrosswordWordIterator) -> Vec<String> {
-        self.root.words(pattern, String::from(""))
+        let mut result = vec![];
+        self.root.words_tmp(pattern, String::from(""), &mut result);
+        result
     }
 
     pub fn is_viable(&self, chars: CrosswordWordIterator) -> bool {
