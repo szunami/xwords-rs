@@ -88,9 +88,8 @@ impl TrieNode {
                         child.words(pattern.clone(), partial, result);
                     }
                 } else {
-                    match self.children.get(&new_char) {
-                        Some(child) => child.words(pattern, partial, result),
-                        None => {}
+                    if let Some(child) = self.children.get(&new_char) {
+                        child.words(pattern, partial, result);
                     }
                 }
             }
@@ -117,7 +116,7 @@ impl TrieNode {
                             return true;
                         }
                     }
-                    return false;
+                    false
                 } else {
                     match self.children.get(&c) {
                         None => false,

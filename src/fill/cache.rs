@@ -39,7 +39,7 @@ pub struct CachedIsViable {
 }
 
 impl CachedIsViable {
-    pub fn new() -> CachedIsViable {
+    pub fn default() -> CachedIsViable {
         CachedIsViable {
             is_viable_cache: FxHashMap::default(),
         }

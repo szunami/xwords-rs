@@ -25,7 +25,7 @@ impl<'s> SimpleFiller<'s> {
     pub fn new(trie: &'s Trie) -> SimpleFiller<'s> {
         SimpleFiller {
             word_cache: CachedWords::default(),
-            is_viable_cache: CachedIsViable::new(),
+            is_viable_cache: CachedIsViable::default(),
             trie,
         }
     }
