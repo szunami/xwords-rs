@@ -12,7 +12,6 @@ use rustc_hash::{FxHashSet, FxHasher};
 use std::{collections, collections::BinaryHeap, hash::Hasher};
 
 pub mod cache;
-pub mod parallel;
 pub mod simple;
 pub mod single_threaded;
 
@@ -75,40 +74,42 @@ pub fn fill_one_word(
     iter: &CrosswordWordIterator,
     word: &String,
 ) -> Crossword {
-    
     let mut result_contents = String::with_capacity(iter.word_boundary.length);
-    let iter = iter.clone();
-    
-    for (index, c) in iter.enumerate() {
-        
-        let row = index / candidate.width;
-        let col = index % candidate.width;
-        
-        
-        result_contents.push(c);
+    let word_boundary = iter.word_boundary;
+    let mut word_iter = word.chars();
+
+    match word_boundary.direction {
+        Direction::Across => {
+            for (index, c) in candidate.contents.chars().enumerate() {
+                let row = index / candidate.width;
+                let col = index % candidate.width;
+
+                if row == word_boundary.start_row
+                    && col >= word_boundary.start_col
+                    && col < word_boundary.start_col + word_boundary.length
+                {
+                    result_contents.push(word_iter.next().unwrap());
+                } else {
+                    result_contents.push(c);
+                }
+            }
+        }
+        Direction::Down => {
+            for (index, c) in candidate.contents.chars().enumerate() {
+                let row = index / candidate.width;
+                let col = index % candidate.width;
+
+                if col == word_boundary.start_col
+                    && row >= word_boundary.start_row
+                    && row < word_boundary.start_row + word_boundary.length
+                {
+                    result_contents.push(word_iter.next().unwrap());
+                } else {
+                    result_contents.push(c);
+                }
+            }
+        }
     }
-    
-    
-    // let mut result_contents = candidate.contents.clone();
-    // let mut bytes = result_contents.into_bytes();
-
-    // let word_boundary = iter.word_boundary;
-
-    // match word_boundary.direction {
-    //     Direction::Across => {
-    //         for (char_index, c) in word.chars().enumerate() {
-    //             let col = word_boundary.start_col + char_index;
-    //             bytes[word_boundary.start_row * candidate.width + col] = c as u8;
-    //         }
-    //     }
-    //     Direction::Down => {
-    //         for (char_index, c) in word.chars().enumerate() {
-    //             let row = word_boundary.start_row + char_index;
-    //             bytes[row * candidate.width + word_boundary.start_col] = c as u8;
-    //         }
-    //     }
-    // }
-    // result_contents = String::from_utf8(bytes).expect("Non utf8 char");
 
     Crossword {
         contents: result_contents,

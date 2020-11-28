@@ -74,7 +74,7 @@ impl TrieNode {
         &self,
         mut pattern: T,
         partial: String,
-        result: &mut Vec<String>
+        result: &mut Vec<String>,
     ) {
         let mut new_partial = partial;
         if self.contents.is_some() {
@@ -87,11 +87,10 @@ impl TrieNode {
                     for child in self.children.values() {
                         child.words(pattern.clone(), new_partial.clone(), result);
                     }
-                }
-                else {
+                } else {
                     match self.children.get(&new_char) {
                         Some(child) => child.words(pattern, new_partial, result),
-                        None => {},
+                        None => {}
                     }
                 }
             }
