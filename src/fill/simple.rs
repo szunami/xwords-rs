@@ -119,7 +119,7 @@ mod tests {
 
     #[test]
     fn medium_grid() {
-        let grid = Crossword::new(String::from(
+        let grid = Crossword::square(String::from(
             "
     ***
     ***

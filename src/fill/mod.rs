@@ -178,7 +178,7 @@ mod tests {
     #[test]
 
     fn fill_one_word_works() {
-        let c = Crossword::new(String::from(
+        let c = Crossword::square(String::from(
             "
 abc
 def
@@ -201,7 +201,7 @@ ghi
                 ),
                 &String::from("cat")
             ),
-            Crossword::new(String::from(
+            Crossword::square(String::from(
                 "
 cat
 def
@@ -225,7 +225,7 @@ ghi
                 ),
                 &String::from("cat"),
             ),
-            Crossword::new(String::from(
+            Crossword::square(String::from(
                 "
 cbc
 aef
