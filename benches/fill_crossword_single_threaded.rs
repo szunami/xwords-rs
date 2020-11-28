@@ -39,9 +39,9 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         Benchmark::new("empty_20201012_crossword", move |b| {
             let mut filler = SingleThreadedFiller::new(tmp_trie.as_ref(), tmp_bigrams.as_ref());
             let input = std::fs::read_to_string("./grids/20201012_empty.txt")
-            .expect("failed to read input");
-        let input = Crossword::new(input).expect("failed to parse input");
-       
+                .expect("failed to read input");
+            let input = Crossword::new(input).expect("failed to parse input");
+
             b.iter(|| {
                 assert!(filler.fill(black_box(&input)).is_ok());
             });

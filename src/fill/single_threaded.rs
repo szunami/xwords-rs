@@ -55,7 +55,6 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
         let word_boundaries = parse_word_boundaries(&crossword);
         let word_boundary_lookup = build_lookup(&word_boundaries);
 
-        
         let mut already_used = HashSet::with_capacity_and_hasher(
             word_boundaries.len(),
             BuildHasherDefault::<FxHasher>::default(),
@@ -87,7 +86,6 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
 
             let orthogonals = orthogonals(&to_fill.word_boundary, &word_boundary_lookup);
 
-            
             let potential_fills = self.word_cache.words(to_fill.clone(), self.trie);
 
             for potential_fill in potential_fills {

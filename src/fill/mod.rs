@@ -9,10 +9,7 @@ use crate::{
 use cached::Cached;
 use core::hash::{BuildHasherDefault, Hash};
 use rustc_hash::{FxHashSet, FxHasher};
-use std::{
-    collections::BinaryHeap,
-    hash::Hasher,
-};
+use std::{collections::BinaryHeap, hash::Hasher};
 
 pub mod cache;
 pub mod parallel;
@@ -182,9 +179,7 @@ cached_key! {
 
 pub fn build_lookup<'s>(
     word_boundaries: &'s Vec<WordBoundary>,
-) -> 
-    FxHashMap<(Direction, usize, usize), &'s WordBoundary>
-     {
+) -> FxHashMap<(Direction, usize, usize), &'s WordBoundary> {
     let mut result = FxHashMap::default();
 
     for word_boundary in word_boundaries {
@@ -193,14 +188,20 @@ pub fn build_lookup<'s>(
                 for index in 0..word_boundary.length {
                     let col = word_boundary.start_col + index;
 
-                    result.insert((Direction::Across, word_boundary.start_row, col), word_boundary);
+                    result.insert(
+                        (Direction::Across, word_boundary.start_row, col),
+                        word_boundary,
+                    );
                 }
             }
             Direction::Down => {
                 for index in 0..word_boundary.length {
                     let row = word_boundary.start_row + index;
 
-                    result.insert((Direction::Down, row, word_boundary.start_col), word_boundary);
+                    result.insert(
+                        (Direction::Down, row, word_boundary.start_col),
+                        word_boundary,
+                    );
                 }
             }
         }
@@ -225,14 +226,22 @@ pub fn orthogonals<'s>(
             for index in 0..to_fill.length {
                 let col = to_fill.start_col + index;
 
-                result.push(*word_boundary_lookup.get(&(Direction::Down, to_fill.start_row, col)).unwrap());
+                result.push(
+                    *word_boundary_lookup
+                        .get(&(Direction::Down, to_fill.start_row, col))
+                        .unwrap(),
+                );
             }
         }
         Direction::Down => {
             for index in 0..to_fill.length {
                 let row = to_fill.start_row + index;
 
-                result.push(*word_boundary_lookup.get(&(Direction::Across, row, to_fill.start_col)).unwrap());
+                result.push(
+                    *word_boundary_lookup
+                        .get(&(Direction::Across, row, to_fill.start_col))
+                        .unwrap(),
+                );
             }
         }
     }
