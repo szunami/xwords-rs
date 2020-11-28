@@ -30,18 +30,18 @@ impl CachedWords {
 }
 
 #[derive(Clone)]
-pub struct CachedIsWord {
-    is_word_cache: FxHashMap<u64, bool>,
+pub struct CachedIsViable {
+    is_viable_cache: FxHashMap<u64, bool>,
 }
 
-impl CachedIsWord {
-    pub fn new() -> CachedIsWord {
-        CachedIsWord {
-            is_word_cache: FxHashMap::default(),
+impl CachedIsViable {
+    pub fn new() -> CachedIsViable {
+        CachedIsViable {
+            is_viable_cache: FxHashMap::default(),
         }
     }
 
-    pub fn is_word(&mut self, iter: CrosswordWordIterator, trie: &Trie) -> bool {
+    pub fn is_viable(&mut self, iter: CrosswordWordIterator, trie: &Trie) -> bool {
         let mut hasher = FxHasher::default();
         for c in iter.clone() {
             c.hash(&mut hasher);
@@ -49,8 +49,8 @@ impl CachedIsWord {
         let key = hasher.finish();
 
         *self
-            .is_word_cache
+            .is_viable_cache
             .entry(key)
-            .or_insert_with(|| trie.is_word(iter))
+            .or_insert_with(|| trie.is_viable(iter))
     }
 }
