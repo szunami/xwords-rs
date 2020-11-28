@@ -43,7 +43,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             });
         }),
     );
-    
+
     let tmp_trie = trie.clone();
 
     c.bench(

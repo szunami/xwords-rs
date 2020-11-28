@@ -47,7 +47,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             });
         }),
     );
-    
+
     let tmp_bigrams = bigrams.clone();
     let tmp_trie = trie.clone();
 

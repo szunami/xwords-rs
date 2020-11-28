@@ -116,35 +116,6 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
     }
 }
 
-pub fn is_viable_tmp(
-    candidate: &Crossword,
-    word_boundaries: &[WordBoundary],
-    trie: &Trie,
-    is_viable_cache: &mut CachedIsViable,
-) -> bool {
-    let mut already_used = HashSet::with_capacity_and_hasher(
-        word_boundaries.len(),
-        BuildHasherDefault::<FxHasher>::default(),
-    );
-
-    for word_boundary in word_boundaries {
-        let iter = CrosswordWordIterator::new(candidate, word_boundary);
-        if iter.clone().any(|c| c == ' ') {
-            continue;
-        }
-
-        if already_used.contains(&iter) {
-            return false;
-        }
-        already_used.insert(iter.clone());
-
-        if !is_viable_cache.is_viable(iter, trie) {
-            return false;
-        }
-    }
-    true
-}
-
 #[cfg(test)]
 mod tests {
 
