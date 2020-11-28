@@ -94,7 +94,7 @@ pub fn fill_one_word(
             }
         }
     }
-    unsafe { result_contents = String::from_utf8_unchecked(bytes) }
+    result_contents = String::from_utf8(bytes).expect("Non utf8 char");
 
     Crossword {
         contents: result_contents,
