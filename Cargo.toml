@@ -36,9 +36,5 @@ path = "examples/snippet.rs"
 debug = 1
 
 [[bench]]
-name = "fill_crossword_single_threaded"
-harness = false
-
-[[bench]]
 name = "fill_crossword_simple"
 harness = false

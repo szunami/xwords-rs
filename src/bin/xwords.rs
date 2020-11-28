@@ -1,11 +1,11 @@
 extern crate clap;
 use std::fs::File;
+use xwords::trie::Trie;
 
 use clap::{App, Arg};
 use xwords::{
     crossword::Crossword,
-    default_indexes,
-    fill::{simple::SimpleFiller, single_threaded::SingleThreadedFiller, Filler},
+    fill::{simple::SimpleFiller, Filler},
 };
 
 fn main() -> Result<(), String> {
@@ -19,14 +19,6 @@ fn main() -> Result<(), String> {
                 .required(true),
         )
         .arg(
-            Arg::with_name("algorithm")
-                .short("a")
-                .long("algorithm")
-                .value_name("ALGORITHM")
-                .possible_values(&["simple", "single_threaded"])
-                .default_value("single_threaded"),
-        )
-        .arg(
             Arg::with_name("profile")
                 .short("p")
                 .long("profile")
@@ -37,10 +29,6 @@ fn main() -> Result<(), String> {
     let input = matches.value_of("input").expect("input not included");
     let input = std::fs::read_to_string(input).expect("failed to read input");
     let input = Crossword::new(input).expect("failed to parse input");
-
-    let algorithm = matches
-        .value_of("algorithm")
-        .expect("failed to load algorithm");
 
     if matches.is_present("profile") {
         let guard = pprof::ProfilerGuard::new(100).unwrap();
@@ -53,19 +41,8 @@ fn main() -> Result<(), String> {
         });
     }
 
-    let output = match algorithm {
-        "single_threaded" => {
-            let (bigrams, trie) = default_indexes();
-            SingleThreadedFiller::new(&trie, &bigrams).fill(&input)
-        }
-        "simple" => {
-            let (_bigrams, trie) = default_indexes();
-            SimpleFiller::new(&trie).fill(&input)
-        }
-        _ => {
-            return Err(String::from("Failed to parse algorithm"));
-        }
-    };
+    let trie = Trie::load_default().expect("Failed to load trie");
+    let output = SimpleFiller::new(&trie).fill(&input);
 
     match output {
         Ok(output) => {
