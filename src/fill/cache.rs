@@ -16,7 +16,11 @@ impl CachedWords {
         }
     }
 
-    pub fn words<T: Iterator<Item=char> + Clone>(&mut self, iter: T, trie: &Trie) -> &Vec<String> {
+    pub fn words<T: Iterator<Item = char> + Clone>(
+        &mut self,
+        iter: T,
+        trie: &Trie,
+    ) -> &Vec<String> {
         let mut hasher = FxHasher::default();
         for c in iter.clone() {
             c.hash(&mut hasher);
@@ -41,7 +45,7 @@ impl CachedIsViable {
         }
     }
 
-    pub fn is_viable<T: Iterator<Item=char> + Clone>(&mut self, iter: T, trie: &Trie) -> bool {
+    pub fn is_viable<T: Iterator<Item = char> + Clone>(&mut self, iter: T, trie: &Trie) -> bool {
         let mut hasher = FxHasher::default();
         for c in iter.clone() {
             c.hash(&mut hasher);

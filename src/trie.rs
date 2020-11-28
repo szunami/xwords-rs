@@ -70,7 +70,11 @@ impl TrieNode {
         Ok(())
     }
 
-    fn words<T: Iterator<Item=char> + Clone>(&self, mut pattern: T, partial: String) -> Vec<String> {
+    fn words<T: Iterator<Item = char> + Clone>(
+        &self,
+        mut pattern: T,
+        partial: String,
+    ) -> Vec<String> {
         let mut new_partial = partial;
         if self.contents.is_some() {
             new_partial.push(self.contents.unwrap());
@@ -101,7 +105,7 @@ impl TrieNode {
         }
     }
 
-    pub fn is_viable<T: Iterator<Item=char> + Clone>(&self, mut chars: T) -> bool {
+    pub fn is_viable<T: Iterator<Item = char> + Clone>(&self, mut chars: T) -> bool {
         match chars.next() {
             None => self.is_terminal,
 
@@ -160,11 +164,11 @@ impl Trie {
         Trie { root }
     }
 
-    pub fn words<T: Iterator<Item=char> + Clone>(&self, pattern: T) -> Vec<String> {
+    pub fn words<T: Iterator<Item = char> + Clone>(&self, pattern: T) -> Vec<String> {
         self.root.words(pattern, String::from(""))
     }
 
-    pub fn is_viable<T: Iterator<Item=char> + Clone>(&self, chars: T) -> bool {
+    pub fn is_viable<T: Iterator<Item = char> + Clone>(&self, chars: T) -> bool {
         self.root.is_viable(chars)
     }
 }
@@ -175,8 +179,6 @@ mod tests {
     use rustc_hash::FxHashMap;
 
     use std::collections::HashSet;
-
-    
 
     use super::{Trie, TrieNode};
 
