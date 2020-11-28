@@ -11,7 +11,6 @@ use rustc_hash::{FxHashSet, FxHasher};
 use std::{collections, hash::Hasher};
 
 pub mod cache;
-pub mod parallel;
 pub mod simple;
 
 pub trait Filler {
