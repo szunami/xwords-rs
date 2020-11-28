@@ -6,10 +6,10 @@ use crate::{
     trie::Trie,
     Crossword, FxHashMap,
 };
-use cached::Cached;
+
 use core::hash::{BuildHasherDefault, Hash};
 use rustc_hash::{FxHashSet, FxHasher};
-use std::{collections::BinaryHeap, hash::Hasher};
+use std::{collections, collections::BinaryHeap, hash::Hasher};
 
 pub mod cache;
 pub mod parallel;
@@ -102,81 +102,6 @@ pub fn fill_one_word(
     }
 }
 
-pub struct FxCache<K: Hash + Eq, V> {
-    store: FxHashMap<K, V>,
-}
-impl<K: Hash + Eq, V> FxCache<K, V> {
-    pub fn default() -> FxCache<K, V> {
-        FxCache {
-            store: FxHashMap::default(),
-        }
-    }
-}
-impl<K: Hash + Eq, V> Cached<K, V> for FxCache<K, V> {
-    fn cache_get(&mut self, k: &K) -> Option<&V> {
-        self.store.get(k)
-    }
-    fn cache_get_mut(&mut self, k: &K) -> Option<&mut V> {
-        self.store.get_mut(k)
-    }
-    fn cache_get_or_set_with<F: FnOnce() -> V>(&mut self, k: K, f: F) -> &mut V {
-        self.store.entry(k).or_insert_with(f)
-    }
-    fn cache_set(&mut self, k: K, v: V) -> Option<V> {
-        self.store.insert(k, v)
-    }
-    fn cache_remove(&mut self, k: &K) -> Option<V> {
-        self.store.remove(k)
-    }
-    fn cache_clear(&mut self) {
-        self.store.clear();
-    }
-    fn cache_reset(&mut self) {
-        self.store = FxHashMap::default();
-    }
-    fn cache_size(&self) -> usize {
-        self.store.len()
-    }
-}
-
-pub fn is_viable(iter: CrosswordWordIterator, trie: &Trie) -> bool {
-    is_viable_internal(iter, trie)
-}
-
-cached_key! {
-    IS_WORD: FxCache<u64, bool> = FxCache::default();
-    Key = {
-        use std::hash::Hash;
-        let mut hasher = FxHasher::default();
-        for c in iter.clone() {
-            c.hash(&mut hasher);
-        }
-        hasher.finish()
-    };
-    fn is_viable_internal(iter: CrosswordWordIterator, trie: &Trie) -> bool = {
-        trie.is_viable(iter)
-    }
-}
-
-pub fn words(pattern: CrosswordWordIterator, trie: &Trie) -> Vec<String> {
-    words_internal(pattern, trie)
-}
-
-cached_key! {
-    WORDS: FxCache<u64, Vec<String>> = FxCache::default();
-    Key = {
-        use std::hash::Hash;
-        let mut hasher = FxHasher::default();
-        for c in pattern.clone() {
-            c.hash(&mut hasher)
-        }
-        hasher.finish()
-     };
-    fn words_internal(pattern: CrosswordWordIterator, trie: &Trie) -> Vec<String> = {
-        trie.words(pattern)
-    }
-}
-
 pub fn build_lookup<'s>(
     word_boundaries: &'s Vec<WordBoundary>,
 ) -> FxHashMap<(Direction, usize, usize), &'s WordBoundary> {
@@ -212,7 +137,7 @@ pub fn build_lookup<'s>(
 
 pub fn orthogonals<'s>(
     to_fill: &'s WordBoundary,
-    word_boundary_lookup: &std::collections::HashMap<
+    word_boundary_lookup: &collections::HashMap<
         (Direction, usize, usize),
         &'s WordBoundary,
         BuildHasherDefault<FxHasher>,
@@ -252,11 +177,7 @@ pub fn orthogonals<'s>(
 #[cfg(test)]
 mod tests {
     use crate::{
-        crossword::Direction,
-        default_indexes,
-        fill::{is_viable, CrosswordWordIterator},
-        parse::{parse_word_boundaries, WordBoundary},
-        Crossword, Trie,
+        crossword::Direction, fill::CrosswordWordIterator, parse::WordBoundary, Crossword,
     };
 
     use super::fill_one_word;
@@ -320,44 +241,5 @@ thi
             ))
             .unwrap()
         );
-    }
-
-    #[test]
-    fn cache_works() {
-        let trie = Trie::build(vec![
-            String::from("bass"),
-            String::from("bats"),
-            String::from("bess"),
-            String::from("be"),
-        ]);
-
-        let crossword = Crossword::new(String::from(
-            "
-bass
-a   
-s   
-s   
-",
-        ))
-        .unwrap();
-        let word_boundary = WordBoundary {
-            start_row: 0,
-            start_col: 0,
-            direction: Direction::Across,
-            length: 4,
-        };
-        let iter = CrosswordWordIterator::new(&crossword, &word_boundary);
-
-        assert!(is_viable(iter, &trie));
-
-        let word_boundary = WordBoundary {
-            start_row: 0,
-            start_col: 0,
-            direction: Direction::Down,
-            length: 4,
-        };
-        let iter = CrosswordWordIterator::new(&crossword, &word_boundary);
-
-        assert!(is_viable(iter, &trie));
     }
 }

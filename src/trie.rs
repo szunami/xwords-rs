@@ -1,4 +1,3 @@
-use crate::crossword::CrosswordWordIterator;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -71,7 +70,12 @@ impl TrieNode {
         Ok(())
     }
 
-    fn words(&self, mut pattern: CrosswordWordIterator, partial: String, result: &mut Vec<String>) {
+    fn words<T: Iterator<Item = char> + Clone>(
+        &self,
+        mut pattern: T,
+        partial: String,
+        result: &mut Vec<String>
+    ) {
         let mut new_partial = partial;
         if self.contents.is_some() {
             new_partial.push(self.contents.unwrap());
@@ -100,7 +104,7 @@ impl TrieNode {
         }
     }
 
-    pub fn is_viable(&self, mut chars: CrosswordWordIterator) -> bool {
+    pub fn is_viable<T: Iterator<Item = char> + Clone>(&self, mut chars: T) -> bool {
         match chars.next() {
             None => self.is_terminal,
 
@@ -159,13 +163,13 @@ impl Trie {
         Trie { root }
     }
 
-    pub fn words(&self, pattern: CrosswordWordIterator) -> Vec<String> {
+    pub fn words<T: Iterator<Item = char> + Clone>(&self, pattern: T) -> Vec<String> {
         let mut result = Vec::with_capacity(4);
         self.root.words(pattern, String::from(""), &mut result);
         result
     }
 
-    pub fn is_viable(&self, chars: CrosswordWordIterator) -> bool {
+    pub fn is_viable<T: Iterator<Item = char> + Clone>(&self, chars: T) -> bool {
         self.root.is_viable(chars)
     }
 }
@@ -176,11 +180,6 @@ mod tests {
     use rustc_hash::FxHashMap;
 
     use std::collections::HashSet;
-
-    use crate::{
-        crossword::{Crossword, CrosswordWordIterator, Direction},
-        parse::WordBoundary,
-    };
 
     use super::{Trie, TrieNode};
 
@@ -267,19 +266,8 @@ mod tests {
             .cloned()
             .collect();
 
-        let c = Crossword::new(String::from(
-            "
-b ss
-    
-    
-    
-",
-        ))
-        .unwrap();
-
-        let word_boundary = WordBoundary::new(0, 0, 4, Direction::Across);
-        let iter = CrosswordWordIterator::new(&c, &word_boundary);
-        let actual: HashSet<String> = trie.words(iter).iter().cloned().collect();
+        let iter = String::from("b ss");
+        let actual: HashSet<String> = trie.words(iter.chars()).iter().cloned().collect();
         assert_eq!(expected, actual,)
     }
 }

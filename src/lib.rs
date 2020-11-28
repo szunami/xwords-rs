@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate cached;
-
 extern crate rustc_hash;
 
 use crate::fill::Filler;
