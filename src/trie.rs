@@ -86,7 +86,6 @@ impl TrieNode {
                 if new_char == ' ' {
                     for child in self.children.values() {
                         child.words(pattern.clone(), partial, result);
-                        partial.pop();
                     }
                 } else {
                     match self.children.get(&new_char) {
@@ -97,9 +96,8 @@ impl TrieNode {
             }
             None => {
                 if self.is_terminal {
-                    result.push(partial.to_string());
+                    result.push(partial.clone());
                 }
-                return;
             }
         }
 
