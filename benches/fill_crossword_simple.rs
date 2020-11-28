@@ -1,3 +1,4 @@
+use std::fs::File;
 use xwords::trie::Trie;
 use criterion::black_box;
 use std::sync::Arc;
@@ -9,6 +10,9 @@ use xwords::{
 use criterion::{criterion_group, criterion_main, Benchmark, Criterion};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
+    
+    let group_id = "simple_filler";
+    
     let trie = Trie::load_default().expect("Failed to load trie");
 
     let trie = Arc::new(trie);
@@ -16,8 +20,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let tmp_trie = trie.clone();
 
     c.bench(
-        "simple_filler",
-        Benchmark::new("fill_20201005_crossword", move |b| {
+        group_id,
+        Benchmark::new("empty_20201005_crossword", move |b| {
             let mut filler = SimpleFiller::new(tmp_trie.as_ref());
 
             let input = std::fs::read_to_string("./grids/20201012_empty.txt")
@@ -32,7 +36,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
     let tmp_trie = trie.clone();
     c.bench(
-        "simple_filler",
+        group_id,
         Benchmark::new("empty_20201012_crossword", move |b| {
             let input = std::fs::read_to_string("./grids/20201012_empty.txt")
                 .expect("failed to read input");
@@ -47,10 +51,26 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let tmp_trie = trie.clone();
 
     c.bench(
-        "simple_filler",
+        group_id,
         Benchmark::new("empty_20201107_crossword", move |b| {
             let mut filler = SimpleFiller::new(tmp_trie.as_ref());
             let input = std::fs::read_to_string("./grids/20201107_empty.txt")
+                .expect("failed to read input");
+            let input = Crossword::new(input).expect("failed to parse input");
+
+            b.iter(|| {
+                assert!(filler.fill(black_box(&input)).is_ok());
+            });
+        }),
+    );
+    
+    let tmp_trie = trie.clone();
+
+    c.bench(
+        group_id,
+        Benchmark::new("empty_20201128_crossword", move |b| {
+            let mut filler = SimpleFiller::new(tmp_trie.as_ref());
+            let input = std::fs::read_to_string("./grids/20201128_empty.txt")
                 .expect("failed to read input");
             let input = Crossword::new(input).expect("failed to parse input");
 
