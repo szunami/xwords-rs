@@ -180,6 +180,66 @@ cached_key! {
     }
 }
 
+pub fn build_lookup<'s>(
+    word_boundaries: &'s Vec<WordBoundary>,
+) -> 
+    FxHashMap<(Direction, usize, usize), &'s WordBoundary>
+     {
+    let mut result = FxHashMap::default();
+
+    for word_boundary in word_boundaries {
+        match word_boundary.direction {
+            Direction::Across => {
+                for index in 0..word_boundary.length {
+                    let col = word_boundary.start_col + index;
+
+                    result.insert((Direction::Across, word_boundary.start_row, col), word_boundary);
+                }
+            }
+            Direction::Down => {
+                for index in 0..word_boundary.length {
+                    let row = word_boundary.start_row + index;
+
+                    result.insert((Direction::Down, row, word_boundary.start_col), word_boundary);
+                }
+            }
+        }
+    }
+
+    result
+}
+
+pub fn orthogonals<'s>(
+    to_fill: &'s WordBoundary,
+    word_boundary_lookup: &std::collections::HashMap<
+        (usize, usize),
+        &'s WordBoundary,
+        BuildHasherDefault<FxHasher>,
+    >,
+) -> Vec<&'s WordBoundary> {
+    // TODO: avoid allocating here
+    let mut result = Vec::with_capacity(to_fill.length);
+
+    match to_fill.direction {
+        Direction::Across => {
+            for index in 0..to_fill.length {
+                let col = to_fill.start_col + index;
+
+                result.push(*word_boundary_lookup.get(&(to_fill.start_row, col)).unwrap());
+            }
+        }
+        Direction::Down => {
+            for index in 0..to_fill.length {
+                let row = to_fill.start_row + index;
+
+                result.push(*word_boundary_lookup.get(&(row, to_fill.start_col)).unwrap());
+            }
+        }
+    }
+
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -190,7 +250,7 @@ mod tests {
         Crossword, Trie,
     };
 
-    use super::{fill_one_word, is_viable};
+    use super::fill_one_word;
 
     #[test]
 
@@ -251,36 +311,6 @@ thi
             ))
             .unwrap()
         );
-    }
-
-    #[test]
-    fn is_viable_works() {
-        let (_, trie) = default_indexes();
-
-        let crossword = Crossword::new(String::from(
-            "
-   
-   
-   
-",
-        ))
-        .unwrap();
-
-        let word_boundaries = parse_word_boundaries(&crossword);
-
-        assert!(is_viable(&crossword, &word_boundaries, &trie));
-
-        assert!(!is_viable(
-            &Crossword::new(String::from("ABCDEFGH ")).unwrap(),
-            &word_boundaries,
-            &trie
-        ));
-
-        assert!(!is_viable(
-            &Crossword::new(String::from("ABCB  C  ")).unwrap(),
-            &word_boundaries,
-            &trie
-        ));
     }
 
     #[test]

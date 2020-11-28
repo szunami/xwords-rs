@@ -117,7 +117,7 @@ impl fmt::Display for Crossword {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Direction {
     Across,
     Down,
