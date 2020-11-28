@@ -74,33 +74,35 @@ impl TrieNode {
     fn words<T: Iterator<Item = char> + Clone>(
         &self,
         mut pattern: T,
-        partial: String,
+        partial: &mut String,
         result: &mut Vec<String>,
     ) {
-        let mut new_partial = partial;
         if self.contents.is_some() {
-            new_partial.push(self.contents.unwrap());
+            partial.push(self.contents.unwrap());
         }
 
         match pattern.next() {
             Some(new_char) => {
                 if new_char == ' ' {
                     for child in self.children.values() {
-                        child.words(pattern.clone(), new_partial.clone(), result);
+                        child.words(pattern.clone(), partial, result);
                     }
                 } else {
                     match self.children.get(&new_char) {
-                        Some(child) => child.words(pattern, new_partial, result),
+                        Some(child) => child.words(pattern, partial, result),
                         None => {}
                     }
                 }
             }
             None => {
                 if self.is_terminal {
-                    result.push(new_partial);
+                    result.push(partial.clone());
                 }
-                return;
             }
+        }
+
+        if self.contents.is_some() {
+            partial.pop();
         }
     }
 
@@ -171,7 +173,8 @@ impl Trie {
 
     pub fn words<T: Iterator<Item = char> + Clone>(&self, pattern: T) -> Vec<String> {
         let mut result = Vec::with_capacity(4);
-        self.root.words(pattern, String::from(""), &mut result);
+        let mut partial = String::with_capacity(4);
+        self.root.words(pattern, &mut partial, &mut result);
         result
     }
 
