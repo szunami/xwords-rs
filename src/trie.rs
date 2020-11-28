@@ -160,7 +160,7 @@ impl Trie {
     }
 
     pub fn words(&self, pattern: CrosswordWordIterator) -> Vec<String> {
-        let mut result = vec![];
+        let mut result = Vec::with_capacity(4);
         self.root.words(pattern, String::from(""), &mut result);
         result
     }
