@@ -98,7 +98,7 @@ impl<'s> Filler for SimpleFiller<'s> {
 #[cfg(test)]
 mod tests {
 
-    use crate::{default_indexes, fill::Filler};
+    use crate::{fill::Filler, Trie};
 
     use crate::Crossword;
 
@@ -127,7 +127,7 @@ mod tests {
         .unwrap();
 
         let now = Instant::now();
-        let (_bigrams, trie) = default_indexes();
+        let trie = Trie::load_default().expect("Failed to load trie");
         let mut filler = SimpleFiller::new(&trie);
         let filled_puz = filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
