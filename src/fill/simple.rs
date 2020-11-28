@@ -51,7 +51,10 @@ impl<'s> Filler for SimpleFiller<'s> {
             candidate_count += 1;
 
             if candidate_count % 10_000 == 0 {
-                println!("{}", candidate);
+                
+                // println!("Word cache hit rate: {}", self.word_cache.hits as f32 / (self.word_cache.hits + self.word_cache.misses) as f32);
+                
+                // println!("{}", candidate);
                 println!(
                     "Throughput: {}",
                     candidate_count as f32 / thread_start.elapsed().as_millis() as f32

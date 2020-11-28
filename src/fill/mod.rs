@@ -253,9 +253,8 @@ pub fn orthogonals<'s>(
 mod tests {
     use crate::{
         crossword::Direction,
-        default_indexes,
         fill::{is_viable, CrosswordWordIterator},
-        parse::{parse_word_boundaries, WordBoundary},
+        parse::WordBoundary,
         Crossword, Trie,
     };
 
