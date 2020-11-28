@@ -9,7 +9,7 @@ use crate::{
 use cached::Cached;
 use core::hash::{BuildHasherDefault, Hash};
 use rustc_hash::{FxHashSet, FxHasher};
-use std::{collections::BinaryHeap, hash::Hasher};
+use std::{collections::BinaryHeap, hash::Hasher, collections};
 
 pub mod cache;
 pub mod parallel;
@@ -212,7 +212,7 @@ pub fn build_lookup<'s>(
 
 pub fn orthogonals<'s>(
     to_fill: &'s WordBoundary,
-    word_boundary_lookup: &std::collections::HashMap<
+    word_boundary_lookup: &collections::HashMap<
         (Direction, usize, usize),
         &'s WordBoundary,
         BuildHasherDefault<FxHasher>,
@@ -253,9 +253,8 @@ pub fn orthogonals<'s>(
 mod tests {
     use crate::{
         crossword::Direction,
-        default_indexes,
         fill::{is_viable, CrosswordWordIterator},
-        parse::{parse_word_boundaries, WordBoundary},
+        parse::{WordBoundary},
         Crossword, Trie,
     };
 
