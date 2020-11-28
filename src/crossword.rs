@@ -9,7 +9,7 @@ pub struct Crossword {
 }
 
 impl Crossword {
-    pub fn new(contents: String) -> Result<Crossword, String> {
+    pub fn square(contents: String) -> Result<Crossword, String> {
         let without_newlines: String = contents.chars().filter(|c| *c != '\n').collect();
 
         let width = (without_newlines.len() as f64).sqrt() as usize;
@@ -20,6 +20,18 @@ impl Crossword {
             contents: without_newlines,
             width,
             height: width,
+        })
+    }
+
+    pub fn rectangle(contents: String, width: usize, height: usize) -> Result<Crossword, String> {
+        let without_newlines: String = contents.chars().filter(|c| *c != '\n').collect();
+        if without_newlines.len() != width * height {
+            return Err(String::from("Contents do not match specified dimensions"));
+        }
+        Ok(Crossword {
+            contents: without_newlines,
+            width,
+            height,
         })
     }
 }
@@ -134,7 +146,7 @@ mod tests {
     #[test]
 
     fn it_works() {
-        let result = Crossword::new(String::from(
+        let result = Crossword::square(String::from(
             "
 abc
 def
@@ -153,7 +165,7 @@ ghi
 
     #[test]
     fn crossword_iterator_works() {
-        let input = Crossword::new(String::from("ABCDEFGHI")).unwrap();
+        let input = Crossword::square(String::from("ABCDEFGHI")).unwrap();
         let word_boundary = WordBoundary {
             start_col: 0,
             start_row: 0,
@@ -191,7 +203,7 @@ ghi
 
     #[test]
     fn crossword_iterator_eq_works() {
-        let input = Crossword::new(String::from("ABCB  C  ")).unwrap();
+        let input = Crossword::square(String::from("ABCB  C  ")).unwrap();
         let a = WordBoundary {
             start_col: 0,
             start_row: 0,
@@ -222,7 +234,7 @@ ghi
 
     #[test]
     fn crossword_iterator_hash_works() {
-        let input = Crossword::new(String::from("ABCB  C  ")).unwrap();
+        let input = Crossword::square(String::from("ABCB  C  ")).unwrap();
         let a = WordBoundary {
             start_col: 0,
             start_row: 0,

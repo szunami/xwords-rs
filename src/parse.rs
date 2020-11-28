@@ -134,7 +134,7 @@ mod tests {
 
     #[test]
     fn parse_word_boundaries_works() {
-        let c = Crossword::new(String::from(
+        let c = Crossword::square(String::from(
             "
 abc
 def
@@ -185,7 +185,7 @@ ghi
 
     #[test]
     fn parse_word_boundaries_big_grid() {
-        let c = Crossword::new(String::from(
+        let c = Crossword::square(String::from(
             "
     *    *     
     *    *     
