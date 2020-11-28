@@ -10,7 +10,7 @@ use cached::Cached;
 use core::hash::{BuildHasherDefault, Hash};
 use rustc_hash::{FxHashSet, FxHasher};
 use std::{
-    collections::{BinaryHeap, HashSet},
+    collections::BinaryHeap,
     hash::Hasher,
 };
 
@@ -45,7 +45,7 @@ impl CrosswordFillState {
 
 pub fn is_viable_reuse(
     candidate: &Crossword,
-    word_boundaries: &[WordBoundary],
+    word_boundaries: &Vec<&WordBoundary>,
     trie: &Trie,
     mut already_used: FxHashSet<u64>,
     is_viable_cache: &mut CachedIsViable,
@@ -212,7 +212,7 @@ pub fn build_lookup<'s>(
 pub fn orthogonals<'s>(
     to_fill: &'s WordBoundary,
     word_boundary_lookup: &std::collections::HashMap<
-        (usize, usize),
+        (Direction, usize, usize),
         &'s WordBoundary,
         BuildHasherDefault<FxHasher>,
     >,
@@ -225,14 +225,14 @@ pub fn orthogonals<'s>(
             for index in 0..to_fill.length {
                 let col = to_fill.start_col + index;
 
-                result.push(*word_boundary_lookup.get(&(to_fill.start_row, col)).unwrap());
+                result.push(*word_boundary_lookup.get(&(Direction::Down, to_fill.start_row, col)).unwrap());
             }
         }
         Direction::Down => {
             for index in 0..to_fill.length {
                 let row = to_fill.start_row + index;
 
-                result.push(*word_boundary_lookup.get(&(row, to_fill.start_col)).unwrap());
+                result.push(*word_boundary_lookup.get(&(Direction::Across, row, to_fill.start_col)).unwrap());
             }
         }
     }

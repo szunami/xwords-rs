@@ -13,7 +13,7 @@ use std::time::Instant;
 
 use crate::{trie::Trie, Crossword};
 
-use super::{cache::CachedWords, is_viable_reuse};
+use super::{build_lookup, cache::CachedWords, is_viable_reuse, orthogonals};
 
 #[derive(Clone)]
 pub struct SingleThreadedFiller<'s> {
@@ -53,6 +53,9 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
         };
 
         let word_boundaries = parse_word_boundaries(&crossword);
+        let word_boundary_lookup = build_lookup(&word_boundaries);
+
+        
         let mut already_used = HashSet::with_capacity_and_hasher(
             word_boundaries.len(),
             BuildHasherDefault::<FxHasher>::default(),
@@ -81,13 +84,10 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
                 .filter(|iter| iter.clone().any(|c| c == ' '))
                 .min_by_key(|iter| self.word_cache.words(iter.clone(), self.trie).len())
                 .unwrap();
-            // find valid fills for word;
-            // for each fill:
-            //   are all complete words legit?
-            //     if so, push
 
-            // let potential_fills = words(to_fill.clone(), self.trie);
+            let orthogonals = orthogonals(&to_fill.word_boundary, &word_boundary_lookup);
 
+            
             let potential_fills = self.word_cache.words(to_fill.clone(), self.trie);
 
             for potential_fill in potential_fills {
@@ -96,7 +96,7 @@ impl<'s> Filler for SingleThreadedFiller<'s> {
                 // if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.is_viable_cache) {
                 let (viable, tmp) = is_viable_reuse(
                     &new_candidate,
-                    &word_boundaries,
+                    &orthogonals,
                     self.trie,
                     already_used,
                     &mut self.is_viable_cache,

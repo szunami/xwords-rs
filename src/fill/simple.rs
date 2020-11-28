@@ -8,10 +8,7 @@ use crate::{
     trie::Trie,
 };
 
-use super::{
-    cache::{CachedIsViable, CachedWords},
-    fill_one_word, is_viable_reuse, Filler,
-};
+use super::{Filler, build_lookup, cache::{CachedIsViable, CachedWords}, fill_one_word, is_viable_reuse, orthogonals};
 
 pub struct SimpleFiller<'s> {
     word_cache: CachedWords,
@@ -42,6 +39,8 @@ impl<'s> Filler for SimpleFiller<'s> {
         );
 
         let mut candidates = vec![initial_crossword.to_owned()];
+        
+        let word_boundary_lookup = build_lookup(&word_boundaries);
 
         while !candidates.is_empty() {
             let candidate = candidates.pop().unwrap();
@@ -61,16 +60,17 @@ impl<'s> Filler for SimpleFiller<'s> {
                 .filter(|iter| iter.clone().any(|c| c == ' '))
                 .min_by_key(|iter| self.word_cache.words(iter.clone(), self.trie).len())
                 .unwrap();
+                
+            let orthogonals = orthogonals(&to_fill.word_boundary, &word_boundary_lookup);
 
             let potential_fills = self.word_cache.words(to_fill.clone(), self.trie);
 
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, &to_fill.clone(), &potential_fill);
 
-                // if is_viable_tmp(&new_candidate, &word_boundaries, self.trie, &mut self.is_viable_cache) {
                 let (viable, tmp) = is_viable_reuse(
                     &new_candidate,
-                    &word_boundaries,
+                    &orthogonals,
                     self.trie,
                     already_used,
                     &mut self.is_viable_cache,
