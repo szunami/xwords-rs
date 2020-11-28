@@ -1,18 +1,16 @@
-use std::fs::File;
-use xwords::trie::Trie;
 use criterion::black_box;
-use std::sync::Arc;
+use std::{fs::File, sync::Arc};
 use xwords::{
     crossword::Crossword,
     fill::{simple::SimpleFiller, Filler},
+    trie::Trie,
 };
 
 use criterion::{criterion_group, criterion_main, Benchmark, Criterion};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
-    
     let group_id = "simple_filler";
-    
+
     let trie = Trie::load_default().expect("Failed to load trie");
 
     let trie = Arc::new(trie);
@@ -63,7 +61,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             });
         }),
     );
-    
+
     let tmp_trie = trie.clone();
 
     c.bench(
