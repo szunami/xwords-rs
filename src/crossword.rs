@@ -1,5 +1,19 @@
+/*!
+Core types to represent a crossword puzzle.
+*/
+
 use crate::parse::WordBoundary;
 use std::{fmt, hash::Hash};
+
+/// The underlying representation of a crossword puzzle. All of
+/// the contents are stored in a string and the dimensions of the grid
+/// are stored explicitly.
+///
+/// In the contents, `*` represents a shaded square, and a ` ` represents
+/// a blank square.
+/// 
+/// To parse a square grid, see [`xwords::crossword::Crossword::square`]. To parse a 
+/// rectangular grid, see [`xwords::crossword::Crossword::rectangle`]
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub struct Crossword {
@@ -9,6 +23,8 @@ pub struct Crossword {
 }
 
 impl Crossword {
+    /// Parses a crossword. Assumes that grid width and height are equal and returns
+    /// an Err if not. Newlines are removed.
     pub fn square(contents: String) -> Result<Crossword, String> {
         let without_newlines: String = contents.chars().filter(|c| *c != '\n').collect();
 
@@ -23,6 +39,9 @@ impl Crossword {
         })
     }
 
+    /// Parses a crossword. Assumes that width and height are as specified. If the length
+    /// of the input does not match the input dimensions, an Err is returned. Newlines are
+    /// removed.
     pub fn rectangle(contents: String, width: usize, height: usize) -> Result<Crossword, String> {
         let without_newlines: String = contents.chars().filter(|c| *c != '\n').collect();
         if without_newlines.len() != width * height {
@@ -36,19 +55,22 @@ impl Crossword {
     }
 }
 
+/// An `Iterator<char>` that correctly traversing a Crossword, accounting for direction.
+/// 
+/// The length of the word is stored in the `word_boundary`.
 #[derive(Clone, Debug)]
-pub struct CrosswordWordIterator<'s> {
+pub struct WordIterator<'s> {
     crossword: &'s Crossword,
     pub word_boundary: &'s WordBoundary,
     index: usize,
 }
 
-impl<'s> CrosswordWordIterator<'s> {
+impl<'s> WordIterator<'s> {
     pub fn new(
         crossword: &'s Crossword,
         word_boundary: &'s WordBoundary,
-    ) -> CrosswordWordIterator<'s> {
-        CrosswordWordIterator {
+    ) -> WordIterator<'s> {
+        WordIterator {
             crossword,
             word_boundary,
             index: 0,
@@ -56,7 +78,7 @@ impl<'s> CrosswordWordIterator<'s> {
     }
 }
 
-impl<'s> fmt::Display for CrosswordWordIterator<'s> {
+impl<'s> fmt::Display for WordIterator<'s> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for c in self.clone() {
             write!(f, "{}", c)?;
@@ -65,7 +87,7 @@ impl<'s> fmt::Display for CrosswordWordIterator<'s> {
     }
 }
 
-impl<'s> Iterator for CrosswordWordIterator<'s> {
+impl<'s> Iterator for WordIterator<'s> {
     type Item = char;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -93,7 +115,7 @@ impl<'s> Iterator for CrosswordWordIterator<'s> {
     }
 }
 
-impl Hash for CrosswordWordIterator<'_> {
+impl Hash for WordIterator<'_> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         for c in (*self).clone() {
             c.hash(state);
@@ -101,7 +123,7 @@ impl Hash for CrosswordWordIterator<'_> {
     }
 }
 
-impl PartialEq for CrosswordWordIterator<'_> {
+impl PartialEq for WordIterator<'_> {
     fn eq(&self, other: &Self) -> bool {
         if self.word_boundary.length != other.word_boundary.length {
             return false;
@@ -111,7 +133,7 @@ impl PartialEq for CrosswordWordIterator<'_> {
     }
 }
 
-impl Eq for CrosswordWordIterator<'_> {}
+impl Eq for WordIterator<'_> {}
 
 impl fmt::Display for Crossword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -129,6 +151,7 @@ impl fmt::Display for Crossword {
     }
 }
 
+/// The direction of a word in a Crossword.
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Direction {
     Across,
@@ -138,7 +161,7 @@ pub enum Direction {
 #[cfg(test)]
 mod tests {
     use super::Crossword;
-    use crate::{crossword::CrosswordWordIterator, parse::WordBoundary};
+    use crate::{crossword::WordIterator, parse::WordBoundary};
     use std::collections::HashSet;
 
     use super::Direction;
@@ -173,7 +196,7 @@ ghi
             length: 3,
         };
 
-        let t = CrosswordWordIterator {
+        let t = WordIterator {
             crossword: &input,
             word_boundary: &word_boundary,
             index: 0,
@@ -190,7 +213,7 @@ ghi
             length: 3,
         };
 
-        let t = CrosswordWordIterator {
+        let t = WordIterator {
             crossword: &input,
             word_boundary: &word_boundary,
             index: 0,
@@ -217,13 +240,13 @@ ghi
             length: 3,
         };
 
-        let a_iter = CrosswordWordIterator {
+        let a_iter = WordIterator {
             crossword: &input,
             word_boundary: &a,
             index: 0,
         };
 
-        let b_iter = CrosswordWordIterator {
+        let b_iter = WordIterator {
             crossword: &input,
             word_boundary: &b,
             index: 0,
@@ -248,13 +271,13 @@ ghi
             length: 3,
         };
 
-        let a_iter = CrosswordWordIterator {
+        let a_iter = WordIterator {
             crossword: &input,
             word_boundary: &a,
             index: 0,
         };
 
-        let b_iter = CrosswordWordIterator {
+        let b_iter = WordIterator {
             crossword: &input,
             word_boundary: &b,
             index: 0,

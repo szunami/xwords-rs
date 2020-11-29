@@ -1,3 +1,7 @@
+/*!
+A data structure that provides efficient lookup of partially filled words.
+*/
+
 use crate::File;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
@@ -159,13 +163,9 @@ impl Trie {
             is_terminal: false,
         };
 
-        println!("Building {} words", words.len());
-
         for word in words.iter() {
             root = root.add_sequence(&word);
         }
-
-        println!("Done building");
 
         Trie { root }
     }

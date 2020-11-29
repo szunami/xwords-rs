@@ -1,7 +1,7 @@
 extern crate rustc_hash;
 
-use crate::fill::Filler;
-use fill::simple::SimpleFiller;
+use crate::fill::Fill;
+use fill::filler::Filler;
 use rustc_hash::FxHashMap;
 use trie::Trie;
 
@@ -17,5 +17,5 @@ pub mod trie;
 
 pub fn fill_crossword_with_default_wordlist(crossword: &Crossword) -> Result<Crossword, String> {
     let trie = Trie::load_default().expect("Failed to load trie");
-    SimpleFiller::new(&trie).fill(crossword)
+    Filler::new(&trie).fill(crossword)
 }

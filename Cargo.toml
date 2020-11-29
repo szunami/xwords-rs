@@ -36,7 +36,7 @@ path = "examples/snippet.rs"
 debug = 1
 
 [[bench]]
-name = "fill_crossword_simple"
+name = "filler"
 harness = false
 
 [[bench]]

@@ -1,5 +1,14 @@
+/*!
+Utility methods to split a `Crossword` into component words.
+*/
 use crate::{Crossword, Direction};
 
+/// Parses a Crossword into a `Vec<WordBoundary>`. Returns all words present in the puzzle.
+/// 
+/// Note that every square in a Crossword is present in two word boundaries; one `Down` and
+/// one `Across`.
+/// 
+/// Also note that as a `Crossword` is being filled, the word boundaries do not change.
 pub fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
     let mut result = vec![];
 
@@ -99,6 +108,12 @@ pub fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
     result
 }
 
+/// A representation of a word in a `Crossword`. Note that a `WordBoundary` is not
+/// attached to a specific `Crossword`, and that it is mostly used to represent
+/// a location in a grid.
+/// 
+/// Note that a `WordBoundary` can be combined with a `&Crossword` to create a `WordIterator`,
+/// which will produce the `char`s present in that specific `Crossword`.
 #[derive(Debug, PartialEq, Clone)]
 pub struct WordBoundary {
     pub start_row: usize,

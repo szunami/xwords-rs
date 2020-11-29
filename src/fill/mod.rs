@@ -1,5 +1,9 @@
+/*!
+Utility methods consumed in filling a crossword puzzle.
+*/
+
 use crate::{
-    crossword::{CrosswordWordIterator, Direction},
+    crossword::{WordIterator, Direction},
     fill::cache::CachedIsViable,
     parse::WordBoundary,
     trie::Trie,
@@ -11,12 +15,24 @@ use rustc_hash::{FxHashSet, FxHasher};
 use std::{collections, hash::Hasher};
 
 pub mod cache;
-pub mod simple;
+pub mod filler;
 
-pub trait Filler {
+/// The sole trait involved in filling crossword puzzles. Algorithms that
+/// conform to this interface will be easy to compare against the existing
+/// algorithm.
+pub trait Fill {
     fn fill(&mut self, crossword: &Crossword) -> Result<Crossword, String>;
 }
 
+/// Determines whether a given crossword puzzle is viable. This performs several
+/// checks to decide whether a partially complete crossword should be considered
+/// for further filling, or should be discarded.
+/// 
+/// `already_used` is reused across runs to avoid allocating and should be `clear`ed
+/// between calls. Currently this method is fairly hot.
+/// 
+/// Viability checks include: (1) is there at least one valid word that matches this partial
+/// fill; (2) does this crossword include any repeated complete words.
 pub fn is_viable_reuse(
     candidate: &Crossword,
     word_boundaries: &[&WordBoundary],
@@ -25,7 +41,7 @@ pub fn is_viable_reuse(
     is_viable_cache: &mut CachedIsViable,
 ) -> (bool, FxHashSet<u64>) {
     for word_boundary in word_boundaries {
-        let iter = CrosswordWordIterator::new(candidate, word_boundary);
+        let iter = WordIterator::new(candidate, word_boundary);
 
         let mut hasher = FxHasher::default();
         let mut full = true;
@@ -47,9 +63,10 @@ pub fn is_viable_reuse(
     (true, already_used)
 }
 
+
 pub fn fill_one_word(
     candidate: &Crossword,
-    iter: &CrosswordWordIterator,
+    iter: &WordIterator,
     word: &str,
 ) -> Crossword {
     let mut result_contents = String::with_capacity(iter.word_boundary.length);
@@ -95,7 +112,7 @@ pub fn fill_one_word(
     }
 }
 
-pub fn build_lookup<'s>(
+pub fn build_square_word_boundary_lookup<'s>(
     word_boundaries: &'s[WordBoundary],
 ) -> FxHashMap<(Direction, usize, usize), &'s WordBoundary> {
     let mut result = FxHashMap::default();
@@ -128,7 +145,10 @@ pub fn build_lookup<'s>(
     result
 }
 
-pub fn orthogonals<'s>(
+/// Identifies WordBoundaries that intersect a given `WordBoundary`.
+/// This is useful to identify word that are affected by a given
+/// `WordBoundary` being filled.
+pub fn words_orthogonal_to_word<'s>(
     to_fill: &'s WordBoundary,
     word_boundary_lookup: &collections::HashMap<
         (Direction, usize, usize),
@@ -170,7 +190,7 @@ pub fn orthogonals<'s>(
 #[cfg(test)]
 mod tests {
     use crate::{
-        crossword::Direction, fill::CrosswordWordIterator, parse::WordBoundary, Crossword,
+        crossword::Direction, fill::WordIterator, parse::WordBoundary, Crossword,
     };
 
     use super::fill_one_word;
@@ -190,7 +210,7 @@ ghi
         assert_eq!(
             fill_one_word(
                 &c,
-                &CrosswordWordIterator::new(
+                &WordIterator::new(
                     &c,
                     &WordBoundary {
                         start_col: 0,
@@ -214,7 +234,7 @@ ghi
         assert_eq!(
             fill_one_word(
                 &c,
-                &CrosswordWordIterator::new(
+                &WordIterator::new(
                     &c,
                     &WordBoundary {
                         start_col: 0,
