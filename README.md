@@ -1,6 +1,6 @@
 # xwords
 
-![xwords logo](xwords.png)
+<img src="https://raw.githubusercontent.com/szunami/xwords-rs/main/xwords.png" width="48">
 
 ![](https://github.com/szunami/xwords-rs/workflows/Build/badge.svg)
 [![](http://meritbadge.herokuapp.com/xwords)](https://crates.io/crates/xwords)
