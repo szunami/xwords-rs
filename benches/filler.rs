@@ -3,14 +3,14 @@ use criterion::black_box;
 use std::sync::Arc;
 use xwords::{
     crossword::Crossword,
-    fill::simple::Filler,
+    fill::filler::Filler,
     trie::Trie,
 };
 
 use criterion::{criterion_group, criterion_main, Benchmark, Criterion};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
-    let group_id = "simple_filler";
+    let group_id = "filler";
 
     let trie = Trie::load_default().expect("Failed to load trie");
 

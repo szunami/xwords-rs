@@ -6,7 +6,7 @@ use xwords::trie::Trie;
 use clap::{App, Arg};
 use xwords::{
     crossword::Crossword,
-    fill::{simple::Filler},
+    fill::filler::Filler,
 };
 
 fn main() -> Result<(), String> {

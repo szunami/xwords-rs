@@ -1,3 +1,6 @@
+/*!
+Utility methods to split a `Crossword` into component words.
+*/
 use crate::{Crossword, Direction};
 
 /// Parses a Crossword into a `Vec<WordBoundary>`. Returns all words present in the puzzle.

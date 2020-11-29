@@ -15,7 +15,7 @@ use rustc_hash::{FxHashSet, FxHasher};
 use std::{collections, hash::Hasher};
 
 pub mod cache;
-pub mod simple;
+pub mod filler;
 
 /// The sole trait involved in filling crossword puzzles. Algorithms that
 /// conform to this interface will be easy to compare against the existing

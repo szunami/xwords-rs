@@ -1,3 +1,7 @@
+/*!
+A data structure that provides efficient lookup of partially filled words.
+*/
+
 use crate::File;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};

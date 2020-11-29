@@ -1,3 +1,8 @@
+/*!
+Data stores that store the result of partial word lookups
+to prevent repeated work.
+*/
+
 use std::hash::{Hash, Hasher};
 
 use rustc_hash::{FxHashMap, FxHasher};
