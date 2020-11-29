@@ -1,3 +1,11 @@
+//! `xwords` is a crate with utilities to fill crossword puzzles.
+//! 
+//! It includes structs to represent partially filled crossword
+//! puzzles, utilities to manipulate them, data structures
+//! to make this all efficient, and an algorithm that ties this all
+//! together.
+
+
 extern crate rustc_hash;
 
 use crate::fill::Fill;
