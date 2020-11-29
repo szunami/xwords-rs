@@ -1,29 +1,34 @@
+/*!
+An algorithm that composes algorithms and data structures throughout this
+crate. This is where the magic happens.
+*/
+
 use std::{collections::HashSet, hash::BuildHasherDefault, time::Instant};
 
 use rustc_hash::FxHasher;
 
 use crate::{
-    crossword::{Crossword, CrosswordWordIterator},
+    crossword::{Crossword, WordIterator},
     parse::parse_word_boundaries,
     trie::Trie,
 };
 
 use super::{
-    build_lookup,
+    build_square_word_boundary_lookup,
     cache::{CachedIsViable, CachedWords},
-    fill_one_word, is_viable_reuse, orthogonals, Filler,
+    fill_one_word, is_viable_reuse, words_orthogonal_to_word, Filler,
 };
 
-pub struct SimpleFiller<'s> {
+pub struct Filler<'s> {
     word_cache: CachedWords,
     is_viable_cache: CachedIsViable,
 
     trie: &'s Trie,
 }
 
-impl<'s> SimpleFiller<'s> {
-    pub fn new(trie: &'s Trie) -> SimpleFiller<'s> {
-        SimpleFiller {
+impl<'s> Fill<'s> {
+    pub fn new(trie: &'s Trie) -> Filler<'s> {
+        Filler {
             word_cache: CachedWords::default(),
             is_viable_cache: CachedIsViable::default(),
             trie,
@@ -31,7 +36,7 @@ impl<'s> SimpleFiller<'s> {
     }
 }
 
-impl<'s> Filler for SimpleFiller<'s> {
+impl<'s> Filler for Filler<'s> {
     fn fill(&mut self, initial_crossword: &Crossword) -> Result<Crossword, String> {
         let thread_start = Instant::now();
         let mut candidate_count = 0;
@@ -44,7 +49,7 @@ impl<'s> Filler for SimpleFiller<'s> {
 
         let mut candidates = vec![initial_crossword.to_owned()];
 
-        let word_boundary_lookup = build_lookup(&word_boundaries);
+        let word_boundary_lookup = build_square_word_boundary_lookup(&word_boundaries);
 
         while !candidates.is_empty() {
             let candidate = candidates.pop().unwrap();
@@ -60,7 +65,7 @@ impl<'s> Filler for SimpleFiller<'s> {
 
             let to_fill = word_boundaries
                 .iter()
-                .map(|word_boundary| CrosswordWordIterator::new(&candidate, word_boundary))
+                .map(|word_boundary| WordIterator::new(&candidate, word_boundary))
                 .filter(|iter| iter.clone().any(|c| c == ' '))
                 .min_by_key(|iter| {
                     (
@@ -71,7 +76,7 @@ impl<'s> Filler for SimpleFiller<'s> {
                 })
                 .unwrap();
 
-            let orthogonals = orthogonals(&to_fill.word_boundary, &word_boundary_lookup);
+            let orthogonals = words_orthogonal_to_word(&to_fill.word_boundary, &word_boundary_lookup);
 
             let potential_fills = self.word_cache.words(to_fill.clone(), self.trie);
 
@@ -110,7 +115,7 @@ mod tests {
 
     use std::{cmp::Ordering, time::Instant};
 
-    use super::SimpleFiller;
+    use super::Filler;
 
     #[test]
     fn test() {
@@ -134,7 +139,7 @@ mod tests {
 
         let now = Instant::now();
         let trie = Trie::load_default().expect("Failed to load trie");
-        let mut filler = SimpleFiller::new(&trie);
+        let mut filler = Filler::new(&trie);
         let filled_puz = filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);

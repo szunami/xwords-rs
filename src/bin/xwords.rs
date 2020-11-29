@@ -1,11 +1,11 @@
 extern crate clap;
-use std::fs::File;
+use std::{fs::File, env};
 use xwords::trie::Trie;
 
 use clap::{App, Arg};
 use xwords::{
     crossword::Crossword,
-    fill::{simple::SimpleFiller, Filler},
+    fill::{simple::Filler, Filler},
 };
 
 fn main() -> Result<(), String> {
@@ -66,7 +66,7 @@ fn main() -> Result<(), String> {
     }
 
     let trie = Trie::load_default().expect("Failed to load trie");
-    let output = SimpleFiller::new(&trie).fill(&input);
+    let output = Filler::new(&trie).fill(&input);
 
     match output {
         Ok(output) => {

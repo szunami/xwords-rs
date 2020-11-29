@@ -2,7 +2,7 @@ use criterion::black_box;
 use std::sync::Arc;
 use xwords::{
     crossword::Crossword,
-    fill::{simple::SimpleFiller, Filler},
+    fill::{simple::Filler, Filler},
     trie::Trie,
 };
 
@@ -20,7 +20,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench(
         group_id,
         Benchmark::new("empty_20201005_crossword", move |b| {
-            let mut filler = SimpleFiller::new(tmp_trie.as_ref());
+            let mut filler = Filler::new(tmp_trie.as_ref());
 
             let input = std::fs::read_to_string("./grids/20201012_empty.txt")
                 .expect("failed to read input");
@@ -39,7 +39,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             let input = std::fs::read_to_string("./grids/20201012_empty.txt")
                 .expect("failed to read input");
             let input = Crossword::square(input).expect("failed to parse input");
-            let mut filler = SimpleFiller::new(tmp_trie.as_ref());
+            let mut filler = Filler::new(tmp_trie.as_ref());
             b.iter(|| {
                 assert!(filler.fill(black_box(&input)).is_ok());
             });
@@ -51,7 +51,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench(
         group_id,
         Benchmark::new("empty_20201107_crossword", move |b| {
-            let mut filler = SimpleFiller::new(tmp_trie.as_ref());
+            let mut filler = Filler::new(tmp_trie.as_ref());
             let input = std::fs::read_to_string("./grids/20201107_empty.txt")
                 .expect("failed to read input");
             let input = Crossword::square(input).expect("failed to parse input");
@@ -67,7 +67,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench(
         group_id,
         Benchmark::new("empty_20201128_crossword", move |b| {
-            let mut filler = SimpleFiller::new(tmp_trie.as_ref());
+            let mut filler = Filler::new(tmp_trie.as_ref());
             let input = std::fs::read_to_string("./grids/20201128_empty.txt")
                 .expect("failed to read input");
             let input = Crossword::square(input).expect("failed to parse input");
@@ -83,7 +83,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench(
         group_id,
         Benchmark::new("empty_20201124_crossword", move |b| {
-            let mut filler = SimpleFiller::new(tmp_trie.as_ref());
+            let mut filler = Filler::new(tmp_trie.as_ref());
             let input = std::fs::read_to_string("./grids/20201124_empty.txt")
                 .expect("failed to read input");
             let input = Crossword::rectangle(input, 16, 15).expect("failed to parse input");
