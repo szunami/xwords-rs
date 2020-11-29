@@ -1,11 +1,12 @@
 extern crate clap;
-use std::{fs::File, env};
+use xwords::fill::Fill;
+use std::{fs::File};
 use xwords::trie::Trie;
 
 use clap::{App, Arg};
 use xwords::{
     crossword::Crossword,
-    fill::{simple::Filler, Filler},
+    fill::{simple::Filler},
 };
 
 fn main() -> Result<(), String> {

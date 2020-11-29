@@ -13,11 +13,7 @@ use crate::{
     trie::Trie,
 };
 
-use super::{
-    build_square_word_boundary_lookup,
-    cache::{CachedIsViable, CachedWords},
-    fill_one_word, is_viable_reuse, words_orthogonal_to_word, Filler,
-};
+use super::{Fill, build_square_word_boundary_lookup, cache::{CachedIsViable, CachedWords}, fill_one_word, is_viable_reuse, words_orthogonal_to_word};
 
 pub struct Filler<'s> {
     word_cache: CachedWords,
@@ -26,7 +22,7 @@ pub struct Filler<'s> {
     trie: &'s Trie,
 }
 
-impl<'s> Fill<'s> {
+impl<'s> Filler<'s> {
     pub fn new(trie: &'s Trie) -> Filler<'s> {
         Filler {
             word_cache: CachedWords::default(),
@@ -36,7 +32,7 @@ impl<'s> Fill<'s> {
     }
 }
 
-impl<'s> Filler for Filler<'s> {
+impl<'s> Fill for Filler<'s> {
     fn fill(&mut self, initial_crossword: &Crossword) -> Result<Crossword, String> {
         let thread_start = Instant::now();
         let mut candidate_count = 0;
@@ -109,7 +105,7 @@ impl<'s> Filler for Filler<'s> {
 #[cfg(test)]
 mod tests {
 
-    use crate::{fill::Filler, Trie};
+    use crate::{fill::Fill, Trie};
 
     use crate::Crossword;
 

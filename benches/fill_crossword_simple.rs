@@ -1,8 +1,9 @@
+use xwords::fill::Fill;
 use criterion::black_box;
 use std::sync::Arc;
 use xwords::{
     crossword::Crossword,
-    fill::{simple::Filler, Filler},
+    fill::simple::Filler,
     trie::Trie,
 };
 

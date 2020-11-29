@@ -1,6 +1,6 @@
 extern crate rustc_hash;
 
-use crate::fill::Filler;
+use crate::fill::Fill;
 use fill::simple::Filler;
 use rustc_hash::FxHashMap;
 use trie::Trie;
