@@ -1,9 +1,8 @@
-use xwords::fill::Fill;
 use criterion::black_box;
 use std::sync::Arc;
 use xwords::{
     crossword::Crossword,
-    fill::filler::Filler,
+    fill::{filler::Filler, Fill},
     trie::Trie,
 };
 
@@ -78,7 +77,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             });
         }),
     );
-    
+
     let tmp_trie = trie.clone();
 
     c.bench(

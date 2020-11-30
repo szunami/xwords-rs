@@ -11,8 +11,8 @@ use std::{fmt, hash::Hash};
 ///
 /// In the contents, `*` represents a shaded square, and a ` ` represents
 /// a blank square.
-/// 
-/// To parse a square grid, see [`xwords::crossword::Crossword::square`]. To parse a 
+///
+/// To parse a square grid, see [`xwords::crossword::Crossword::square`]. To parse a
 /// rectangular grid, see [`xwords::crossword::Crossword::rectangle`]
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
@@ -56,7 +56,7 @@ impl Crossword {
 }
 
 /// An `Iterator<char>` that correctly traversing a Crossword, accounting for direction.
-/// 
+///
 /// The length of the word is stored in the `word_boundary`.
 #[derive(Clone, Debug)]
 pub struct WordIterator<'s> {
@@ -66,10 +66,7 @@ pub struct WordIterator<'s> {
 }
 
 impl<'s> WordIterator<'s> {
-    pub fn new(
-        crossword: &'s Crossword,
-        word_boundary: &'s WordBoundary,
-    ) -> WordIterator<'s> {
+    pub fn new(crossword: &'s Crossword, word_boundary: &'s WordBoundary) -> WordIterator<'s> {
         WordIterator {
             crossword,
             word_boundary,
