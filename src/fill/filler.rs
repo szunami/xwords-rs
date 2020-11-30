@@ -13,7 +13,11 @@ use crate::{
     trie::Trie,
 };
 
-use super::{Fill, build_square_word_boundary_lookup, cache::{CachedIsViable, CachedWords}, fill_one_word, is_viable_reuse, words_orthogonal_to_word};
+use super::{
+    build_square_word_boundary_lookup,
+    cache::{CachedIsViable, CachedWords},
+    fill_one_word, is_viable_reuse, words_orthogonal_to_word, Fill,
+};
 
 pub struct Filler<'s> {
     word_cache: CachedWords,
@@ -47,8 +51,7 @@ impl<'s> Fill for Filler<'s> {
 
         let word_boundary_lookup = build_square_word_boundary_lookup(&word_boundaries);
 
-        while !candidates.is_empty() {
-            let candidate = candidates.pop().unwrap();
+        while let Some(candidate) = candidates.pop() {
             candidate_count += 1;
 
             if candidate_count % 10_000 == 0 {
@@ -72,7 +75,8 @@ impl<'s> Fill for Filler<'s> {
                 })
                 .unwrap();
 
-            let orthogonals = words_orthogonal_to_word(&to_fill.word_boundary, &word_boundary_lookup);
+            let orthogonals =
+                words_orthogonal_to_word(&to_fill.word_boundary, &word_boundary_lookup);
 
             let potential_fills = self.word_cache.words(to_fill.clone(), self.trie);
 

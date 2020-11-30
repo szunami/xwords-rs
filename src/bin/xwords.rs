@@ -1,13 +1,9 @@
 extern crate clap;
-use xwords::fill::Fill;
-use std::{fs::File};
-use xwords::trie::Trie;
+use std::fs::File;
+use xwords::{fill::Fill, trie::Trie};
 
 use clap::{App, Arg};
-use xwords::{
-    crossword::Crossword,
-    fill::filler::Filler,
-};
+use xwords::{crossword::Crossword, fill::filler::Filler};
 
 fn main() -> Result<(), String> {
     let matches = App::new("xwords")

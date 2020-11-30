@@ -3,7 +3,7 @@ Utility methods consumed in filling a crossword puzzle.
 */
 
 use crate::{
-    crossword::{WordIterator, Direction},
+    crossword::{Direction, WordIterator},
     fill::cache::CachedIsViable,
     parse::WordBoundary,
     trie::Trie,
@@ -27,10 +27,10 @@ pub trait Fill {
 /// Determines whether a given crossword puzzle is viable. This performs several
 /// checks to decide whether a partially complete crossword should be considered
 /// for further filling, or should be discarded.
-/// 
+///
 /// `already_used` is reused across runs to avoid allocating and should be `clear`ed
 /// between calls. Currently this method is fairly hot.
-/// 
+///
 /// Viability checks include: (1) is there at least one valid word that matches this partial
 /// fill; (2) does this crossword include any repeated complete words.
 pub fn is_viable_reuse(
@@ -63,12 +63,7 @@ pub fn is_viable_reuse(
     (true, already_used)
 }
 
-
-pub fn fill_one_word(
-    candidate: &Crossword,
-    iter: &WordIterator,
-    word: &str,
-) -> Crossword {
+pub fn fill_one_word(candidate: &Crossword, iter: &WordIterator, word: &str) -> Crossword {
     let mut result_contents = String::with_capacity(iter.word_boundary.length);
     let word_boundary = iter.word_boundary;
     let mut word_iter = word.chars();
@@ -113,7 +108,7 @@ pub fn fill_one_word(
 }
 
 pub fn build_square_word_boundary_lookup<'s>(
-    word_boundaries: &'s[WordBoundary],
+    word_boundaries: &'s [WordBoundary],
 ) -> FxHashMap<(Direction, usize, usize), &'s WordBoundary> {
     let mut result = FxHashMap::default();
 
@@ -189,9 +184,7 @@ pub fn words_orthogonal_to_word<'s>(
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        crossword::Direction, fill::WordIterator, parse::WordBoundary, Crossword,
-    };
+    use crate::{crossword::Direction, fill::WordIterator, parse::WordBoundary, Crossword};
 
     use super::fill_one_word;
 
